@@ -38,9 +38,14 @@
 			flag_select.css({
 				"left": ( left - ( fs_w / 2 ) ) + 'px',
 				"top": top + 'px'
-			})
+			});
 			
-			flag_select.slideDown().data('rel_input', th.attr('name'));
+			flag_select.slideDown(function(){
+				if ( sel_input.length ) {
+					var st = sel_input.parent('label').position();
+					$('.postbox .inside', flag_select).animate( { 'scrollTop': st.top }, 700 );
+				};
+			}).data('rel_input', th.attr('name'));
 		});
 
 		$('.lang_radio').on('change', function(){
@@ -143,6 +148,11 @@
 		};
 		fs.stop().slideUp(function(){
 			$('input[type="radio"]', fs).removeAttr('checked');
+
+			// Work-around for jQuery not being able to set scrollTop() on hidden elements :)
+			fs.css( { 'left': '-9999px', 'display': 'block' } );
+			$('.postbox .inside', fs).scrollTop('0');
+			fs.css( { 'display': 'none', 'left': '0' } );
 		});
 	}
 
