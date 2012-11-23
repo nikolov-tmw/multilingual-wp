@@ -578,6 +578,7 @@ class scbMultipleChoiceField extends scbFormField {
 		$args = wp_parse_args( $args, array(
 			'numeric' => false,		// use numeric array instead of associative
 			'checked' => null,
+			'extra' => ''
 		) );
 
 		extract( $args );
