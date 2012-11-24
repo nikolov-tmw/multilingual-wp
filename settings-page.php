@@ -51,9 +51,9 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 
 	public function enqueue_scripts( $handle ) {
 		if ( 'settings_page_multilingual-wp' == $handle ) {
-			wp_enqueue_script( 'multilingual-wp-js', $this->plugin_url . 'js/multilingual-wp.js', array( 'jquery', 'thickbox' ), null, true );
+			wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery', 'thickbox' ), null, true );
 
-			wp_enqueue_style( 'multilingual-wp-css', $this->plugin_url . 'css/multilingual-wp.css' );
+			wp_enqueue_style( 'multilingual-wp-settings-css', $this->plugin_url . 'css/multilingual-wp-settings.css' );
 			wp_enqueue_style( 'thickbox-css' );
 		}
 	}
