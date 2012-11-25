@@ -16,7 +16,8 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 
 	// Manually handle option saving ( use Settings API instead )
 	function form_handler() {
-		if ( empty( $_POST['action'] ) )
+		global $pagenow;
+		if ( empty( $_POST['action'] ) || 'settings_page_multilingual-wp' != $pagenow )
 			return false;
 
 		check_admin_referer( $this->nonce );
@@ -41,8 +42,6 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 		$this->args = array(
 			'page_title' => 'Multilingual WP',
 		);
-
-		$this->plugin_url = plugins_url( dirname( __FILE__ ) );
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
 
