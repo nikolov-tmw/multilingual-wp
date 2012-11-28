@@ -17,7 +17,8 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 	// Manually handle option saving ( use Settings API instead )
 	function form_handler() {
 		global $pagenow;
-		if ( empty( $_POST['action'] ) || 'settings_page_multilingual-wp' != $pagenow )
+		// exit;
+		if ( 'POST' != $_SERVER['REQUEST_METHOD'] || empty( $_POST['action'] ) )
 			return false;
 
 		check_admin_referer( $this->nonce );
@@ -45,7 +46,7 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
 
-		add_action( 'init', array( $this, 'form_handler' ) );
+		add_action( 'load-settings_page_multilingual-wp', array( $this, 'form_handler' ), 100 );
 	}
 
 	public function enqueue_scripts( $handle ) {
@@ -109,6 +110,7 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 		$default_settings = $l_opts = array();
 		$enabled_langs = $this->options->enabled_langs;
 		$default_lang = $this->options->default_lang;
+		
 		foreach ( $languages as $lang => $data ) {
 			$l_opts[$lang] = '<img style="margin-bottom:-8px;padding:0 5px;" src="' . $this->plugin_url . '/flags/24/' . $data['icon'] . '" alt="' . esc_attr( $data['label'] ) . '" /> ' . $data['label'] . '<br />';
 		}
