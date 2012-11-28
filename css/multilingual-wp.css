@@ -1,4 +1,4 @@
 body.js #titlediv #titlewrap, body.js #postdivrich { display: none; }
 #mlwp-editors h2.nav-tab-wrapper { padding: 0; }
 #mlwp-editors h2.nav-tab-wrapper a { float: right; }
-input.wpml-title { padding: 3px 8px; font-size: 1.7em; line-height: 100%; width: 100%; outline: 0; }
+input.mlwp-title { padding: 3px 8px; font-size: 1.7em; line-height: 100%; width: 100%; outline: 0; }

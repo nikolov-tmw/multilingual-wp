@@ -34,8 +34,32 @@ require_once dirname( __FILE__ ) . '/flags_data.php';
 class Multilingual_WP {
 	public static $options;
 	public $plugin_url;
-	public $languages_meta_key = '_wpml_langs';
-	public $rel_p_meta_key = '_wpml_rel_post';
+	public $languages_meta_key = '_mlwp_langs';
+	public $rel_p_meta_key = '_mlwp_rel_post';
+
+	public $link_type = 'pre';
+
+	public $current_lang = '';
+	public $locale = '';
+
+	public $ID;
+	public $post;
+	public $post_type;
+	public $rel_langs;
+	public $rel_posts;
+
+	/**
+	* Late Filter Priority
+	* 
+	* Holds the priority for filters that need to be applied last - therefore it should be a really hight number
+	* 
+	* @var Integer
+	*/
+	public $late_fp = 10000;
+
+	const LT_PRE = 'pre';
+	const LT_QUERY = 'qa';
+	const LT_SD = 'sd';
 
 	private $_doing_save = false;
 	private $pt_prefix = 'mlwp_';
@@ -74,11 +98,15 @@ class Multilingual_WP {
 			require_once( dirname( __FILE__ ) . '/settings-page.php' );
 			new Multilingual_WP_Admin_Page( __FILE__, self::$options );
 		}
+
 	}
 
 	function __construct() {
 		add_action( 'init', array( $this, 'init' ), 100 );
 
+		add_action( 'plugins_loaded', array( $this, 'setup_locale' ), $this->late_fp );
+
+		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
 	}
 
 	public function init() {
@@ -96,6 +124,155 @@ class Multilingual_WP {
 		add_action( 'submitpage_box', array( $this, 'insert_editors' ), 0 );
 
 		add_action( 'save_post', array( $this, 'save_post_action' ), 10 );
+
+		if ( ! is_admin() ) {
+			add_action( 'parse_request', array( $this, 'set_locale_from_query' ), 0 );
+
+			add_filter( 'query_vars', array( $this, 'add_lang_query_var' ) );
+
+			add_filter( 'the_posts', array( $this, 'filter_posts' ), $this->late_fp, 2 );
+		}
+
+		add_action( 'generate_rewrite_rules', array( $this, 'add_rewrite_rules' ), $this->late_fp );
+	}
+
+	public function add_rewrite_rules( $wp_rewrite ) {
+		static $did_rules = false;
+		if ( ! $did_rules ) {
+			$additional_rules = array();
+			foreach ( $wp_rewrite->rules as $regex => $match ) {
+				$additional_rules[ "([a-z]{2})/$regex" ] = $this->add_query_arg( 'mlwp_lang', '$matches[1]', preg_replace_callback( '~\[(\d*?)\]~', array( $this, 'fix_rewrite_rules' ), $match ) );
+			}
+			$wp_rewrite->rules = array_merge( $additional_rules, $wp_rewrite->rules );
+		}
+	}
+
+	public function setup_locale(  ) {
+		if ( ! is_admin() ) {
+			$request = $_SERVER['REQUEST_URI'];
+			$home = home_url( '/' );
+			$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
+			$request = str_replace( $home, '', $request );
+			$lang = preg_match( '~([a-z]{2})~', $request, $matches );
+			if ( ! empty( $matches ) && $this->is_enabled( $matches[0] ) ) {
+				$this->current_lang = $matches[0];
+			} else {
+				$this->current_lang = self::$options->default_lang;
+			}
+			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
+		}
+	}
+
+	public function set_locale( $locale ) {
+		if ( $this->locale ) {
+			$locale = $this->locale;
+		}
+		return $locale;
+	}
+
+	public function filter_posts( $posts, $wp_query ) {
+		$language = isset( $wp_query->query['mlwp_lang'] ) ? $wp_query->query['mlwp_lang'] : $this->current_lang;
+		if ( $language && $this->is_enabled( $language ) ) {
+			$old_id = $this->ID;
+
+			foreach ( $posts as $key => $post ) {
+				$posts[ $key ] = $this->filter_post( $post, $language, false );
+			}
+
+			if ( $old_id ) {
+				$this->setup_post_vars( $old_id );
+			}
+		}
+
+		return $posts;
+	}
+
+	public function filter_post( $post, $language = false, $preserve_post_vars = true ) {
+		$language = $language ? $language : $this->current_lang;
+		if ( $language && ( ! isset( $post->mlwp_lang ) || $post->mlwp_lang != $lang ) && $this->is_enabled_pt( $post->post_type ) ) {
+			if ( $preserve_post_vars ) {
+				$old_id = $this->ID;
+			}
+
+			$this->setup_post_vars( $post->ID );
+			if ( isset( $this->rel_langs[ $language ] ) && ( $_post = get_post( $this->rel_langs[ $language ] ) ) ) {
+				$post->mlwp_lang = $language;
+				$post->post_content = $_post->post_content;
+				$post->post_title = $_post->post_title;
+				$post->post_name = $_post->post_name;
+				$post->post_excerpt = $_post->post_excerpt;
+			}
+
+			if ( $preserve_post_vars ) {
+				$this->setup_post_vars( $old_id );
+			}
+		}
+		return $post;
+	}
+
+	public function fix_rewrite_rules( $matches ) {
+		$matches[1] = intval( $matches[1] ) + 1;
+		return '[' . $matches[1] . ']';
+	}
+
+	public function add_query_arg( $key, $value, $target ) {
+		$target .= strpos( $target, '?' ) !== false ? "&{$key}={$value}" : trailingslashit( $target ) . "?{$key}={$value}";
+		return $target;
+	}
+
+	public function add_lang_query_var( $vars ) {
+		$vars[] = 'mlwp_lang';
+
+		return $vars;
+	}
+
+	public function set_locale_from_query( $wp ) {
+		# If the query has detected a language, use it.
+		if ( isset( $wp->query_vars['mlwp_lang'] ) && $this->is_enabled( $wp->query_vars['mlwp_lang'] ) ) {
+			// Set the current language
+			$this->current_lang = $wp->query_vars['mlwp_lang'];
+			// Set the locale
+			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
+		} elseif ( ! $this->current_lang || ! $this->locale ) { // Otherwise if we don't have languge or locale set - set some defaults
+			$this->current_lang = self::$options->default_lang;
+
+			// Fallback
+			$this->current_lang = $this->current_lang ? $this->current_lang : 'en';
+
+			// Set the locale
+			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
+		}
+	}
+
+	public function is_enabled( $language ) {
+		return in_array( $language, self::$options->enabled_langs );
+	}
+
+	public function is_enabled_pt( $pt ) {
+		return in_array( $pt, self::$options->enabled_pt );
+	}
+
+	public function clear_lang_info( $subject, $lang = false ) {
+		$lang = $lang ? $lang : $this->current_lang;
+		if ( ! $lang ) {
+			return false;
+		}
+		if ( is_array( $subject ) ) {
+			$_subject = $subject;
+			foreach ( $subject as $key => $value ) {
+				$_subject[ $key ] = $this->clear_lang_info( $value, $lang );
+			}
+		} else {
+			return preg_replace( '~' . $lang . '/~', '', $subject );
+		}
+	}
+
+	public function slashes( $subject, $action = 'decode' ) {
+		if ( $action == 'encode' ) {
+			return str_replace( '/', '%2F', $subject );
+		} else {
+			return str_replace( '%2F', '/', $subject );
+		}
 	}
 
 	public function save_post( $data, $wp_error = false ) {
@@ -127,7 +304,7 @@ class Multilingual_WP {
 		}
 
 		// If the current post type is not in the supported post types, skip it
-		if ( ! in_array( $post->post_type, self::$options->enabled_pt ) ) {
+		if ( ! $this->is_enabled_pt( $post->post_type ) ) {
 			return;
 		}
 
@@ -269,7 +446,7 @@ class Multilingual_WP {
 	}
 
 	public function admin_scripts( $hook ) {
-		if ( 'post.php' == $hook && in_array( get_post_type( get_the_ID() ), self::$options->enabled_pt ) ) {
+		if ( 'post.php' == $hook && $this->is_enabled_pt( get_post_type( get_the_ID() ) ) ) {
 			$this->setup_post_vars();
 			
 			$to_create = array();
@@ -331,13 +508,13 @@ class Multilingual_WP {
 
 	public function insert_editors() {
 		global $pagenow;
-		if ( 'post.php' == $pagenow && in_array( get_post_type( get_the_ID() ), self::$options->enabled_pt ) ) {
+		if ( 'post.php' == $pagenow && $this->is_enabled_pt( get_post_type( get_the_ID() ) ) ) {
 			echo '<div class="hide-if-js" id="mlwp-editors">';
 				echo '<h2>' . __( 'Language', 'multilingual-wp' ) . '</h2>';
 				foreach (self::$options->enabled_langs as $i => $lang) {
-					echo '<div class="js-tab wpml-lang-editor lang-' . $lang . ( $lang == self::$options->default_lang ? ' wpml-deflang' : '' ) . '" id="wpml_tab_lang_' . $lang . '" title="' . self::$options->languages[ $lang ]['label'] . '">';
+					echo '<div class="js-tab mlwp-lang-editor lang-' . $lang . ( $lang == self::$options->default_lang ? ' mlwp-deflang' : '' ) . '" id="mlwp_tab_lang_' . $lang . '" title="' . self::$options->languages[ $lang ]['label'] . '">';
 					
-					echo '<input type="text" class="wpml-title" name="title_' . $lang . '" size="30" value="' . esc_attr( $this->rel_posts[ $lang ]->post_title ) . '" id="title_' . $lang . '" autocomplete="off" />';
+					echo '<input type="text" class="mlwp-title" name="title_' . $lang . '" size="30" value="' . esc_attr( $this->rel_posts[ $lang ]->post_title ) . '" id="title_' . $lang . '" autocomplete="off" />';
 
 					wp_editor( $this->rel_posts[ $lang ]->post_content, "content_{$lang}" );
 
@@ -351,4 +528,7 @@ class Multilingual_WP {
 scb_init( array( 'Multilingual_WP', 'plugin_init' ) );
 
 global $Multilingual_WP;
-$Multilingual_WP = new Multilingual_WP();
+
+// Let's allow anyone to override our class definition - this way anyone can extend the plugin and add/overwrite functionality without having the need to modify the plugin files
+$mlwp_class_name = apply_filters( 'mlwp_class_name', 'Multilingual_WP' );
+$Multilingual_WP = new $mlwp_class_name();

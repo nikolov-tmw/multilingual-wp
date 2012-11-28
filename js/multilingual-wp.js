@@ -4,9 +4,9 @@
 
 		// Update the content of the current post
 		$(document).on('submit', '#post', function(){
-			$('#postdivrich #wp-content-wrap .wp-editor-area').val( $('.js-tab.wpml-deflang .wp-editor-area').val() );
+			$('#postdivrich #wp-content-wrap .wp-editor-area').val( $('.js-tab.mlwp-deflang .wp-editor-area').val() );
 
-			$('#titlewrap input#title').val( $('.js-tab.wpml-deflang .wpml-title').val() );
+			$('#titlewrap input#title').val( $('.js-tab.mlwp-deflang .mlwp-title').val() );
 		})
 
 		$(window).load(function(){
@@ -34,7 +34,7 @@
 			nav.append("<span>&nbsp;&nbsp;</span>");
 
 			for(i in tabs) {
-				el = '<a href="#' + tabs[i].id + '" class="nav-tab' + ( $('#' + tabs[i].id).hasClass('wpml-deflang') ? ' active' : '' ) + '">' + tabs[i].title + '</a>';
+				el = '<a href="#' + tabs[i].id + '" class="nav-tab' + ( $('#' + tabs[i].id).hasClass('mlwp-deflang') ? ' active' : '' ) + '">' + tabs[i].title + '</a>';
 				nav.append(el);
 			}
 			nav.append('<div class="clear"></div>');
