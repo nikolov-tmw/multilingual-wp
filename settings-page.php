@@ -108,6 +108,7 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 		$default_settings = $l_opts = array();
 		$enabled_langs = $this->options->enabled_langs;
 		$default_lang = $this->options->default_lang;
+		$lang_mode = $this->options->lang_mode;
 
 		foreach ( $languages as $lang => $data ) {
 			$l_opts[$lang] = '<img style="margin-bottom:-8px;padding:0 5px;" src="' . $this->plugin_url . '/flags/24/' . $data['icon'] . '" alt="' . esc_attr( $data['label'] ) . '" /> ' . $data['label'] . '<br />';
@@ -170,6 +171,15 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 			'value' => $this->options->show_ui ? true : false,
 			'choices' => array( '' => __( 'No', 'multilingual-wp' ), '1' => __( 'Yes', 'multilingual-wp' ) ),
 			'desc' => __( 'Whether to display the User Interface for the post types added by Multilingual WP.', 'multilingual-wp' )
+		);
+
+		$default_settings[] = array(
+			'title' => __( 'Language Rewrite Mode', 'multilingual-wp' ),
+			'type' => 'select',
+			'name' => "lang_mode",
+			'value' => $lang_mode,
+			'choices' => array( Multilingual_WP::LT_PRE => __( 'Pre-Path mode', 'multilingual-wp' ), Multilingual_WP::LT_QUERY => __( 'Query Variable mode', 'multilingual-wp' ), Multilingual_WP::LT_SD => __( 'Sub-Domain mode', 'multilingual-wp' ) ),
+			'desc' => __( 'Select the type of link rewriting.<br /><code>Pre-Path mode</code> will add {xx}/ to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional server configuration.', 'multilingual-wp' )
 		);
 
 		echo $this->table( $default_settings );

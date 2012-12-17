@@ -32,35 +32,122 @@ require_once dirname( __FILE__ ) . '/flags_data.php';
 * 
 */
 class Multilingual_WP {
+	/**
+	 * Holds a reference to the scbOptions object, containing all of the plugin's settings
+	 *
+	 * @var scbOptions object
+	 **/
 	public static $options;
+
+	/**
+	 * Holds the URL to the plugin's directory
+	 *
+	 * @var string
+	 **/
 	public $plugin_url;
+
+	/**
+	 * Holds the meta key name for the language posts associated with each original post
+	 *
+	 * @var string
+	 **/
 	public $languages_meta_key = '_mlwp_langs';
+
+	/**
+	 * Holds the meta key name that keeps the ID of the original post
+	 *
+	 * @var string
+	 **/
 	public $rel_p_meta_key = '_mlwp_rel_post';
 
-	public $link_type = 'pre';
+	/**
+	 * Holds the current link type mode
+	 *
+	 * @var string
+	 **/
+	public $link_type;
 
-	public $current_lang = '';
-	public $locale = '';
+	/**
+	 * Holds the currently active language
+	 *
+	 * @var string
+	 **/
+	public $current_lang;
 
+	/**
+	 * Holds the currently selected locale
+	 *
+	 * @var string
+	 **/
+	public $locale;
+
+	/**
+	 * Holds a reference to the ID of the post we're currently interacting with
+	 *
+	 * @var string|Integer
+	 **/
 	public $ID;
+
+	/**
+	 * Holds a reference to the post object with which we're currently interacting
+	 *
+	 * @var stdClass|WP_Post object
+	 **/
 	public $post;
+
+	/**
+	 * Holds a reference to the post type of the post we're currently interacting with
+	 *
+	 * @var string
+	 **/
 	public $post_type;
+
+	/**
+	 * Holds a reference to the ID's of all related languages for the post we're currently interacting with
+	 *
+	 * @var array
+	 **/
 	public $rel_langs;
+
+	
 	public $rel_posts;
 	public $parent_rel_langs;
 
 	/**
-	* Late Filter Priority
-	* 
-	* Holds the priority for filters that need to be applied last - therefore it should be a really hight number
-	* 
-	* @var Integer
-	*/
+	 * Late Filter Priority
+	 *
+	 * Holds the priority for filters that need to be applied last - therefore it should be a really hight number
+	 *
+	 * @var Integer
+	 **/
 	public $late_fp = 10000;
 
+	/**
+	 * Holds the query var, registered in the query vars array in WP_Query
+	 *
+	 * @var string
+	 **/
 	const QUERY_VAR = 'language';
+
+	/**
+	 * Referes to the pre-path mode for defining the language
+	 *
+	 * @var string
+	 **/
 	const LT_PRE = 'pre';
+
+	/**
+	 * Referes to the query argument mode for defining the language
+	 *
+	 * @var string
+	 **/
 	const LT_QUERY = 'qa';
+
+	/**
+	 * Referes to the subdomain mode for defining the language
+	 *
+	 * @var string
+	 **/
 	const LT_SD = 'sd';
 
 	private $_doing_save = false;
@@ -93,6 +180,7 @@ class Multilingual_WP {
 			'enabled_pt' => array( 'post', 'page' ),
 			'generated_pt' => array(),
 			'show_ui' => false,
+			'lang_mode' => false,
 		) );
 
 		// Creating settings page objects
@@ -153,6 +241,15 @@ class Multilingual_WP {
 
 	public function setup_locale(  ) {
 		if ( ! is_admin() ) {
+			switch ( self::$options->lang_mode ) {
+				case 'value':
+					# code...
+					break;
+				
+				default:
+					# code...
+					break;
+			}
 			$request = $_SERVER['REQUEST_URI'];
 			$home = home_url( '/' );
 			$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
@@ -239,6 +336,7 @@ class Multilingual_WP {
 	}
 
 	public function set_locale_from_query( $wp ) {
+		// var_dump( $this->locale );
 		# If the query has detected a language, use it.
 		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) ) {
 			// Set the current language
@@ -254,6 +352,7 @@ class Multilingual_WP {
 			// Set the locale
 			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
 		}
+		// var_dump( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ), self::$options->default_lang, $wp );
 	}
 
 	public function is_gen_pt( $post_type ) {
