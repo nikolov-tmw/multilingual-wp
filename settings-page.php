@@ -1,10 +1,10 @@
 <?php
 
-class Multilingual_WP_Admin_Page extends scbAdminPage {
+class Multilingual_WP_Settings_Page extends scbAdminPage {
 	protected $textdomain = 'multilingual-wp';
 	protected $admin_notice = false;
 
-	function _page_content_hook() {
+	public function _page_content_hook() {
 		if ( $this->admin_notice ) {
 			$this->admin_msg( $this->admin_notice );
 		}
@@ -15,7 +15,7 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 	}
 
 	// Manually handle option saving ( use Settings API instead )
-	function form_handler() {
+	public function form_handler() {
 		if ( 'POST' != $_SERVER['REQUEST_METHOD'] || empty( $_POST['action'] ) )
 			return false;
 
@@ -37,32 +37,45 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 		$this->admin_notice = __( 'Settings <strong>saved</strong>.', 'multilingual-wp' );
 	}
 
-	function setup() {
+	public function setup() {
 		$this->args = array(
-			'page_title' => 'Multilingual WP',
+			'menu_title' => __( 'Multilingual WP', 'multilingual-wp' ),
+			'page_title' => __( 'Settings', 'multilingual-wp' ),
+			'page_slug' => 'multilingual-wp',
+			'toplevel' => 'menu'
 		);
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
 
-		add_action( 'load-settings_page_multilingual-wp', array( $this, 'form_handler' ), 100 );
+		add_action( 'load-toplevel_page_multilingual-wp', array( $this, 'form_handler' ), 100 );
 	}
 
 	public function enqueue_scripts( $handle ) {
-		if ( 'settings_page_multilingual-wp' == $handle ) {
-			wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery', 'thickbox' ), null, true );
+		if ( 'toplevel_page_multilingual-wp' == $handle ) {
+			global $wp_version;
+
+			if ( version_compare( $wp_version, '3.5', '>=' ) ) {
+				if ( ! did_action( 'wp_enqueue_media' ) ) {
+					wp_enqueue_media();
+				}
+
+				wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery' ), null, true );
+			} else {
+				wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery', 'thickbox' ), null, true );
+				wp_enqueue_style( 'thickbox-css' );
+			}
 
 			wp_enqueue_style( 'multilingual-wp-settings-css', $this->plugin_url . 'css/multilingual-wp-settings.css' );
-			wp_enqueue_style( 'thickbox-css' );
 		}
 	}
 
-	function page_header() {
+	public function page_header() {
 		echo "<div class='wrap mlwp-wrap'>\n";
 		screen_icon( $this->args['screen_icon'] );
 		echo html( "h2", $this->args['page_title'] );
 	}
 
-	function page_content() {
+	public function page_content() {
 		$languages = $this->options->languages;
 
 		// We want to put all of the output in a single <form>
@@ -188,7 +201,7 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 			'name' => "def_lang_in_url",
 			'value' => $this->options->def_lang_in_url ? true : false,
 			'choices' => array( '' => __( 'No', 'multilingual-wp' ), '1' => __( 'Yes', 'multilingual-wp' ) ),
-			'desc' => __( 'Whether to modify URL\'s to include language information for the default language. For instance if the default language is English, whether to make the home page URL <code>http://example.com/en/</code> or leave it <code>http://example.com/</code>.', 'multilingual-wp' )
+			'desc' => __( 'Whether to modify URL\'s to include language information for the default language. For instance if the default language is English and you have selected "Yes", the home page URL will be <code>http://example.com/en/</code> otherwise it will be <code>http://example.com/</code>.', 'multilingual-wp' )
 		);
 
 		echo $this->table( $default_settings );
@@ -205,27 +218,48 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 
 			echo $this->table( array(
 				array(
-					'title' => __( 'Language Label', 'multilingual-wp' ),
+					'title' => __( 'Language Label <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][label]",
 					'desc' => __( 'Enter the label that will be used to represent this language. This will be used in the admin interface, language selector widget, etc.', 'multilingual-wp' ),
 					'value' => $data['label']
 				),
 				array(
-					'title' => __( 'Language Locale', 'multilingual-wp' ),
+					'title' => __( 'Language Locale <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][locale]",
 					'desc' => __( 'Enter the PHP/WordPress locale for this language. For instance: <code>en_US</code>.', 'multilingual-wp' ),
 					'value' => $data['locale']
-				),array(
-					'title' => __( 'Language Flag', 'multilingual-wp' ),
+				),
+				array(
+					'title' => __( 'Language Flag <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][icon]",
 					'desc' => __( 'Select the flag that will represent this language. The current flag is <img src="' . $this->plugin_url . 'flags/24/' . $data['icon'] . '" class="lang_icon" alt="" />', 'multilingual-wp' ),
 					'value' => $data['icon'],
 					'extra' => array( 'class' => 'regular-text mlwp_flag_input' )
-					// 'render' => array( $this, 'render_lf_dd' )
-				)
+				),
+				array(
+					'title' => __( 'Not Available Message <span class="required">*</span>', 'multilingual-wp' ),
+					'type' => 'textarea',
+					'name' => "languages[$lang][na_message]",
+					'desc' => __( 'Enter the message that will be displayed when the requested post/page is not available in this language.', 'multilingual-wp' ),
+					'value' => $data['na_message']
+				),
+				array(
+					'title' => __( 'Date Format', 'multilingual-wp' ),
+					'type' => 'text',
+					'name' => "languages[$lang][date_format]",
+					'desc' => __( 'Enter a custom date format for this language.', 'multilingual-wp' ),
+					'value' => $data['date_format']
+				),
+				array(
+					'title' => __( 'Time Format', 'multilingual-wp' ),
+					'type' => 'text',
+					'name' => "languages[$lang][time_format]",
+					'desc' => __( 'Enter a custo time format for this language.', 'multilingual-wp' ),
+					'value' => $data['time_format']
+				),
 			) );
 
 			$this->end_box();
@@ -234,14 +268,18 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 		echo '</div> <!-- Tab end -->';
 	}
 
-	function page_footer() {
-		global $MULTILINGUAL_WP_FLAGS;
+	public function page_footer() {
+		global $MULTILINGUAL_WP_FLAGS, $wp_version;
 		$i = 2; ?>
 		<div id="mlwp_flag_select" class="metabox-holder">
 			<div class="postbox">
 				<div class="inside">
 					<div class="col col3">
-						<a class="button-primary thickbox" href="<?php echo admin_url( 'media-upload.php?post_id=0&amp;mlwp_media=1&amp;TB_iframe=1&amp;width=640&amp;height=198' ) ?>">Custom Flag</a>
+						<?php if ( version_compare( $wp_version, '3.5', '>=' ) ) : ?>
+							<a class="button-primary add_media" href="#"><?php _e( 'Custom Flag', 'multilingual-wp' ); ?></a>
+						<?php else : ?>
+							<a class="button-primary thickbox" href="<?php echo admin_url( 'media-upload.php?post_id=0&amp;mlwp_media=1&amp;TB_iframe=1&amp;width=640&amp;height=198' ) ?>"><?php _e( 'Custom Flag', 'multilingual-wp' ); ?></a>
+						<?php endif; ?>
 					</div>
 					<?php foreach ( $MULTILINGUAL_WP_FLAGS as $val => $label ) :
 						$src = str_replace( ' ', '%20', $val ); ?>

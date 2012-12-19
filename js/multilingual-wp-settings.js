@@ -1,9 +1,26 @@
 (function($){
+	var wp_35_media = typeof wp == 'undefined' ? false : true,
+		base_url;
+
 	$(document).ready(function(){
-		tb_position();
-		$(window).resize(function(){
+		base_url = $('img.lang_icon:eq(0)').attr('src').replace(/(.*flags\/24\/).*/, '$1');
+		if ( ! wp_35_media ) {
 			tb_position();
-		});
+			$(window).resize(function(){
+				tb_position();
+			});
+		} else {
+			$('.add_media').click(function(e) {
+				var button = $(this);
+
+				wp.media.editor.send.attachment = function(props, attachment) {
+					hide_lang_select( attachment.url );
+				}
+
+				wp.media.editor.open(button);
+				return false;
+			});
+		};
 
 		init_js_tabs();
 
@@ -138,13 +155,17 @@
 		})
 	};
 
-	function hide_lang_select( input ) {
+	function hide_lang_select( media_url ) {
 		var fs = $('#mlwp_flag_select');
 		var selected = $('input[type="radio"]:checked', fs);
-		if ( selected.length ) {
+		if ( typeof media_url != 'undefined' && media_url ) {
 			var input = $('input[name="' + fs.data('rel_input') + '"]');
-			input.val( selected.val() )
-			input.parent('label').find('img.lang_icon').attr( 'src', ( input.parent('label').find('img.lang_icon').attr('src').replace( /(flags\/24\/).*/, '$1' + selected.val() ) ) );
+			input.val( media_url );
+			input.parent('label').find('img.lang_icon').attr( 'src', media_url );
+		} else if ( selected.length ) {
+			var input = $('input[name="' + fs.data('rel_input') + '"]');
+			input.val( selected.val() );
+			input.parent('label').find('img.lang_icon').attr( 'src', ( base_url + selected.val() ) );
 		};
 		fs.stop().slideUp(function(){
 			$('input[type="radio"]', fs).removeAttr('checked');

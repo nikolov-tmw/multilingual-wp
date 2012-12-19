@@ -7,7 +7,7 @@ div#wpbody-content .mlwp-wrap .col5 { width: 20%; padding-right: 1%; }
 div#wpbody-content .mlwp-wrap .col6 { width: 16%; padding-right: 1%; }
 
 div#wpbody-content #mlwp_flag_select { display: none; width: 600px; position: absolute; z-index: 100; }
-div#wpbody-content #mlwp_flag_select .button-primary { display: block; text-align: center; padding: 6px 5px 7px; }
+div#wpbody-content #mlwp_flag_select .button-primary { display: block; text-align: center; padding: 3px 5px 7px; height: 30px; }
 div#wpbody-content #mlwp_flag_select .inside { height: 200px; overflow-y: auto; margin: 0px; padding: 10px; }
 div#wpbody-content #mlwp_flag_select img { margin-bottom: -7px; padding: 0 2px; }
 div#wpbody-content #mlwp_flag_select div.col { padding-bottom: 15px; }

@@ -187,7 +187,10 @@ class Multilingual_WP {
 		// Creating settings page objects
 		if ( is_admin() ) {
 			require_once( dirname( __FILE__ ) . '/settings-page.php' );
-			new Multilingual_WP_Admin_Page( __FILE__, self::$options );
+			new Multilingual_WP_Settings_Page( __FILE__, self::$options );
+
+			require_once( dirname( __FILE__ ) . '/add-language-page.php' );
+			new Multilingual_WP_Add_Language_Page( __FILE__, self::$options );
 		}
 
 	}
@@ -199,7 +202,7 @@ class Multilingual_WP {
 
 		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
 
-		add_filter( 'wp_unique_post_slug', array( $this, 'fix_post_slug' ), $this->late_fp, 5 );
+		add_filter( 'wp_unique_post_slug', array( $this, 'fix_post_slug' ), $this->late_fp, 6 );
 	}
 
 	public function init() {
@@ -308,7 +311,7 @@ class Multilingual_WP {
 					$home = home_url( '/' );
 					$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
 					$request = str_replace( $home, '', $request );
-					$lang = preg_match( '~([a-z]{2})~', $request, $matches );
+					$lang = preg_match( '~^([a-z]{2})~', $request, $matches );
 					// var_dump( $request );
 
 					// Did the URL matched a language? Is it enabled?
@@ -338,9 +341,29 @@ class Multilingual_WP {
 		return $locale;
 	}
 
-	public function fix_post_slug( $slug, $post_ID, $post_status, $post_type, $post_parent ) {
-		if ( $this->is_gen_pt( $post_type ) ) {
-			
+	public function fix_post_slug( $slug, $post_ID, $post_status, $post_type, $post_parent, $original_slug = false ) {
+		// There is nothing to fix...
+		if ( $slug == $original_slug ) {
+			return $slug;
+		}
+
+		global $wpdb, $wp_rewrite;
+
+		$feeds = $wp_rewrite->feeds;
+
+		$hierarchical_post_types = get_post_types( array('hierarchical' => true) );
+
+		if ( $original_slug && ( $this->is_gen_pt( $post_type ) || $this->is_enabled_pt( $post_type ) ) && in_array( $post_type, $hierarchical_post_types ) ) {
+			$check_sql = "SELECT post_name FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND ID != %d AND post_parent = %d LIMIT 1";
+			$post_name_check = $wpdb->get_var( $wpdb->prepare( $check_sql, $original_slug, $post_type, $post_ID, $post_parent ) );
+
+			if ( $post_name_check || in_array( $slug, $feeds ) || preg_match( "@^($wp_rewrite->pagination_base)?\d+$@", $slug )  || apply_filters( 'wp_unique_post_slug_is_bad_hierarchical_slug', false, $slug, $post_type, $post_parent ) ) {
+				// WordPress has already taken care of that
+				return $slug;
+			} else {
+				// If we don't have a confclict within the same post type - return the original slug
+				return $original_slug;
+			}
 		}
 
 		return $slug;
@@ -365,12 +388,19 @@ class Multilingual_WP {
 
 	public function filter_post( $post, $language = false, $preserve_post_vars = true ) {
 		$language = $language ? $language : $this->current_lang;
-		if ( $language && ( ! isset( $post->{self::QUERY_VAR} ) || $post->{self::QUERY_VAR} != $lang ) && $this->is_enabled_pt( $post->post_type ) ) {
+		if ( $language && ( ! isset( $post->{self::QUERY_VAR} ) || $post->{self::QUERY_VAR} != $lang ) && ( $this->is_enabled_pt( $post->post_type ) || $this->is_gen_pt( $post->post_type ) ) ) {
 			if ( $preserve_post_vars ) {
 				$old_id = $this->ID;
 			}
 
-			$this->setup_post_vars( $post->ID );
+			$orig_id = $this->is_gen_pt( $post->post_type ) ? get_post_meta( $post->ID, $this->rel_p_meta_key, true ) : $post->ID;
+
+			// If this is a generated post type, we need to get the original post object
+			if ( $orig_id != $post->ID && $orig_id ) {
+				$post = get_post( $orig_id );
+			}
+
+			$this->setup_post_vars( $orig_id );
 			if ( isset( $this->rel_langs[ $language ] ) && ( $_post = get_post( $this->rel_langs[ $language ] ) ) ) {
 				$post->mlwp_lang = $language;
 				$post->post_content = $_post->post_content;
@@ -424,9 +454,7 @@ class Multilingual_WP {
 	}
 
 	public function is_gen_pt( $post_type ) {
-		global $post;
-
-		return in_array( $post->post_type, self::$options->generated_pt );
+		return in_array( $post_type, self::$options->generated_pt );
 	}
 
 	public function is_enabled( $language ) {
@@ -565,6 +593,9 @@ class Multilingual_WP {
 				}
 				if ( isset( $_POST[ "title_{$lang}" ] ) ) {
 					$_post['post_title'] = $_POST[ "title_{$lang}" ];
+				}
+				if ( isset( $_POST[ "post_name_{$lang}" ] ) ) {
+					$_post['post_name'] = $_POST[ "post_name_{$lang}" ];
 				}
 				$this->save_post( $_post );
 			}
@@ -707,6 +738,7 @@ class Multilingual_WP {
 					echo '<div class="js-tab mlwp-lang-editor lang-' . $lang . ( $lang == self::$options->default_lang ? ' mlwp-deflang' : '' ) . '" id="mlwp_tab_lang_' . $lang . '" title="' . self::$options->languages[ $lang ]['label'] . '">';
 					
 					echo '<input type="text" class="mlwp-title" name="title_' . $lang . '" size="30" value="' . esc_attr( $this->rel_posts[ $lang ]->post_title ) . '" id="title_' . $lang . '" autocomplete="off" />';
+					echo '<p>' . __( 'Slug:', 'multilingual-wp' ) . ' <input type="text" class="mlwp-slug" name="post_name_' . $lang . '" size="30" value="' . esc_attr( $this->rel_posts[ $lang ]->post_name ) . '" id="post_name_' . $lang . '" autocomplete="off" /></p>';
 
 					wp_editor( $this->rel_posts[ $lang ]->post_content, "content_{$lang}" );
 
@@ -714,6 +746,13 @@ class Multilingual_WP {
 				}
 			echo '</div>';
 		}
+	}
+
+	public function get_options( $key = false ) {
+		if ( $key ) {
+			return self::$options->$key;
+		}
+		return self::$options;
 	}
 }
 
