@@ -182,6 +182,15 @@ class Multilingual_WP_Admin_Page extends scbAdminPage {
 			'desc' => __( 'Select the type of link rewriting.<br /><code>Pre-Path mode</code> will add {xx}/ to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional server configuration.', 'multilingual-wp' )
 		);
 
+		$default_settings[] = array(
+			'title' => __( 'Default Language in URL\'s?', 'multilingual-wp' ),
+			'type' => 'select',
+			'name' => "def_lang_in_url",
+			'value' => $this->options->def_lang_in_url ? true : false,
+			'choices' => array( '' => __( 'No', 'multilingual-wp' ), '1' => __( 'Yes', 'multilingual-wp' ) ),
+			'desc' => __( 'Whether to modify URL\'s to include language information for the default language. For instance if the default language is English, whether to make the home page URL <code>http://example.com/en/</code> or leave it <code>http://example.com/</code>.', 'multilingual-wp' )
+		);
+
 		echo $this->table( $default_settings );
 
 		echo '</div> <!-- Tab end -->';

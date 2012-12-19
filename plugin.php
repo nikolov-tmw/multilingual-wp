@@ -181,6 +181,7 @@ class Multilingual_WP {
 			'generated_pt' => array(),
 			'show_ui' => false,
 			'lang_mode' => false,
+			'def_lang_in_url' => false,
 		) );
 
 		// Creating settings page objects
@@ -220,6 +221,8 @@ class Multilingual_WP {
 		if ( ! is_admin() ) {
 			add_action( 'parse_request', array( $this, 'set_locale_from_query' ), 0 );
 
+			add_action( 'parse_request', array( $this, 'fix_home_page' ), 0 );
+
 			add_filter( 'query_vars', array( $this, 'add_lang_query_var' ) );
 
 			add_filter( 'the_posts', array( $this, 'filter_posts' ), $this->late_fp, 2 );
@@ -233,33 +236,97 @@ class Multilingual_WP {
 		if ( ! $did_rules ) {
 			$additional_rules = array();
 			foreach ( $wp_rewrite->rules as $regex => $match ) {
-				$additional_rules[ "([a-z]{2})/$regex" ] = $this->add_query_arg( self::QUERY_VAR , '$matches[1]', preg_replace_callback( '~\[(\d*?)\]~', array( $this, 'fix_rewrite_rules' ), $match ) );
+				if ( $this->should_build_rwr( $match ) ) {
+					foreach ( self::$options->enabled_langs as $lang ) {
+						// Don't create rewrite rules for the default language if the user doesn't want it
+						if ( $lang == self::$options->default_lang && ! self::$options->def_lang_in_url ) {
+							continue;
+						}
+
+						// Add the proper language query information
+						$_match = $this->add_query_arg( self::QUERY_VAR , $lang, $match );
+
+						// Replace the original post type with the proper post type(this allows different slugs for each language)
+						$additional_rules[ "$lang/$regex" ] = $this->fix_rwr_post_types( $_match, $lang );
+					}
+				}
 			}
+			// Add our rewrite rules at the beginning of all rewrite rules - they are with a higher priority
 			$wp_rewrite->rules = array_merge( $additional_rules, $wp_rewrite->rules );
 		}
 	}
 
+	public function should_build_rwr( $rw_match ) {
+		$should = false;
+		foreach ( self::$options->enabled_pt as $pt ) {
+			if ( strpos( $rw_match, "$pt=" ) !== false || strpos( $rw_match, "post_type=$pt&" ) !== false ) {
+				$should = true;
+				break;
+			}
+		}
+		if ( ! $should && $this->is_enabled_pt( 'page' ) ) {
+			$should = (bool) strpos( $rw_match, "pagename=" ) !== false;
+		}
+
+		return $should;
+	}
+
+	public function fix_rewrite_rules( $matches ) {
+		$matches[1] = intval( $matches[1] ) + 1;
+		return '[' . $matches[1] . ']';
+	}
+
+	public function fix_rwr_post_types( $rw_match, $lang ) {
+		foreach ( self::$options->enabled_pt as $pt ) {
+			if ( 'page' == $pt ) {
+				$rw_match = str_replace( 'pagename', "post_type={$this->pt_prefix}{$pt}_{$lang}&name", $rw_match );
+				continue;
+			}
+			$rw_match = str_replace( "$pt=", "{$this->pt_prefix}{$pt}_{$lang}", $rw_match );
+			$rw_match = str_replace( "post_type=$pt&", "{$this->pt_prefix}{$pt}_{$lang}", $rw_match );
+		}
+		return $rw_match;
+	}
+
 	public function setup_locale(  ) {
+		$this->lang_mode = self::$options->lang_mode;
 		if ( ! is_admin() ) {
-			switch ( self::$options->lang_mode ) {
-				case 'value':
-					# code...
+			$request = $_SERVER['REQUEST_URI'];
+
+			switch ( $this->lang_mode ) {
+				case self::LT_QUERY :
+					// Do we have the proper $_GET argument? Is it of an enabled language?
+					if ( isset( $_GET[ self::QUERY_VAR ] ) && $this->is_enabled( $_GET[ self::QUERY_VAR ] ) ) {
+						$this->current_lang = $_GET[ self::QUERY_VAR ];
+					} else { // Set the default language
+						$this->current_lang = self::$options->default_lang;
+					}
+
 					break;
 				
-				default:
-					# code...
+				case self::LT_PRE :
+					$home = home_url( '/' );
+					$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
+					$request = str_replace( $home, '', $request );
+					$lang = preg_match( '~([a-z]{2})~', $request, $matches );
+					// var_dump( $request );
+
+					// Did the URL matched a language? Is it enabled?
+					if ( ! empty( $matches ) && $this->is_enabled( $matches[0] ) ) {
+						$this->current_lang = $matches[0];
+					} else { // Set the default language
+						$this->current_lang = self::$options->default_lang;
+					}
+					
+					break;
+
+				case self::LT_SD : // Sub-domain setup is not enabled yet
+				default :
+					$this->current_lang = self::$options->default_lang;
+
 					break;
 			}
-			$request = $_SERVER['REQUEST_URI'];
-			$home = home_url( '/' );
-			$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
-			$request = str_replace( $home, '', $request );
-			$lang = preg_match( '~([a-z]{2})~', $request, $matches );
-			if ( ! empty( $matches ) && $this->is_enabled( $matches[0] ) ) {
-				$this->current_lang = $matches[0];
-			} else {
-				$this->current_lang = self::$options->default_lang;
-			}
+
 			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
 		}
 	}
@@ -319,11 +386,6 @@ class Multilingual_WP {
 		return $post;
 	}
 
-	public function fix_rewrite_rules( $matches ) {
-		$matches[1] = intval( $matches[1] ) + 1;
-		return '[' . $matches[1] . ']';
-	}
-
 	public function add_query_arg( $key, $value, $target ) {
 		$target .= strpos( $target, '?' ) !== false ? "&{$key}={$value}" : trailingslashit( $target ) . "?{$key}={$value}";
 		return $target;
@@ -336,7 +398,6 @@ class Multilingual_WP {
 	}
 
 	public function set_locale_from_query( $wp ) {
-		// var_dump( $this->locale );
 		# If the query has detected a language, use it.
 		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) ) {
 			// Set the current language
@@ -352,10 +413,19 @@ class Multilingual_WP {
 			// Set the locale
 			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
 		}
-		// var_dump( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ), self::$options->default_lang, $wp );
+	}
+
+	public function fix_home_page( $wp ) {
+		# If the request is in the form of "xx" - we assume that this is language information
+		if ( in_array( $wp->request, self::$options->enabled_langs ) ) {
+			// So we set the query_vars array to an empty array, thus forcing the display of the home page :)
+			$wp->query_vars = array();
+		}
 	}
 
 	public function is_gen_pt( $post_type ) {
+		global $post;
+
 		return in_array( $post->post_type, self::$options->generated_pt );
 	}
 
@@ -548,9 +618,7 @@ class Multilingual_WP {
 						'supports' => isset( $pt->supports ) ? $pt->supports : array(),
 						'can_export' => $pt->can_export,
 					);
-					if ( 'page' == $pt_name ) {
-						// var_dump($args);
-					}
+
 					$result = register_post_type($name, $args);
 					if ( ! is_wp_error( $result ) ) {
 						$generated_pt[] = $name;
