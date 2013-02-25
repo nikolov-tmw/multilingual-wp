@@ -191,6 +191,9 @@ class Multilingual_WP {
 
 			require_once( dirname( __FILE__ ) . '/add-language-page.php' );
 			new Multilingual_WP_Add_Language_Page( __FILE__, self::$options );
+
+			require_once( dirname( __FILE__ ) . '/update-posts-page.php' );
+			new Multilingual_WP_Update_Posts_Page( __FILE__, self::$options );
 		}
 
 	}
@@ -597,6 +600,9 @@ class Multilingual_WP {
 				if ( isset( $_POST[ "post_name_{$lang}" ] ) ) {
 					$_post['post_name'] = $_POST[ "post_name_{$lang}" ];
 				}
+				if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
+					$_post['post_parent'] = $this->parent_rel_langs[ $lang ];
+				}
 				$this->save_post( $_post );
 			}
 		}
@@ -667,65 +673,79 @@ class Multilingual_WP {
 		if ( 'post.php' == $hook && $this->is_enabled_pt( get_post_type( get_the_ID() ) ) ) {
 			$this->setup_post_vars();
 			
-			$to_create = array();
-
-			// Check the related languages
-			if ( ! $this->rel_langs || ! is_array( $this->rel_langs ) ) {
-				// If there are no language relantions currently set, add all enabled languages to the creation queue
-				$to_create = self::$options->enabled_langs;
-			} else {
-				// Otherwise loop throuh all enabled languages
-				foreach (self::$options->enabled_langs as $lang) {
-					// If there is no relation for this language, or the related post no longer exists, add it to the creation queue
-					if ( ! isset( $this->rel_langs[ $lang ] ) || ! ( $this->rel_posts[ $lang ] = get_post( $this->rel_langs[ $lang ] ) ) ) {
-						$to_create[] = $lang;
-					}
-				}
-			}
-
-			// If the creation queue is not empty, loop through all languages and create corresponding posts
-			if ( ! empty( $to_create ) ) {
-				foreach ( $to_create as $lang ) {
-					$pt = "{$this->pt_prefix}{$this->post_type}_{$lang}";
-					$parent = 0;
-					// Look-up for a parent post
-					if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
-						$parent = $this->parent_rel_langs[ $lang ];
-					}
-					$data = array(
-						'post_title'     => $this->post->post_title,
-						'post_name'      => $this->post->post_name,
-						'post_content'   => '',
-						'post_excerpt'   => '',
-						'post_status'    => $this->post->post_status,
-						'post_type'      => $pt,
-						'post_author'    => $this->post->post_author,
-						'ping_status'    => $this->post->ping_status, 
-						'comment_status' => $this->post->comment_status,
-						'post_parent'    => $parent,
-						'menu_order'     => $this->post->menu_order,
-						'post_password'  => $this->post->post_password,
-					);
-					// If this is the default language, set the content and excerpt to the current post's content and excerpt
-					if ( $lang == self::$options->default_lang ) {
-						$data['post_content'] = $this->post->post_content;
-						$data['post_excerpt'] = $this->post->post_excerpt;
-					}
-					$id = $this->save_post( $data );
-					if ( $id ) {
-						$this->rel_langs[ $lang ] = $id;
-						$this->rel_posts[ $lang ] = (object) $data;
-						update_post_meta( $id, $this->rel_p_meta_key, $this->ID );
-					}
-				}
-
-				// Update the related languages data
-				update_post_meta( $this->ID, $this->languages_meta_key, $this->rel_langs );
-			}
+			$this->create_rel_posts();
 
 			// Enqueue scripts and styles
 			wp_enqueue_script( 'multilingual-wp-js' );
 			wp_enqueue_style( 'multilingual-wp-css' );
+		}
+	}
+
+	/**
+	* Creates any missing related posts
+	* 
+	* 
+	* 
+	* 
+	**/
+	public function create_rel_posts( $post = false ) {
+		if ( $post ) {
+			$this->setup_post_vars( $post->ID );
+		}
+		$to_create = array();
+
+		// Check the related languages
+		if ( ! $this->rel_langs || ! is_array( $this->rel_langs ) ) {
+			// If there are no language relantions currently set, add all enabled languages to the creation queue
+			$to_create = self::$options->enabled_langs;
+		} else {
+			// Otherwise loop throuh all enabled languages
+			foreach (self::$options->enabled_langs as $lang) {
+				// If there is no relation for this language, or the related post no longer exists, add it to the creation queue
+				if ( ! isset( $this->rel_langs[ $lang ] ) || ! ( $this->rel_posts[ $lang ] = get_post( $this->rel_langs[ $lang ] ) ) ) {
+					$to_create[] = $lang;
+				}
+			}
+		}
+
+		// If the creation queue is not empty, loop through all languages and create corresponding posts
+		if ( ! empty( $to_create ) ) {
+			foreach ( $to_create as $lang ) {
+				$pt = "{$this->pt_prefix}{$this->post_type}_{$lang}";
+				$parent = 0;
+				// Look-up for a parent post
+				if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
+					$parent = $this->parent_rel_langs[ $lang ];
+				}
+				$data = array(
+					'post_title'     => $this->post->post_title,
+					'post_name'      => $this->post->post_name,
+					'post_content'   => '',
+					'post_excerpt'   => '',
+					'post_status'    => $this->post->post_status,
+					'post_type'      => $pt,
+					'post_author'    => $this->post->post_author,
+					'ping_status'    => $this->post->ping_status, 
+					'comment_status' => $this->post->comment_status,
+					'post_parent'    => $parent,
+					'menu_order'     => $this->post->menu_order,
+					'post_password'  => $this->post->post_password,
+				);
+				// If this is the default language, set the content and excerpt to the current post's content and excerpt
+				if ( $lang == self::$options->default_lang ) {
+					$data['post_content'] = $this->post->post_content;
+					$data['post_excerpt'] = $this->post->post_excerpt;
+				}
+				$id = $this->save_post( $data );
+				if ( $id ) {
+					$this->rel_langs[ $lang ] = $id;
+					$this->rel_posts[ $lang ] = (object) $data;
+					update_post_meta( $id, $this->rel_p_meta_key, $this->ID );
+				}
+			}
+
+			// Update the related languages data
+			update_post_meta( $this->ID, $this->languages_meta_key, $this->rel_langs );
 		}
 	}
 
@@ -763,3 +783,11 @@ global $Multilingual_WP;
 // Let's allow anyone to override our class definition - this way anyone can extend the plugin and add/overwrite functionality without having the need to modify the plugin files
 $mlwp_class_name = apply_filters( 'mlwp_class_name', 'Multilingual_WP' );
 $Multilingual_WP = new $mlwp_class_name();
+
+/**
+* Gives access to the @global $Multilingual_WP
+*
+**/
+function _mlwp() {
+	return $GLOBALS['Multilingual_WP'];
+}

@@ -50,7 +50,7 @@ class Multilingual_WP_Add_Language_Page extends scbAdminPage {
 		if ( empty( $errors ) ) {
 			global $Multilingual_WP;
 
-			$langs = $Multilingual_WP->get_options( 'languages' );
+			$langs = $this->options->languages;
 			
 			// Trim the language ID - this could go away in the future
 			$id = substr( $data['id'], 0, 2 );
@@ -60,7 +60,7 @@ class Multilingual_WP_Add_Language_Page extends scbAdminPage {
 			} else {
 				unset( $data['id'] );
 				$langs[ $id ] = $data;
-				$Multilingual_WP->get_options()->languages = $langs;
+				$this->options->languages = $langs;
 
 				$this->admin_notice = sprintf( __( 'The language "%s" has been added.', 'multilingual-wp' ), $data['label'] );
 			}
@@ -106,8 +106,6 @@ class Multilingual_WP_Add_Language_Page extends scbAdminPage {
 	}
 
 	public function page_content() {
-		$languages = $this->options->languages;
-
 		// We want to put all of the output in a single <form>
 		ob_start();
 
