@@ -164,6 +164,7 @@ class Multilingual_WP {
 					'na_message' => 'Sorry, but this article is not available in English.',
 					'date_format' => '',
 					'time_format' => '',
+					'order' => 0,
 				),
 				'bg' => array(
 					'locale' => 'bg_BG',
@@ -172,6 +173,7 @@ class Multilingual_WP {
 					'na_message' => 'Sorry, but this article is not available in Bulgarian.',
 					'date_format' => '',
 					'time_format' => '',
+					'order' => 10,
 				)
 			),
 			'default_lang' => false,
