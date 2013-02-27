@@ -113,6 +113,15 @@ class Multilingual_WP {
 	public $rel_posts;
 	public $parent_rel_langs;
 
+	private $home_url;
+
+	/**
+	* Caches various object's slugs(posts/pages/categories/etc.)
+	*
+	* @access private
+	**/
+	private $slugs_cache = array( 'posts' => array(), 'categories' => array() );
+
 	/**
 	 * Late Filter Priority
 	 *
@@ -201,13 +210,12 @@ class Multilingual_WP {
 	}
 
 	function __construct() {
+		// Make sure we have the home url before adding all the filters
+		$this->home_url = home_url( '/' );
+
 		add_action( 'init', array( $this, 'init' ), 100 );
 
 		add_action( 'plugins_loaded', array( $this, 'setup_locale' ), $this->late_fp );
-
-		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
-
-		add_filter( 'wp_unique_post_slug', array( $this, 'fix_post_slug' ), $this->late_fp, 6 );
 	}
 
 	public function init() {
@@ -219,6 +227,41 @@ class Multilingual_WP {
 
 		$this->register_post_types();
 
+		$this->add_filters();
+
+		$this->add_actions();
+	}
+
+	private function add_filters() {
+		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
+
+		add_filter( 'wp_unique_post_slug', array( $this, 'fix_post_slug' ), $this->late_fp, 6 );
+
+
+		// Links fixing filters
+		add_filter( 'author_feed_link',				array( $this, 'convert_URL' ) );
+		add_filter( 'author_link',					array( $this, 'convert_URL' ) );
+		add_filter( 'author_feed_link',				array( $this, 'convert_URL' ) );
+		add_filter( 'day_link',						array( $this, 'convert_URL' ) );
+		add_filter( 'get_comment_author_url_link',	array( $this, 'convert_URL' ) );
+		add_filter( 'month_link',					array( $this, 'convert_URL' ) );
+		add_filter( 'year_link',					array( $this, 'convert_URL' ) );
+		add_filter( 'category_feed_link',			array( $this, 'convert_URL' ) );
+		add_filter( 'category_link',				array( $this, 'convert_URL' ) );
+		add_filter( 'tag_link',						array( $this, 'convert_URL' ) );
+		add_filter( 'term_link',					array( $this, 'convert_URL' ) );
+		add_filter( 'the_permalink',				array( $this, 'convert_URL' ) );
+		add_filter( 'feed_link',					array( $this, 'convert_URL' ) );
+		add_filter( 'post_comments_feed_link',		array( $this, 'convert_URL' ) );
+		add_filter( 'tag_feed_link',				array( $this, 'convert_URL' ) );
+		add_filter( 'get_pagenum_link',				array( $this, 'convert_URL' ) );
+		add_filter( 'home_url',						array( $this, 'convert_URL' ) );
+
+		add_filter( 'page_link',					array( $this, 'convert_post_URL' ), 10, 2 );
+		add_filter( 'post_link',					array( $this, 'convert_post_URL' ),	10, 2 );
+	}
+
+	private function add_actions() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 
 		add_action( 'submitpost_box', array( $this, 'insert_editors' ), 0 );
@@ -230,6 +273,8 @@ class Multilingual_WP {
 			add_action( 'parse_request', array( $this, 'set_locale_from_query' ), 0 );
 
 			add_action( 'parse_request', array( $this, 'fix_home_page' ), 0 );
+
+			add_action( 'parse_request', array( $this, 'fix_hierarchical_requests' ), 0 );
 
 			add_filter( 'query_vars', array( $this, 'add_lang_query_var' ) );
 
@@ -313,7 +358,7 @@ class Multilingual_WP {
 					break;
 				
 				case self::LT_PRE :
-					$home = home_url( '/' );
+					$home = $this->home_url;
 					$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
 					$request = str_replace( $home, '', $request );
 					$lang = preg_match( '~^([a-z]{2})~', $request, $matches );
@@ -335,6 +380,9 @@ class Multilingual_WP {
 					break;
 			}
 
+			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
+		} else {
+			$this->current_lang = self::$options->default_lang;
 			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
 		}
 	}
@@ -455,6 +503,14 @@ class Multilingual_WP {
 		if ( in_array( $wp->request, self::$options->enabled_langs ) ) {
 			// So we set the query_vars array to an empty array, thus forcing the display of the home page :)
 			$wp->query_vars = array();
+		}
+	}
+
+	public function fix_hierarchical_requests( $wp ) {
+		if ( isset( $wp->query_vars['post_type'] ) && $this->is_gen_pt( $wp->query_vars['post_type'] ) ) {
+			$slug = preg_replace( '~.*?name=(.*?)&.*~', '$1', str_replace( '%2F', '/', $wp->matched_query ) );
+			$slug = explode( '/', $slug );
+			$wp->query_vars['name'] = $slug[ ( count( $slug ) - 1 ) ];
 		}
 	}
 
@@ -605,6 +661,7 @@ class Multilingual_WP {
 				if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
 					$_post['post_parent'] = $this->parent_rel_langs[ $lang ];
 				}
+				update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
 				$this->save_post( $_post );
 			}
 		}
@@ -743,6 +800,7 @@ class Multilingual_WP {
 					$this->rel_langs[ $lang ] = $id;
 					$this->rel_posts[ $lang ] = (object) $data;
 					update_post_meta( $id, $this->rel_p_meta_key, $this->ID );
+					update_post_meta( $id, '_mlwp_post_slug', $data['post_name'] );
 				}
 			}
 
@@ -775,6 +833,277 @@ class Multilingual_WP {
 			return self::$options->$key;
 		}
 		return self::$options;
+	}
+
+	public function convert_URL( $url = '', $lang = '' ) {
+		$url = $url ? $url : $this->curPageURL();
+		$lang = $lang && $this->is_enabled( $lang ) ? $lang : $this->current_lang;
+
+		// Fix the URL according to the current URL mode
+		switch ( $this->lang_mode ) {
+			case self::LT_QUERY :
+				// If this is the default language and the user doesn't want it in the URL's
+				if ( $lang == $this->default_lang && ! $this->options->def_lang_in_url ) {
+					$url = remove_query_arg( self::QUERY_VAR, $url );
+				} else {
+					$url = add_query_arg( self::QUERY_VAR, $lang, $url );
+				}
+
+				break;
+			
+			case self::LT_PRE :
+				$home = $this->home_url;
+
+				// If this is the default language and the user doesn't want it in the URL's
+				if ( $lang == self::$options->default_lang && ! self::$options->def_lang_in_url ) {
+					$url = preg_replace( '~^(.*' . preg_quote( $home, '~' ) . ')(?:[a-z]{2}\/)?(.*)$~', '$1$2', $url );
+				} else {
+					preg_match( '~^.*' . preg_quote( $home, '~' ) . '([a-z]{2})/.*?$~', $url, $matches );
+
+					// Did the URL matched a language?
+					if ( ! empty( $matches ) ) {
+						if ( $matches[1] != $lang ) {
+							$url = preg_replace( '~^(.*' . preg_quote( $home, '~' ) . ')(?:[a-z]{2}\/)?(.*)$~', '$1$2', $home );
+						}
+					} else { // Add the language to the URL
+						$url = preg_replace( '~^(.*' . preg_quote( $home, '~' ) . ')(.*)?$~', '$1' . $lang . '/$2', $url );
+					}
+				}
+				
+				break;
+
+			case self::LT_SD : // Sub-domain setup is not enabled yet
+			default :
+				// Get/add language domain info here
+
+				break;
+		}
+
+		return $url;
+	}
+
+	public function convert_post_URL( $url, $data = false ) {
+		if ( ! $data ) {
+			return $this->convert_URL( $url );
+		}
+		$id = is_object( $data ) ? $data->ID : $data;
+		$post = is_object( $data ) ? $data : get_post( $id );
+
+		if ( $this->is_enabled_pt( $post->post_type ) ) {
+			if ( $post->post_parent ) {
+				$slugs = array();
+				foreach ( get_post_ancestors( $id ) as $a_id ) {
+					$rel_langs = get_post_meta( $a_id, $this->languages_meta_key, true );
+					if ( ! isset( $rel_langs[ $this->current_lang ] ) ) {
+						continue;
+					}
+
+					// var_dump( $this->get_obj_slug( $a_id, 'post' ) );
+
+					$slugs[ $this->get_obj_slug( $a_id, 'post' ) ] = $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' );
+				}
+				foreach ( $slugs as $search => $replace ) {
+					if ( $replace == '' ) {
+						continue;
+					}
+					$url = str_replace( $search, $replace, $url );
+				}
+				// var_dump( $slugs );
+			}
+			$this->add_slug_cache( $post->ID, $post->name, 'post' );
+
+			$rel_langs = get_post_meta( $post->ID, $this->languages_meta_key, true );
+			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
+				$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
+				// var_dump( $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ) );
+			}
+		}
+
+		return $url;
+	}
+
+	public function curPageURL() {
+		$pageURL = 'http';
+		if ( isset( $_SERVER["HTTPS"] ) && $_SERVER["HTTPS"] == "on" ) {
+			$pageURL .= "s";
+		}
+		$pageURL .= "://";
+		if ( $_SERVER["SERVER_PORT"] != "80" ) {
+			$pageURL .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] . $_SERVER["REQUEST_URI"];
+		} else {
+			$pageURL .= $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
+		}
+		return $pageURL;
+	}
+
+	/**
+	* Post URLs to IDs function, supports custom post types - borrowed and modified from url_to_postid() 
+	* in wp-includes/rewrite.php
+	* 
+	* Borrowed from BetterWP.net
+	* @link http://betterwp.net/wordpress-tips/url_to_postid-for-custom-post-types/
+	**/
+	public function url_to_pid( $url ) {
+		global $wp_rewrite;
+
+		$url = apply_filters('url_to_postid', $url);
+
+		// First, check to see if there is a 'p=N' or 'page_id=N' to match against
+		if ( preg_match('#[?&](p|page_id|attachment_id)=(\d+)#', $url, $values) )	{
+			$id = absint($values[2]);
+			if ( $id )
+				return $id;
+		}
+
+		// Check to see if we are using rewrite rules
+		$rewrite = $wp_rewrite->wp_rewrite_rules();
+
+		// Not using rewrite rules, and 'p=N' and 'page_id=N' methods failed, so we're out of options
+		if ( empty($rewrite) )
+			return 0;
+
+		// Get rid of the #anchor
+		$url_split = explode('#', $url);
+		$url = $url_split[0];
+
+		// Get rid of URL ?query=string
+		$url_split = explode('?', $url);
+		$url = $url_split[0];
+
+		// Add 'www.' if it is absent and should be there
+		if ( false !== strpos(home_url(), '://www.') && false === strpos($url, '://www.') )
+			$url = str_replace('://', '://www.', $url);
+
+		// Strip 'www.' if it is present and shouldn't be
+		if ( false === strpos(home_url(), '://www.') )
+			$url = str_replace('://www.', '://', $url);
+
+		// Strip 'index.php/' if we're not using path info permalinks
+		if ( !$wp_rewrite->using_index_permalinks() )
+			$url = str_replace('index.php/', '', $url);
+
+		if ( false !== strpos($url, home_url()) ) {
+			// Chop off http://domain.com
+			$url = str_replace(home_url(), '', $url);
+		} else {
+			// Chop off /path/to/blog
+			$home_path = parse_url(home_url());
+			$home_path = isset( $home_path['path'] ) ? $home_path['path'] : '' ;
+			$url = str_replace($home_path, '', $url);
+		}
+
+		// Trim leading and lagging slashes
+		$url = trim($url, '/');
+
+		$request = $url;
+		// Look for matches.
+		$request_match = $request;
+		foreach ( (array)$rewrite as $match => $query) {
+			// If the requesting file is the anchor of the match, prepend it
+			// to the path info.
+			if ( !empty($url) && ($url != $request) && (strpos($match, $url) === 0) )
+				$request_match = $url . '/' . $request;
+
+			if ( preg_match("!^$match!", $request_match, $matches) ) {
+				// Got a match.
+				// Trim the query of everything up to the '?'.
+				$query = preg_replace("!^.+\?!", '', $query);
+
+				// Substitute the substring matches into the query.
+				$query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
+
+				// Filter out non-public query vars
+				global $wp;
+				parse_str($query, $query_vars);
+				$query = array();
+				foreach ( (array) $query_vars as $key => $value ) {
+					if ( in_array($key, $wp->public_query_vars) )
+						$query[$key] = $value;
+				}
+
+			// Taken from class-wp.php
+			foreach ( $GLOBALS['wp_post_types'] as $post_type => $t )
+				if ( $t->query_var )
+					$post_type_query_vars[$t->query_var] = $post_type;
+
+			foreach ( $wp->public_query_vars as $wpvar ) {
+				if ( isset( $wp->extra_query_vars[$wpvar] ) )
+					$query[$wpvar] = $wp->extra_query_vars[$wpvar];
+				elseif ( isset( $_POST[$wpvar] ) )
+					$query[$wpvar] = $_POST[$wpvar];
+				elseif ( isset( $_GET[$wpvar] ) )
+					$query[$wpvar] = $_GET[$wpvar];
+				elseif ( isset( $query_vars[$wpvar] ) )
+					$query[$wpvar] = $query_vars[$wpvar];
+
+				if ( !empty( $query[$wpvar] ) ) {
+					if ( ! is_array( $query[$wpvar] ) ) {
+						$query[$wpvar] = (string) $query[$wpvar];
+					} else {
+						foreach ( $query[$wpvar] as $vkey => $v ) {
+							if ( !is_object( $v ) ) {
+								$query[$wpvar][$vkey] = (string) $v;
+							}
+						}
+					}
+
+					if ( isset($post_type_query_vars[$wpvar] ) ) {
+						$query['post_type'] = $post_type_query_vars[$wpvar];
+						$query['name'] = $query[$wpvar];
+					}
+				}
+			}
+
+				// Do the query
+				$query = new WP_Query($query);
+				if ( !empty($query->posts) && $query->is_singular )
+					return $query->post->ID;
+				else
+					return 0;
+			}
+		}
+		return 0;
+	}
+
+	/**
+	* Gets the slug of an object - uses own cache
+	* 
+	* @param $id Integer - the ID of the object that the slug is requested
+	* @param $type String - the type of the object in question. "post"(any general post type), "category"(any terms) or mlwp_post(plugin-created post types)
+	**/
+	public function get_obj_slug( $id, $type ) {
+		$_id = "_{$id}";
+		if ( $type == 'post' ) {
+			// var_dump( $this->slugs_cache['posts'] );
+			if ( isset( $this->slugs_cache['posts'][ $_id ] ) ) {
+				return $this->slugs_cache['posts'][ $_id ];
+			} else {
+				$post = get_post( $id );
+				if ( ! $post ) {
+					return false;
+				}
+				$this->slugs_cache['posts'][ $_id ] = $post->post_name;
+				return $post->post_name;
+			}
+		} elseif ( $type == 'mlwp_post' ) {
+			if ( isset( $this->slugs_cache['posts'][ $_id ] ) ) {
+				return $this->slugs_cache['posts'][ $_id ];
+			} else {
+				$slug = get_post_meta( $id, '_mlwp_post_slug', true );
+
+				$this->slugs_cache['posts'][ $_id ] = $slug;
+
+				return $slug;
+			}
+		}
+	}
+
+	public function add_slug_cache( $id, $slug, $type ) {
+		if ( $type == 'post' || $type == 'mlwp_post' ) {
+			if ( ! isset( $this->slugs_cache['posts'][ $id ] ) ) {
+				$this->slugs_cache['posts'][ $id ] = $slug;
+			}
+		}
 	}
 }
 
