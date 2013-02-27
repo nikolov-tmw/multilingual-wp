@@ -543,6 +543,10 @@ class Multilingual_WP {
 			// Set the locale
 			$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
 		}
+
+		if ( ! isset( $wp->query_vars[ self::QUERY_VAR ] ) ) {
+			$wp->query_vars[ self::QUERY_VAR ] = $this->current_lang;
+		}
 	}
 
 	public function fix_home_page( $wp ) {
@@ -570,11 +574,18 @@ class Multilingual_WP {
 	*
 	**/
 	public function fix_no_pt_request( $wp ) {
-		if ( isset( $wp->query_vars['language'] ) && isset( $wp->query_vars['name'] ) && ! isset( $wp->query_vars['post_type'] ) && $this->is_enabled( $wp->query_vars['language'] ) ) {
-			$lang = $wp->query_vars['language'];
-			$pt = "{$this->pt_prefix}post_{$lang}";
-			if ( $this->is_gen_pt( $pt ) && $this->is_enabled_pt( 'post' ) ) {
-				$wp->query_vars['post_type'] = $pt;
+		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && isset( $wp->query_vars['name'] ) && ! isset( $wp->query_vars['post_type'] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) ) {
+			$lang = $wp->query_vars[ self::QUERY_VAR ];
+			if ( $lang == self::$options->default_lang ) {
+				$pt = 'post';
+				if ( $this->is_enabled_pt( 'post' ) ) {
+					$wp->query_vars['post_type'] = 'post';
+				}
+			} else {
+				$pt = "{$this->pt_prefix}post_{$lang}";
+				if ( $this->is_gen_pt( $pt ) && $this->is_enabled_pt( 'post' ) ) {
+					$wp->query_vars['post_type'] = $pt;
+				}
 			}
 		}
 	}
@@ -762,6 +773,15 @@ class Multilingual_WP {
 
 				update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
 				$this->save_post( $_post );
+
+				// If this is the default language - copy over the title/content/etc over
+				if ( $lang == self::$options->default_lang ) {
+					$this->post->post_title = $_post['post_title'];
+					$this->post->post_content = $_post['post_content'];
+					$this->post->post_name = $_post['post_name'];
+
+					$this->save_post( $this->post );
+				}
 			}
 		}
 
@@ -1429,30 +1449,6 @@ class Multilingual_WP {
 		$this->current_lang = $comm_lang;
 		// Set the locale
 		$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
-
-		// add_filter( 'comment_post_redirect', array( $this, 'fix_comment_post_redirect' ), 10, 2 );
-	}
-
-	/**
-	* Fixes the "&amp;" in URL's parsed by qTranslate
-	* Generally that's a good practice, but not and when you do a PHP redirect
-	*
-	* @access public
-	**/
-	public function fix_comment_post_redirect( $location, $comment ) {
-		$location = str_replace( '&amp;', '&', $location );
-		if ( preg_match( '~lang=([a-z]{2}).*?lang=([a-z]{2})~', $location ) ) {
-			global $q_config;
-			$location = preg_replace( '~#comment-\d*~', '', $location );
-			
-			$location = remove_query_arg( 'lang', $location );
-			if ( $q_config['language'] != $q_config['default_language'] || ! $q_config['hide_default_language'] ) {
-				$location = add_query_arg( 'lang', $q_config['language'], $location );
-			}
-			$location .= '#comment-' . $comment->comment_ID;
-		}
-
-		return $location;
 	}
 
 	/**
