@@ -109,6 +109,12 @@ class Multilingual_WP {
 	 **/
 	public $rel_langs;
 
+	/**
+	 *
+	 *
+	 **/
+	protected $textdomain = 'multilingual-wp';
+
 	
 	public $rel_posts;
 	public $parent_rel_langs;
@@ -232,6 +238,11 @@ class Multilingual_WP {
 		$this->add_actions();
 	}
 
+	/**
+	* Registers any filter hooks that the plugin is using
+	* @access private
+	* @uses add_filter()
+	**/
 	private function add_filters() {
 		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
 
@@ -259,8 +270,26 @@ class Multilingual_WP {
 
 		add_filter( 'page_link',					array( $this, 'convert_post_URL' ), 10, 2 );
 		add_filter( 'post_link',					array( $this, 'convert_post_URL' ),	10, 2 );
+
+		add_filter( 'redirect_canonical',			array( $this, 'fix_redirect' ), 10, 2 );
+
+		// Comment-separating-related filters
+		add_filter( 'comments_array', array( $this, 'filter_comments_by_lang' ), 10, 2 );
+		add_filter( 'manage_edit-comments_columns', array( $this, 'filter_edit_comments_t_headers' ), 100 );
+		add_filter( 'get_comments_number', array( $this, 'fix_comments_count' ), 100, 2 );
+
+		if ( ! is_admin() ) {
+			add_filter( 'query_vars', array( $this, 'add_lang_query_var' ) );
+
+			add_filter( 'the_posts', array( $this, 'filter_posts' ), $this->late_fp, 2 );
+		}
 	}
 
+	/**
+	* Registers any action hooks that the plugin is using
+	* @access private
+	* @uses add_action()
+	**/
 	private function add_actions() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 
@@ -276,14 +305,33 @@ class Multilingual_WP {
 
 			add_action( 'parse_request', array( $this, 'fix_hierarchical_requests' ), 0 );
 
-			add_filter( 'query_vars', array( $this, 'add_lang_query_var' ) );
+			add_action( 'parse_request', array( $this, 'fix_no_pt_request' ), 0 );
 
-			add_filter( 'the_posts', array( $this, 'filter_posts' ), $this->late_fp, 2 );
+			add_action( 'template_redirect', array( $this, 'canonical_redirect' ), 0 );
 		}
 
 		add_action( 'generate_rewrite_rules', array( $this, 'add_rewrite_rules' ), $this->late_fp );
-	}
 
+		// Comment-separating-related actions
+		// This hook is fired whenever a new comment is created
+		add_action( 'comment_post', array( $this, 'new_comment' ), 10, 2 );
+
+		// This hooks is usually fired around the submit button of the comments form
+		add_action( 'comment_form', array( $this, 'comment_form_hook' ), 10 );
+
+		// Fired whenever an comment is editted
+		add_action( 'edit_comment', array( $this, 'save_comment_lang' ), 10, 2 );
+
+		// Fired at the footer of the Comments edit screen
+		add_action( 'admin_footer-edit-comments.php', array( $this, 'print_comment_scripts' ), 10 );
+
+		// This is for our custom Admin AJAX action "mlwpc_set_language"
+		add_action( 'wp_ajax_mlwpc_set_language', array($this, 'handle_ajax_update' ), 10 );
+
+		add_action( 'manage_comments_custom_column', array($this, 'render_comment_lang_col' ), 10, 2 );
+		add_action( 'admin_init', array( $this, 'admin_init' ), 10 );
+	}
+	
 	public function add_rewrite_rules( $wp_rewrite ) {
 		static $did_rules = false;
 		if ( ! $did_rules ) {
@@ -362,7 +410,6 @@ class Multilingual_WP {
 					$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
 					$request = str_replace( $home, '', $request );
 					$lang = preg_match( '~^([a-z]{2})~', $request, $matches );
-					// var_dump( $request );
 
 					// Did the URL matched a language? Is it enabled?
 					if ( ! empty( $matches ) && $this->is_enabled( $matches[0] ) ) {
@@ -506,11 +553,50 @@ class Multilingual_WP {
 		}
 	}
 
+	/**
+	* Fixes hierarchical requests by finding the slug of the requested page/post only(vs "some/page/path")
+	*
+	**/
 	public function fix_hierarchical_requests( $wp ) {
 		if ( isset( $wp->query_vars['post_type'] ) && $this->is_gen_pt( $wp->query_vars['post_type'] ) ) {
 			$slug = preg_replace( '~.*?name=(.*?)&.*~', '$1', str_replace( '%2F', '/', $wp->matched_query ) );
 			$slug = explode( '/', $slug );
 			$wp->query_vars['name'] = $slug[ ( count( $slug ) - 1 ) ];
+		}
+	}
+
+	/**
+	* Fixes requests which lack the post type query var
+	*
+	**/
+	public function fix_no_pt_request( $wp ) {
+		if ( isset( $wp->query_vars['language'] ) && isset( $wp->query_vars['name'] ) && ! isset( $wp->query_vars['post_type'] ) && $this->is_enabled( $wp->query_vars['language'] ) ) {
+			$lang = $wp->query_vars['language'];
+			$pt = "{$this->pt_prefix}post_{$lang}";
+			if ( $this->is_gen_pt( $pt ) && $this->is_enabled_pt( 'post' ) ) {
+				$wp->query_vars['post_type'] = $pt;
+			}
+		}
+	}
+
+	/**
+	* Redirects to the proper URL in case the requested URL is one that has "mlwp_..."
+	*
+	**/
+	public function canonical_redirect() {
+		global $wp;
+
+		// Cycle through each of the generated post types
+		foreach ( self::$options->generated_pt as $pt ) {
+			// Check if the requested URL contains this post type's name
+			if ( strpos( $wp->request, $pt ) !== false ) {
+				$permalink = get_permalink( $this->post->ID );
+				// Try to make sure we're not going to redirect to the same URL
+				if ( strpos( $permalink, $wp->request ) === false ) {
+					wp_redirect( $permalink, 301 );
+					exit;
+				}
+			}
 		}
 	}
 
@@ -661,6 +747,19 @@ class Multilingual_WP {
 				if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
 					$_post['post_parent'] = $this->parent_rel_langs[ $lang ];
 				}
+				$_post['post_author'] = $this->post->post_author;
+				$_post['post_date'] = $this->post->post_date;
+				$_post['post_date_gmt'] = $this->post->post_date_gmt;
+				$_post['post_status'] = $this->post->post_status;
+				$_post['comment_status'] = $this->post->comment_status;
+				$_post['ping_status'] = $this->post->ping_status;
+				$_post['post_password'] = $this->post->post_password;
+				$_post['to_ping'] = $this->post->to_ping;
+				$_post['pinged'] = $this->post->pinged;
+				$_post['post_modified'] = $this->post->post_modified;
+				$_post['post_modified_gmt'] = $this->post->post_modified_gmt;
+				$_post['menu_order'] = $this->post->menu_order;
+
 				update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
 				$this->save_post( $_post );
 			}
@@ -898,8 +997,6 @@ class Multilingual_WP {
 						continue;
 					}
 
-					// var_dump( $this->get_obj_slug( $a_id, 'post' ) );
-
 					$slugs[ $this->get_obj_slug( $a_id, 'post' ) ] = $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' );
 				}
 				foreach ( $slugs as $search => $replace ) {
@@ -908,18 +1005,24 @@ class Multilingual_WP {
 					}
 					$url = str_replace( $search, $replace, $url );
 				}
-				// var_dump( $slugs );
 			}
 			$this->add_slug_cache( $post->ID, $post->name, 'post' );
 
 			$rel_langs = get_post_meta( $post->ID, $this->languages_meta_key, true );
 			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
 				$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
-				// var_dump( $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ) );
 			}
 		}
 
 		return $url;
+	}
+
+	public function fix_redirect( $redirect_url, $requested_url ) {
+		foreach ( self::$options->generated_pt as $pt ) {
+			if ( strpos( $redirect_url, $pt ) !== false && strpos( $requested_url, $pt ) === false ) {
+				return false;
+			}
+		}
 	}
 
 	public function curPageURL() {
@@ -1074,7 +1177,6 @@ class Multilingual_WP {
 	public function get_obj_slug( $id, $type ) {
 		$_id = "_{$id}";
 		if ( $type == 'post' ) {
-			// var_dump( $this->slugs_cache['posts'] );
 			if ( isset( $this->slugs_cache['posts'][ $_id ] ) ) {
 				return $this->slugs_cache['posts'][ $_id ];
 			} else {
@@ -1104,6 +1206,515 @@ class Multilingual_WP {
 				$this->slugs_cache['posts'][ $id ] = $slug;
 			}
 		}
+	}
+
+	/**
+	* Registers a custom meta box for the Comment Language
+	* @access public
+	**/
+	public function admin_init() {
+		add_meta_box( 'MLWP_Comments', __( 'Comment Language', $this->textdomain ), array( $this, 'comment_language_metabox' ), 'comment', 'normal' );
+	}
+
+	/**
+	* Createс a custom meta box for the Comment Language
+	* @access public
+	**/
+	public function comment_language_metabox( $comment ) {
+		$curr_lang = get_comment_meta( $comment->comment_ID, '_comment_language', true ); ?>
+		<table class="form-table editcomment comment_xtra">
+			<tbody>
+				<tr valign="top">
+					<td class="first"><?php _e( 'Select the Comment\'s Language:', $this->textdomain ); ?></td>
+					<td>
+						<select name="mlwpc_language" id="MLWP_Comments_language" class="widefat">
+							<?php foreach ( self::$options->enabled_langs as $lang ) : ?>
+								<option value="<?php echo $lang; ?>"<?php echo $lang == $curr_lang ? ' selected="selected"' : ''; ?>><?php echo self::$options->languages[ $lang ]['label']; ?></option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	<?php
+	}
+
+	public function fix_comments_count( $count, $post_id ) {
+		if ( $count != 0 ) {
+			global $wp_version;
+			$comments_query = version_compare( $wp_version, '3.5', '>=' ) ? new WP_Comment_Query() : new MLWP_Comment_Query();
+
+			$comments = $comments_query->query( array( 'post_id' => $post_id, 'status' => 'approve', 'order' => 'ASC', 'meta_query' => array( array( 'key' => '_comment_language', 'value' => $this->current_lang ) ) ) );
+
+			return count( $comments );
+		}
+	}
+
+	/**
+	* Adds a "Language" header for the Edit Comments screen
+	* @access public
+	**/
+	public function filter_edit_comments_t_headers( $columns ) {
+		if ( ! empty($columns) ) {
+			$response = $columns['response'];
+			unset($columns['response']);
+			$columns['comm_language'] = __( 'Language', $this->textdomain );
+			$columns['response'] = $response;
+		}
+
+		return $columns;
+	}
+
+	/**
+	* Renders the language for each comment in the Edit Comments screen
+	* @access public
+	**/
+	public function render_comment_lang_col( $column, $commentID ) {
+		if ( $column == 'comm_language' ) {
+			$comm_lang = get_comment_meta( $commentID, '_comment_language', true );
+			if ( in_array( $comm_lang, self::$options->enabled_langs ) ) {
+				echo self::$options->languages[ $comm_lang ]['label'];
+			} else {
+				echo '<p class="help">' . sprintf( __( 'Language not set, or inactive(language ID is "%s")', $this->textdomain ), $comm_lang ) . '</p>';
+			}
+		}
+	}
+
+	/**
+	* Handles the AJAX POST for bulk updating of comments language
+	* @access public
+	**/
+	public function handle_ajax_update() {
+		if ( isset( $_POST['language'] ) && isset( $_POST['ids'] ) && is_array( $_POST['ids'] ) && check_admin_referer( 'bulk-comments' ) ) {
+			
+			$language = $_POST['language'];
+			$ids = $_POST['ids'];
+
+			$result = array('success' => false, 'message' => '');
+
+			if ( ! in_array( $language, self::$options->enabled_langs ) ) {
+				$result['success'] = false;
+				$result['message'] = sprintf( __( 'The language with id "%s" is currently not enabled.', $this->textdomain ), $language );
+			} else {
+				foreach ( $ids as $id ) {
+					update_comment_meta( $id, '_comment_language', $language );
+				}
+				$result['success'] = true;
+				$result['message'] = sprintf( __( 'The language of comments with ids "%s" has been successfully changed to "%s".', $this->textdomain ), implode( ', ', $ids ), self::$options->languages[ $language ]['label'] );
+			}
+			
+			echo json_encode( $result );
+			exit;
+		}
+	}
+
+	/**
+	* Prints the necessary JS for the Edit Comments screen
+	* @access public
+	**/
+	public function print_comment_scripts() {
+		$languages = array();
+		foreach ( self::$options->enabled_langs as $lang ) {
+			$languages[ $lang ] = self::$options->languages[ $lang ]['label'];
+		}
+		$languages = empty($languages) ? false : $languages; ?>
+		<script type="text/javascript">
+			var MLWP_languages = <?php echo json_encode( $languages ); ?>;
+			(function($){
+				function selectedIDs (no_alert) {
+					var ids = new Array;
+
+					$('input[name="delete_comments[]"]:checked').each(function(){
+						ids.push($(this).val());
+					})
+					ids = ids.length ? ids : false;
+
+					if ( ! no_alert && ! ids ) {
+						alert('<?php echo esc_js( __( "Please Select comment/s first!", $this->textdomain ) ); ?>');
+					};
+					return ids;
+				}
+
+				function update_lang (ids, curr_lang) {
+					curr_lang = MLWP_languages[curr_lang];
+					$.each(ids, function(i, id){
+						$('#comment-' + id + ' .column-comm_language').text(curr_lang);
+						$('input[name="delete_comments[]"][value="' + id + '"]').removeAttr('checked');
+					})
+				}
+
+				function display_message(message, is_error) {
+					var css_class = is_error ? 'error' : 'updated mlwp_fadeout';
+					$('#comments-form .tablenav.top').after('<div class="' + css_class + '"><p>' + message + '</p></div>');
+					if ( ! is_error ) {
+						setTimeout(function(){
+							$('#comments-form .mlwp_fadeout').slideUp(function(){
+								$(this).remove();
+							})
+						}, 5000);
+					};
+				}
+
+				function set_language () {
+					var ids = selectedIDs(),
+						curr_lang = $('#mlwpc_language').val(),
+						waiting = $('.MLWP_languages_div .waiting');
+
+					if ( ids && curr_lang ) {
+						waiting.show();
+						$.post(ajaxurl, {
+							action: 'mlwpc_set_language',
+							language: curr_lang,
+							ids: ids,
+							_wpnonce: $('#_wpnonce').val(),
+							_wp_http_referer: $('#_wp_http_referer').val()
+						}, function(data) {
+							if ( ! data.success ) {
+								display_message(data.message, true);
+								$.each(ids, function(i, id) {
+									$('input[name="delete_comments[]"][value="' + id + '"]').removeAttr('checked');
+								})
+							} else {
+								update_lang(ids, curr_lang);
+								display_message(data.message);
+							};
+							
+							waiting.hide();
+						}, 'json');
+					};
+				}
+
+				$(document).ready(function(){
+					if ( MLWP_languages ) {
+						$('#comments-form .tablenav.top .tablenav-pages').before('<div class="alignleft actions MLWP_languages_div"></div>');
+						$('.MLWP_languages_div').append('<select id="mlwpc_language" name="mlwpc_language"></select> <input type="button" id="mlwpc_set_language" class="button-secondary action" value="<?php echo esc_js(__("Bulk Set Language", $this->textdomain)) ?>"> <img class="waiting" style="display:none;" src="<?php echo esc_url( admin_url( "images/wpspin_light.gif" ) ); ?>" alt="" />');
+						var select = $('#mlwpc_language');
+						for (lang in MLWP_languages) {
+							select.append('<option value="' + lang + '">' + MLWP_languages[lang] + '</option>');
+						};
+
+						$('#mlwpc_set_language').on('click', function(){
+							set_language();
+
+							return false;
+						})
+					};
+				})
+			})(jQuery)
+		</script>
+		<?php 
+	}
+
+	/**
+	* Saves the comment language(single-comment-editting only)
+	* @access public
+	**/
+	public function save_comment_lang( $commentID ) {
+		if ( isset( $_POST['mlwpc_language'] ) && $this->is_enabled( $_POST['mlwpc_language'] ) ) {
+			update_comment_meta( $commentID, '_comment_language', $_POST['mlwpc_language'] );
+		}
+	}
+
+	/**
+	* Sets the language for new comments
+	*
+	* @access public
+	**/
+	public function new_comment( $commentID ) {
+		$comm_lang = isset( $_POST['mlwpc_comment_lang'] ) && $this->is_enabled( $_POST['mlwpc_comment_lang'] ) ? $_POST['mlwpc_comment_lang'] : self::$options->default_lang;
+		
+		update_comment_meta( $commentID, '_comment_language', $comm_lang );
+
+		// Set the current language
+		$this->current_lang = $comm_lang;
+		// Set the locale
+		$this->locale = self::$options->languages[ $this->current_lang ]['locale'];
+
+		// add_filter( 'comment_post_redirect', array( $this, 'fix_comment_post_redirect' ), 10, 2 );
+	}
+
+	/**
+	* Fixes the "&amp;" in URL's parsed by qTranslate
+	* Generally that's a good practice, but not and when you do a PHP redirect
+	*
+	* @access public
+	**/
+	public function fix_comment_post_redirect( $location, $comment ) {
+		$location = str_replace( '&amp;', '&', $location );
+		if ( preg_match( '~lang=([a-z]{2}).*?lang=([a-z]{2})~', $location ) ) {
+			global $q_config;
+			$location = preg_replace( '~#comment-\d*~', '', $location );
+			
+			$location = remove_query_arg( 'lang', $location );
+			if ( $q_config['language'] != $q_config['default_language'] || ! $q_config['hide_default_language'] ) {
+				$location = add_query_arg( 'lang', $q_config['language'], $location );
+			}
+			$location .= '#comment-' . $comment->comment_ID;
+		}
+
+		return $location;
+	}
+
+	/**
+	* Renders a hidden input in the comments form
+	*
+	* This hidden input contains the permalink of the current post(without the hostname) and is used to properly assign the language of the comment as well as the back URL
+	*
+	* @access public
+	**/
+	public function comment_form_hook( $post_id ) {
+		echo '<input type="hidden" name="mlwpc_comment_lang" value="' . $this->current_lang . '" />';
+	}
+
+	/**
+	* Filters comments for the current language only
+	*
+	* This function is called whenever comments are fetched for the comments_template() function. This way the right comments(according to the current language) are fetched automatically.
+	* 
+	* @access public
+	**/
+	public function filter_comments_by_lang( $comments, $post_id ) {
+		global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity, $overridden_cpage;
+
+		// Store the Meta Query arguments
+		$meta_query = array( array( 'key' => '_comment_language', 'value' => $this->current_lang ) );
+
+		/**
+		 * Comment author information fetched from the comment cookies.
+		 *
+		 * @uses wp_get_current_commenter()
+		 */
+		$commenter = wp_get_current_commenter();
+
+		/**
+		 * The name of the current comment author escaped for use in attributes.
+		 */
+		$comment_author = $commenter['comment_author']; // Escaped by sanitize_comment_cookies()
+
+		/**
+		 * The email address of the current comment author escaped for use in attributes.
+		 */
+		$comment_author_email = $commenter['comment_author_email'];  // Escaped by sanitize_comment_cookies()
+
+		// WordPress core files use custom SQL for most of it's stuff, we're only using the $comments_query object to get the most simple query
+		if ( $user_ID ) {
+			// Build the Meta Query SQL
+			$mq_sql = get_meta_sql( $meta_query, 'comment', $wpdb->comments, 'comment_ID' );
+
+			$comments = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->comments {$mq_sql['join']} WHERE comment_post_ID = %d AND (comment_approved = '1' OR ( user_id = %d AND comment_approved = '0' ) ) {$mq_sql['where']} ORDER BY comment_date_gmt", $post->ID, $user_ID ) );
+		} else if ( empty( $comment_author ) ) {
+			$comments_query = new MLWP_Comment_Query();
+			$comments = $comments_query->query( array('post_id' => $post_id, 'status' => 'approve', 'order' => 'ASC', 'meta_query' => $meta_query ) );
+		} else {
+			// Build the Meta Query SQL
+			$mq_sql = get_meta_sql( $meta_query, 'comment', $wpdb->comments, 'comment_ID' );
+
+			$comments = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->comments {$mq_sql['join']} WHERE comment_post_ID = %d AND ( comment_approved = '1' OR ( comment_author = %s AND comment_author_email = %s AND comment_approved = '0' ) ) {$mq_sql['where']} ORDER BY comment_date_gmt", $post->ID, wp_specialchars_decode( $comment_author, ENT_QUOTES ), $comment_author_email ) );
+		}
+
+		return $comments;
+	}
+}
+
+
+/**
+ * WordPress Comment Query class + WP_Meta_Query.
+ *
+ * The default Wordpress Comment Query class with added compatibility for meta queries :)
+ *
+ * @since 3.1.0
+ * @deprecated 3.5 - uses WP's version since it has meta_query support since WP 3.5
+ */
+class MLWP_Comment_Query extends WP_Comment_Query {
+	/**
+	 * Metadata query container
+	 *
+	 * @since 3.2.0
+	 * @access public
+	 * @var object WP_Meta_Query
+	 */
+	var $meta_query = false;
+
+	/**
+	 * Execute the query
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string|array $query_vars
+	 * @return int|array
+	 */
+	function query( $query_vars ) {
+		global $wpdb;
+
+		$defaults = array(
+			'author_email' => '',
+			'ID' => '',
+			'karma' => '',
+			'number' => '',
+			'offset' => '',
+			'orderby' => '',
+			'order' => 'DESC',
+			'parent' => '',
+			'post_ID' => '',
+			'post_id' => 0,
+			'post_author' => '',
+			'post_name' => '',
+			'post_parent' => '',
+			'post_status' => '',
+			'post_type' => '',
+			'status' => '',
+			'type' => '',
+			'user_id' => '',
+			'search' => '',
+			'count' => false,
+			'meta_key' => '',
+			'meta_value' => '',
+			'meta_query' => '',
+		);
+
+		$this->query_vars = wp_parse_args( $query_vars, $defaults );
+		// Parse meta query
+		$this->meta_query = new WP_Meta_Query();
+		$this->meta_query->parse_query_vars( $this->query_vars );
+
+		do_action_ref_array( 'pre_get_comments', array( &$this ) );
+		extract( $this->query_vars, EXTR_SKIP );
+
+		// $args can be whatever, only use the args defined in defaults to compute the key
+		$key = md5( serialize( compact(array_keys($defaults)) )  );
+		$last_changed = wp_cache_get('last_changed', 'comment');
+		if ( !$last_changed ) {
+			$last_changed = time();
+			wp_cache_set('last_changed', $last_changed, 'comment');
+		}
+		$cache_key = "get_comments:$key:$last_changed";
+
+		if ( $cache = wp_cache_get( $cache_key, 'comment' ) ) {
+			return $cache;
+		}
+
+		$post_id = absint($post_id);
+
+		if ( 'hold' == $status )
+			$approved = "comment_approved = '0'";
+		elseif ( 'approve' == $status )
+			$approved = "comment_approved = '1'";
+		elseif ( 'spam' == $status )
+			$approved = "comment_approved = 'spam'";
+		elseif ( 'trash' == $status )
+			$approved = "comment_approved = 'trash'";
+		else
+			$approved = "( comment_approved = '0' OR comment_approved = '1' )";
+
+		$order = ( 'ASC' == strtoupper($order) ) ? 'ASC' : 'DESC';
+
+		if ( ! empty( $orderby ) ) {
+			$ordersby = is_array($orderby) ? $orderby : preg_split('/[,\s]/', $orderby);
+			$allowed_keys = array(
+				'comment_agent',
+				'comment_approved',
+				'comment_author',
+				'comment_author_email',
+				'comment_author_IP',
+				'comment_author_url',
+				'comment_content',
+				'comment_date',
+				'comment_date_gmt',
+				'comment_ID',
+				'comment_karma',
+				'comment_parent',
+				'comment_post_ID',
+				'comment_type',
+				'user_id',
+			);
+			if ( !empty($this->query_vars['meta_key']) ) {
+				$allowed_keys[] = $q['meta_key'];
+				$allowed_keys[] = 'meta_value';
+				$allowed_keys[] = 'meta_value_num';
+			}
+			$ordersby = array_intersect( $ordersby, $allowed_keys );
+			foreach ($ordersby as $key => $value) {
+				if ( $value == $q['meta_key'] || $value == 'meta_value' ) {
+					$ordersby[$key] = "$wpdb->commentmeta.meta_value";
+				} elseif ( $value == 'meta_value_num' ) {
+					$ordersby[$key] = "$wpdb->commentmeta.meta_value+0";
+				}
+			}
+			$orderby = empty( $ordersby ) ? 'comment_date_gmt' : implode(', ', $ordersby);
+		} else {
+			$orderby = 'comment_date_gmt';
+		}
+
+		$number = absint($number);
+		$offset = absint($offset);
+
+		if ( !empty($number) ) {
+			if ( $offset )
+				$limits = 'LIMIT ' . $offset . ',' . $number;
+			else
+				$limits = 'LIMIT ' . $number;
+		} else {
+			$limits = '';
+		}
+
+		if ( $count )
+			$fields = 'COUNT(*)';
+		else
+			$fields = '*';
+
+		$join = '';
+		$where = $approved;
+
+		if ( ! empty($post_id) )
+			$where .= $wpdb->prepare( ' AND comment_post_ID = %d', $post_id );
+		if ( '' !== $author_email )
+			$where .= $wpdb->prepare( ' AND comment_author_email = %s', $author_email );
+		if ( '' !== $karma )
+			$where .= $wpdb->prepare( ' AND comment_karma = %d', $karma );
+		if ( 'comment' == $type ) {
+			$where .= " AND comment_type = ''";
+		} elseif( 'pings' == $type ) {
+			$where .= ' AND comment_type IN ("pingback", "trackback")';
+		} elseif ( ! empty( $type ) ) {
+			$where .= $wpdb->prepare( ' AND comment_type = %s', $type );
+		}
+		if ( '' !== $parent )
+			$where .= $wpdb->prepare( ' AND comment_parent = %d', $parent );
+		if ( '' !== $user_id )
+			$where .= $wpdb->prepare( ' AND user_id = %d', $user_id );
+		if ( '' !== $search )
+			$where .= $this->get_search_sql( $search, array( 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_author_IP', 'comment_content' ) );
+
+		$post_fields = array_filter( compact( array( 'post_author', 'post_name', 'post_parent', 'post_status', 'post_type', ) ) );
+		if ( ! empty( $post_fields ) ) {
+			$join = "JOIN $wpdb->posts ON $wpdb->posts.ID = $wpdb->comments.comment_post_ID";
+			foreach( $post_fields as $field_name => $field_value )
+				$where .= $wpdb->prepare( " AND {$wpdb->posts}.{$field_name} = %s", $field_value );
+		}
+
+		if ( !empty( $this->meta_query->queries ) ) {
+			$clauses = $this->meta_query->get_sql( 'comment', $wpdb->comments, 'comment_ID', $this );
+			$join .= $clauses['join'];
+			$where .= $clauses['where'];
+		}
+
+		$pieces = array( 'fields', 'join', 'where', 'orderby', 'order', 'limits', 'groupby' );
+		$clauses = apply_filters_ref_array( 'comments_clauses', array( compact( $pieces ), &$this ) );
+		foreach ( $pieces as $piece )
+			$$piece = isset( $clauses[ $piece ] ) ? $clauses[ $piece ] : '';
+
+		$query = "SELECT $fields FROM $wpdb->comments $join WHERE $where ORDER BY $orderby $order $limits";
+		// $wpdb->show_errors(); // Use for debugging, but genearally the query should be good :)
+
+		if ( $count )
+			return $wpdb->get_var( $query );
+
+		$comments = $wpdb->get_results( $query );
+		$comments = apply_filters_ref_array( 'the_comments', array( $comments, &$this ) );
+
+		wp_cache_add( $cache_key, $comments, 'comment' );
+
+		return $comments;
 	}
 }
 
