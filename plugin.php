@@ -236,6 +236,8 @@ class Multilingual_WP {
 		$this->add_filters();
 
 		$this->add_actions();
+
+		$this->register_shortcodes();
 	}
 
 	/**
@@ -272,6 +274,8 @@ class Multilingual_WP {
 		add_filter( 'post_link',					array( $this, 'convert_post_URL' ),	10, 2 );
 
 		add_filter( 'redirect_canonical',			array( $this, 'fix_redirect' ), 10, 2 );
+
+		add_filter( 'the_content', 					array( $this, 'parse_quicktags' ), 0 );
 
 		// Comment-separating-related filters
 		add_filter( 'comments_array', array( $this, 'filter_comments_by_lang' ), 10, 2 );
@@ -330,6 +334,70 @@ class Multilingual_WP {
 
 		add_action( 'manage_comments_custom_column', array($this, 'render_comment_lang_col' ), 10, 2 );
 		add_action( 'admin_init', array( $this, 'admin_init' ), 10 );
+	}
+
+	/**
+	* Registers all of the plugin's shortcodes
+	**/
+	private function register_shortcodes() {
+		add_shortcode( 'mlwp-lswitcher', array( $this, 'mlwp_lang_switcher_shortcode' ) );
+
+		add_shortcode( 'mlwp', array( $this, 'mlwp_translation_shortcode' ) );
+
+		foreach ( self::$options->enabled_langs as $language ) {
+			add_shortcode( $language, array( $this, 'translation_shortcode' ) );
+		}
+	}
+
+	public function mlwp_lang_switcher_shortcode( $atts, $content = null ) {
+		$atts = is_array( $atts ) ? $atts : array();
+		$atts['return'] = 'html'; // Always return the HTML instead of echoing it...
+	
+		return $this->build_lang_switcher( $atts );
+	}
+
+	public function translation_shortcode( $atts, $content = null, $tag = false ) {
+		extract(shortcode_atts(array(), $atts, $content));
+		
+		if ( $tag && $this->is_enabled( $tag ) ) {
+			return $this->current_lang == $tag ? apply_filters( 'mlwp_translated_sc_content', $content, $tag ) : '';
+		}
+	
+		return $content;
+	}
+
+	public function mlwp_translation_shortcode( $atts, $content = null ) {
+		extract(shortcode_atts(array(
+			'langs' => ''
+		), $atts, $content));
+
+		if ( ! $langs ) {
+			return $content;
+		}
+		$langs = explode( ',', $langs );
+
+		foreach ( $langs as $lang ) {
+			$lang = strtolower( trim( $lang ) );
+			if ( $this->is_enabled( $lang ) && $lang == $this->current_lang ) {
+				return apply_filters( 'mlwp_translated_sc_content', $content, $langs );
+			}
+		}
+		return '';
+	}
+
+	public function parse_quicktags( $content ) {
+		// Code borrowed and modified from qTranslate's quicktag parsing mechanism
+		$regex = "#(\[:[a-z]{2}\](?:(?!\[:[a-z]{2}\]).)*)#";
+
+		$blocks = preg_split( $regex, $content, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE );
+
+		foreach ( $blocks as $block ) {
+			if ( preg_match( "#^\[:([a-z]{2})\]#ism", $block, $matches ) && $this->is_enabled( $matches[1] ) && $this->current_lang == $matches[1] ) {
+				return preg_replace( "#^\[:([a-z]{2})\]#ism", '', $block );
+			}
+		}
+
+		return $content;
 	}
 	
 	public function add_rewrite_rules( $wp_rewrite ) {
@@ -1057,20 +1125,20 @@ class Multilingual_WP {
 	*
 	* @access public
 	* 
-	* @param $options Array|String - If array - one or more of the following options. If string - the type
+	* @param Array|String $options - If array - one or more of the following options. If string - the type
 	* of the swticher(see $type bellow for options)
 	* 
 	* Available options in the $options Array:
-	* @param $type String - the type of the switcher. One of the following: 'text'(language labels only),
+	* @param String $type - the type of the switcher. One of the following: 'text'(language labels only),
 	* 'image'(language flags only), 'both'(labels and flags), 'select'|'dropdown'(use labels to create a
 	* <select> drop-down with redirection on language select). Default: 'image'
-	* @param $wrap String - the wrapping HTML element for each language. Examples: 'li', 'span', 'div', 'p'... Default: 'li'
-	* @param $outer_wrap String - the wrapping HTML element for each language. Examples: 'ul', 'ol', 'div'... Default: 'ul'
-	* @param $class String - the value for the HTML 'class' attribute for the $outer_wrap element. Default: 'mlwp-lang-switcher'
-	* @param $id String - the value for the HTML 'id' attribute for the $outer_wrap element. Default: "mlwp_lang_switcher_X",
+	* @param String $wrap - the wrapping HTML element for each language. Examples: 'li', 'span', 'div', 'p'... Default: 'li'
+	* @param String $outer_wrap - the wrapping HTML element for each language. Examples: 'ul', 'ol', 'div'... Default: 'ul'
+	* @param String $class - the value for the HTML 'class' attribute for the $outer_wrap element. Default: 'mlwp-lang-switcher'
+	* @param String $id - the value for the HTML 'id' attribute for the $outer_wrap element. Default: "mlwp_lang_switcher_X",
 	* where "X" is an incrementing number starting from 1(it increments any time this function is called without passing 'id' option)
-	* @param $active_class String - the value for the HTML 'class' attribute for the currently active language's element. Default: 'active'
-	* @param $return Boolean|String - Whether to return or echo the output. Pass false for echo. Pass 'html' to get the ready html. Pass
+	* @param String $active_class - the value for the HTML 'class' attribute for the currently active language's element. Default: 'active'
+	* @param Boolean|String $return - Whether to return or echo the output. Pass false for echo. Pass 'html' to get the ready html. Pass
 	* 'array' to retrieve a multidimensional array with the following structure:
 	* array(
 	* 	'xx' => array(
@@ -1082,8 +1150,8 @@ class Multilingual_WP {
 	* 	)
 	* )
 	* That's useful for when trying to build a highly customized switcher. Default: false
-	* @param $hide_current Boolean - whether to display or not the currently active language
-	* @param $flag_size String|Integer - the size for the flag image. One of: 16, 24, 32, 48, 64. Default: gets user's preference(plugin option)
+	* @param Boolean $hide_current - whether to display or not the currently active language
+	* @param String|Integer $flag_size - the size for the flag image. One of: 16, 24, 32, 48, 64. Default: gets user's preference(plugin option)
 	*
 	* @uses apply_filters() Calls "mlwp_lang_switcher_pre" passing the user options and the defaults. If output is provided, returns that 
 	*
@@ -1209,8 +1277,8 @@ class Multilingual_WP {
 	*
 	* @uses apply_filters() calls "mlwp_get_flag", passing the found flag, language and size as additional parameters. Return something different than false to override this function
 	*
-	* @param $language String - the language for which to retreive the flag. Optional, defaults to current
-	* @param $size Integer - the size at which to get the flag. Optional, defaults to plugin settings
+	* @param String $language - the language for which to retreive the flag. Optional, defaults to current
+	* @param Integer $size - the size at which to get the flag. Optional, defaults to plugin settings
 	*
 	* @return String - the URL for the flag, or a general "earth.png" flag if none was found
 	**/
@@ -1390,8 +1458,8 @@ class Multilingual_WP {
 	/**
 	* Gets the slug of an object - uses own cache
 	* 
-	* @param $id Integer - the ID of the object that the slug is requested
-	* @param $type String - the type of the object in question. "post"(any general post type), "category"(any terms) or mlwp_post(plugin-created post types)
+	* @param Integer $id - the ID of the object that the slug is requested
+	* @param String $type - the type of the object in question. "post"(any general post type), "category"(any terms) or mlwp_post(plugin-created post types)
 	**/
 	public function get_obj_slug( $id, $type ) {
 		$_id = "_{$id}";
@@ -1921,10 +1989,4 @@ global $Multilingual_WP;
 $mlwp_class_name = apply_filters( 'mlwp_class_name', 'Multilingual_WP' );
 $Multilingual_WP = new $mlwp_class_name();
 
-/**
-* Gives access to the @global $Multilingual_WP
-*
-**/
-function &_mlwp() {
-	return $GLOBALS['Multilingual_WP'];
-}
+include_once( dirname( __FILE__ ) . '/template-tags.php' );
