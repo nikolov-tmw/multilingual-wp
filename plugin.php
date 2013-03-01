@@ -955,6 +955,21 @@ class Multilingual_WP {
 	}
 
 	public function convert_URL( $url = '', $lang = '' ) {
+		// If we need to conver the current URL to a different language - try to figure-out a proper URL first
+		if ( $url == '' && $lang && $lang != $this->current_lang ) {
+			// If we're on a singular page(post/page/custom post type) simply use get_permalink() to get the proper URL
+			if ( is_singular() ) {
+				$_lang = $this->current_lang;
+				$this->current_lang = $lang;
+				$url = get_permalink( get_the_ID() );
+				$this->current_lang = $_lang;
+
+				return $url;
+			}
+		} elseif ( $url == '' && ( $lang == '' || $lang == $this->current_lang ) ) {
+			return $this->curPageURL();
+		}
+
 		$url = $url ? $url : $this->curPageURL();
 		$lang = $lang && $this->is_enabled( $lang ) ? $lang : $this->current_lang;
 
@@ -1033,6 +1048,190 @@ class Multilingual_WP {
 				$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
 			}
 		}
+
+		return $url;
+	}
+
+	/**
+	* Generates a language switcher
+	*
+	* @access public
+	* 
+	* @param $options Array|String - If array - one or more of the following options. If string - the type
+	* of the swticher(see $type bellow for options)
+	* 
+	* Available options in the $options Array:
+	* @param $type String - the type of the switcher. One of the following: 'text'(language labels only),
+	* 'image'(language flags only), 'both'(labels and flags), 'select'|'dropdown'(use labels to create a
+	* <select> drop-down with redirection on language select). Default: 'image'
+	* @param $wrap String - the wrapping HTML element for each language. Examples: 'li', 'span', 'div', 'p'... Default: 'li'
+	* @param $outer_wrap String - the wrapping HTML element for each language. Examples: 'ul', 'ol', 'div'... Default: 'ul'
+	* @param $class String - the value for the HTML 'class' attribute for the $outer_wrap element. Default: 'mlwp-lang-switcher'
+	* @param $id String - the value for the HTML 'id' attribute for the $outer_wrap element. Default: "mlwp_lang_switcher_X",
+	* where "X" is an incrementing number starting from 1(it increments any time this function is called without passing 'id' option)
+	* @param $active_class String - the value for the HTML 'class' attribute for the currently active language's element. Default: 'active'
+	* @param $return Boolean|String - Whether to return or echo the output. Pass false for echo. Pass 'html' to get the ready html. Pass
+	* 'array' to retrieve a multidimensional array with the following structure:
+	* array(
+	* 	'xx' => array(
+	* 		'label' => 'Language label',
+	* 		'image' => 'URL to the flag image of this language',
+	* 		'active' => true|false, // Is this the active language
+	* 		'url' => 'Proper(fixed) URL for this language',
+	* 		'default' => true|false, // Is this the default language
+	* 	)
+	* )
+	* That's useful for when trying to build a highly customized switcher. Default: false
+	* @param $hide_current Boolean - whether to display or not the currently active language
+	* @param $flag_size String|Integer - the size for the flag image. One of: 16, 24, 32, 48, 64. Default: gets user's preference(plugin option)
+	*
+	* @uses apply_filters() Calls "mlwp_lang_switcher_pre" passing the user options and the defaults. If output is provided, returns that 
+	*
+	**/
+	public function build_lang_switcher( $options = array() ) {
+		static $switcher_counter;
+		$options = is_array( $options ) ? $options : array( 'type' => $options );
+		$defaults = array(
+			'type' => 'image',
+			'wrap' => 'li',
+			'outer_wrap' => 'ul',
+			'class' => 'mlwp-lang-switcher',
+			'id' => '',
+			'separator' => '',
+			'active_class' => 'active',
+			'return' => false,
+			'hide_current' => false,
+			'flag_size' => self::$options->dfs,
+		);
+
+		$result = apply_filters( 'mlwp_lang_switcher_pre', false, $options, $defaults );
+		if ( $result ) {
+			return $result;
+		}
+
+		$options = wp_parse_args( $options, $defaults );
+
+		extract( $options, EXTR_SKIP );
+
+		$type = in_array( $type, array( 'image', 'text', 'both', 'select', 'dropdown' ) ) ? $type : 'image';
+
+		$flag_size = $flag_size && in_array( intval( $flag_size ), array( 16, 24, 32, 48, 64 ) ) ? $flag_size : self::$options->dfs;
+
+		$lang_data = array();
+
+		foreach ( self::$options->languages as $lang => $data ) {
+			if ( ! $this->is_enabled( $lang ) || ( $lang == $this->current_lang && $hide_current ) ) {
+				continue;
+			}
+			$lang_data[ $lang ] = array(
+				'label' => $data['label'],
+				'image' => $this->get_flag( $lang, $flag_size ),
+				'active' => ( $lang == $this->current_lang ), // Is this the active language
+				'url' => $this->convert_URL( '', $lang ),
+				'default' => ( $lang == self::$options->default_lang ), // Is this the default language
+			);
+		}
+
+		// If only the data array was requested - return that
+		if ( $return == 'array' ) {
+			return $lang_data;
+		}
+
+		// Prepare some variables
+		$before_template = $wrap && $wrap != '' ? "\t<{$wrap} class='%s'%s>\n\t\t" : '';
+		$after = $wrap && $wrap != '' ? "\t</{$wrap}>\n" : '';
+
+		if ( $type == 'dropdown' || $type == 'select' ) {
+			$outer_wrap = 'select';
+			$wrap = 'option';
+			$type = 'dd';
+		}
+
+		$switcher_counter = isset( $switcher_counter ) ? $switcher_counter : 0;
+		$switcher_counter += $id == '' ? 1 : 0;
+
+		$id = $id == '' ? "mlwp_lang_switcher_{$switcher_counter}" : esc_attr( $id );
+
+		$class = esc_attr( $class );
+
+		$active_class = esc_attr( $active_class );
+
+		if ( $outer_wrap && $outer_wrap != '' ) {
+			$html = "<{$outer_wrap} id='{$id}' class='{$class}'";
+			if ( $type == 'dd' ) {
+				$html .= ' onchange="window.location = this.options[this.selectedIndex].value;"';
+			}
+			$html .= ">\n";
+		} else {
+			$html = '';
+		}
+
+		$i = 1;
+
+		// Loop through all of the languages and generate the proper HTML for it
+		foreach ( $lang_data as $lang => $data ) {
+			$_class = "lang-{$lang}";
+			$_class .= $lang == $this->current_lang ? " {$active_class}" : '';
+
+			$extra = $type == 'dd' ? " value='" . esc_attr( $data['url'] ) . "'" . ( $data['active'] ? " selected='selected'" : '' ) : '';
+
+			$html .= sprintf( $before_template, $_class, $extra );
+
+			$html .= in_array( $type, array( 'image', 'text', 'both' ) ) ? "<a href='{$data['url']}' class='qtrans_flag qtrans_flag_{$lang} mlwp_flag mlwp_flag_{$lang} mlwp_fs_{$flag_size}'>" : '';
+
+			$html .= $type == 'image' || $type == 'both' ? "<img src='{$data['image']}' alt='{$data['label']}' />" : '';
+
+			$html .= $type == 'text' || $type == 'both' ? "<span class='mlwp_lang_label'>{$data['label']}</span>" : ( $type == 'dd' ? $data['label'] : '' );
+
+			$html .= in_array( $type, array( 'image', 'text', 'both' ) ) ? '</a>' : '';
+
+			$html .= $separator != '' && $i != count( $lang_data ) ? $separator : '';
+
+			$html .= "\n" . $after;
+
+			$i ++;
+		}
+
+		$html .= $outer_wrap && $outer_wrap != '' ? "</{$outer_wrap}>\n" : '';
+
+		// Return or echo the output
+		if ( $return == 'html' ) {
+			return $html;
+		} else {
+			echo $html;
+		}
+	}
+
+	/**
+	* Gets the flag image for a specified/default language
+	*
+	* @access public
+	*
+	* @uses apply_filters() calls "mlwp_get_flag", passing the found flag, language and size as additional parameters. Return something different than false to override this function
+	*
+	* @param $language String - the language for which to retreive the flag. Optional, defaults to current
+	* @param $size Integer - the size at which to get the flag. Optional, defaults to plugin settings
+	*
+	* @return String - the URL for the flag, or a general "earth.png" flag if none was found
+	**/
+	public function get_flag( $language = '', $size = '' ) {
+		$language = $language && isset( self::$options->languages[ $language ] ) ? $language : $this->current_lang;
+		$size = $size && in_array( intval( $size ), array( 16, 24, 32, 48, 64 ) ) ? $size : self::$options->dfs;
+
+		$flag = self::$options->languages[ $language ]['icon'];
+
+		$url = apply_filters( 'mlwp_get_flag', false, $flag, $language, $size );
+
+		if ( $url ) {
+			return $url;
+		}
+		if ( is_numeric( $flag ) ) {
+			$url = wp_get_attachment_image_src( $flag, array( $size, $size ) );
+			$url = $url && is_array( $url ) ? $url[0] : false;
+		} else {
+			$url = $this->plugin_url . "flags/{$size}/{$flag}";
+		}
+		$url = $url ? $url : $this->plugin_url . "flags/{$size}/earth.png";
 
 		return $url;
 	}
@@ -1726,6 +1925,6 @@ $Multilingual_WP = new $mlwp_class_name();
 * Gives access to the @global $Multilingual_WP
 *
 **/
-function _mlwp() {
+function &_mlwp() {
 	return $GLOBALS['Multilingual_WP'];
 }
