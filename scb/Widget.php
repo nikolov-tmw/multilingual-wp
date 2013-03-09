@@ -1,24 +1,24 @@
 <?php
 
-// Adds compatibility methods between WP_Widget and scbForms
+// Adds compatibility methods between WP_Widget and scb_MLWP_Forms
 
-abstract class scbWidget extends WP_Widget {
+abstract class scb_MLWP_Widget extends WP_Widget {
 	protected $defaults = array();
 
-	private static $scb_widgets = array();
+	private static $scb_MLWP_widgets = array();
 
 	static function init( $class, $file = '', $base = '' ) {
-		self::$scb_widgets[] = $class;
+		self::$scb_MLWP_widgets[] = $class;
 
-		add_action( 'widgets_init', array( __CLASS__, '_scb_register' ) );
+		add_action( 'widgets_init', array( __CLASS__, '_scb_MLWP_register' ) );
 
 		// for auto-uninstall
-		if ( $file && $base && class_exists( 'scbOptions' ) )
-			new scbOptions( "widget_$base", $file );
+		if ( $file && $base && class_exists( 'scb_MLWP_Options' ) )
+			new scb_MLWP_Options( "widget_$base", $file );
 	}
 
-	static function _scb_register() {
-		foreach ( self::$scb_widgets as $widget )
+	static function _scb_MLWP_register() {
+		foreach ( self::$scb_MLWP_widgets as $widget )
 			register_widget( $widget );
 	}
 
@@ -47,12 +47,12 @@ abstract class scbWidget extends WP_Widget {
 //_____HELPER METHODS_____
 
 
-	// See scbForms::input()
+	// See scb_MLWP_Forms::input()
 	// Allows extra parameter $args['title']
 	protected function input( $args, $formdata = array() ) {
 		$prefix = array( 'widget-' . $this->id_base, $this->number );
 
-		$form = new scbForm( $formdata, $prefix );
+		$form = new scb_MLWP_Form( $formdata, $prefix );
 
 		// Add default class
 		if ( !isset( $args['extra'] ) && 'text' == $args['type'] )

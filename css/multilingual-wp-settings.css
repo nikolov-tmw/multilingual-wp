@@ -15,3 +15,8 @@ div#wpbody-content #mlwp_flag_select label { display: block; background: #CCCCCC
 div#wpbody-content #mlwp_flag_select label.selected { background: #c3eaf7; }
 
 .cl { display: block; float: none; clear: both; height: 0; }
+
+div.mlwp-box { border-width: 2px; }
+div.mlwp-box.mlwp-notice { background-color: #E0F1FF; border-color: #8497DF; }
+div.mlwp-box.mlwp-success { background-color: #96F1B3; border-color: #48BB51; }
+div.mlwp-box.mlwp-error { background-color: #FFCACA; border-color: #F33636; font-weight: bold; }

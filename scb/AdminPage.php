@@ -2,7 +2,7 @@
 
 // Administration page base class
 
-abstract class scbAdminPage {
+abstract class scb_MLWP_AdminPage {
 	/** Page args
 	 * $page_title string (mandatory)
 	 * $parent (string)  (default: options-general.php)
@@ -26,7 +26,7 @@ abstract class scbAdminPage {
 	// Created at page init
 	protected $pagehook;
 
-	// scbOptions object holder
+	// scb_MLWP_Options object holder
 	// Normally, it's used for storing formdata
 	protected $options;
 	protected $option_name;
@@ -81,7 +81,7 @@ abstract class scbAdminPage {
 
 	// Constructor
 	function __construct( $file = false, $options = null ) {
-		if ( is_a( $options, 'scbOptions' ) )
+		if ( is_a( $options, 'scb_MLWP_Options' ) )
 			$this->options = $options;
 
 		$this->setup();
@@ -171,7 +171,7 @@ abstract class scbAdminPage {
 		if ( empty( $msg ) )
 			$msg = __( 'Settings <strong>saved</strong>.', $this->textdomain );
 
-		echo scb_admin_notice( $msg, $class );
+		echo scb_MLWP_admin_notice( $msg, $class );
 	}
 
 
@@ -202,17 +202,17 @@ abstract class scbAdminPage {
 			'value' => $value,
 			'extra' => '',
 			'desc' => false,
-			'wrap' => html( 'p class="submit"', scbForms::TOKEN )
+			'wrap' => html( 'p class="submit"', scb_MLWP_Forms::TOKEN )
 		);
 
 		if ( ! empty( $class ) )
 			$input_args['extra'] = compact( 'class' );
 
-		return scbForms::input( $input_args );
+		return scb_MLWP_Forms::input( $input_args );
 	}
 
 	/*
-	Mimics scbForms::form_wrap()
+	Mimics scb_MLWP_Forms::form_wrap()
 
 	$this->form_wrap( $content );	// generates a form with a default submit button
 
@@ -236,7 +236,7 @@ abstract class scbAdminPage {
 			$content .= call_user_func_array( array( $this, 'submit_button' ), $button_args );
 		}
 
-		return scbForms::form_wrap( $content, $this->nonce );
+		return scb_MLWP_Forms::form_wrap( $content, $this->nonce );
 	}
 
 	// Generates a table wrapped in a form
@@ -277,7 +277,7 @@ abstract class scbAdminPage {
 		return $this->row_wrap( $args['title'], $this->input( $args, $formdata ) );
 	}
 
-	// Mimic scbForms inheritance
+	// Mimic scb_MLWP_Forms inheritance
 	function __call( $method, $args ) {
 		if ( in_array( $method, array( 'input', 'form' ) ) ) {
 			if ( empty( $args[1] ) && isset( $this->options ) )
@@ -287,7 +287,7 @@ abstract class scbAdminPage {
 				$args[2] = $this->nonce;
 		}
 
-		return call_user_func_array( array( 'scbForms', $method ), $args );
+		return call_user_func_array( array( 'scb_MLWP_Forms', $method ), $args );
 	}
 
 	// Wraps a string in a <script> tag

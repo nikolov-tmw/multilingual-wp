@@ -1,6 +1,6 @@
 <?php
 
-class Multilingual_WP_Update_Posts_Page extends scbAdminPage {
+class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 	protected $textdomain = 'multilingual-wp';
 	protected $admin_notice = false;
 	public $admin_errors = array();

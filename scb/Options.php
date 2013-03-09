@@ -2,7 +2,7 @@
 
 // Container for an array of options
 
-class scbOptions {
+class scb_MLWP_Options {
 
 	protected $key;		// the option name
 
@@ -22,8 +22,8 @@ class scbOptions {
 		$this->defaults = $defaults;
 
 		if ( $file ) {
-			scbUtil::add_activation_hook( $file, array( $this, '_activation' ) );
-			scbUtil::add_uninstall_hook( $file, array( $this, 'delete' ) );
+			scb_MLWP_Util::add_activation_hook( $file, array( $this, '_activation' ) );
+			scb_MLWP_Util::add_uninstall_hook( $file, array( $this, 'delete' ) );
 		}
 	}
 
@@ -43,7 +43,7 @@ class scbOptions {
 	public function get( $field = null, $default = null ) {
 		$data = array_merge( $this->defaults, get_option( $this->key, array() ) );
 
-		return scbForms::get_value( $field, $data, $default );
+		return scb_MLWP_Forms::get_value( $field, $data, $default );
 	}
 
 	/**
@@ -53,7 +53,7 @@ class scbOptions {
 	 * @return mixed Whatever is in those fields
 	 */
 	public function get_defaults( $field = null ) {
-		return scbForms::get_value( $field, $this->defaults );
+		return scb_MLWP_Forms::get_value( $field, $this->defaults );
 	}
 
 	/**

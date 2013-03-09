@@ -2,20 +2,20 @@
 
 // Data-aware form generator
 
-class scbForms {
+class scb_MLWP_Forms {
 
 	const TOKEN = '%input%';
 
 	static function input_with_value( $args, $value ) {
-		$field = scbFormField::create( $args );
+		$field = scb_MLWP_FormField::create( $args );
 
 		return $field->render( $value );
 	}
 
 	static function input( $args, $formdata = null ) {
-		$field = scbFormField::create( $args );
+		$field = scb_MLWP_FormField::create( $args );
 
-		return $field->render( scbForms::get_value( $args['name'], $formdata ) );
+		return $field->render( scb_MLWP_Forms::get_value( $args['name'], $formdata ) );
 	}
 
 	// Generates a table wrapped in a form
@@ -131,7 +131,7 @@ class scbForms {
 	/**
 	 * Given a list of fields, validate some data.
 	 *
-	 * @param array $fields List of args that would be sent to scbForms::input()
+	 * @param array $fields List of args that would be sent to scb_MLWP_Forms::input()
 	 * @param array $data The data to validate. Defaults to $_POST
 	 * @param array $to_update Existing data to populate. Necessary for nested values
 	 *
@@ -143,9 +143,9 @@ class scbForms {
 		}
 
 		foreach ( $fields as $field ) {
-			$value = scbForms::get_value( $field['name'], $data );
+			$value = scb_MLWP_Forms::get_value( $field['name'], $data );
 
-			$fieldObj = scbFormField::create( $field );
+			$fieldObj = scb_MLWP_FormField::create( $field );
 
 			$value = $fieldObj->validate( $value );
 
@@ -223,9 +223,9 @@ class scbForms {
 
 
 /**
- * A wrapper for scbForms, containing the formdata
+ * A wrapper for scb_MLWP_Forms, containing the formdata
  */
-class scbForm {
+class scb_MLWP_Form {
 	protected $data = array();
 	protected $prefix = array();
 
@@ -238,26 +238,26 @@ class scbForm {
 	}
 
 	function traverse_to( $path ) {
-		$data = scbForms::get_value( $path, $this->data );
+		$data = scb_MLWP_Forms::get_value( $path, $this->data );
 
 		$prefix = array_merge( $this->prefix, (array) $path );
 
-		return new scbForm( $data, $prefix );
+		return new scb_MLWP_Form( $data, $prefix );
 	}
 
 	function input( $args ) {
-		$value = scbForms::get_value( $args['name'], $this->data );
+		$value = scb_MLWP_Forms::get_value( $args['name'], $this->data );
 
 		if ( !empty( $this->prefix ) ) {
 			$args['name'] = array_merge( $this->prefix, (array) $args['name'] );
 		}
 
-		return scbForms::input_with_value( $args, $value );
+		return scb_MLWP_Forms::input_with_value( $args, $value );
 	}
 }
 
 
-interface scbFormField_I {
+interface scb_MLWP_FormField_I {
 
 	/**
 	 * Generate the corresponding HTML for a field
@@ -279,12 +279,12 @@ interface scbFormField_I {
 }
 
 
-abstract class scbFormField implements scbFormField_I {
+abstract class scb_MLWP_FormField implements scb_MLWP_FormField_I {
 
 	protected $args;
 
 	public static function create( $args ) {
-		if ( is_a( $args, 'scbFormField_I' ) )
+		if ( is_a( $args, 'scb_MLWP_FormField_I' ) )
 			return $args;
 
 		if ( empty( $args['name'] ) ) {
@@ -307,8 +307,8 @@ abstract class scbFormField implements scbFormField_I {
 		$args = wp_parse_args( $args, array(
 			'desc' => '',
 			'desc_pos' => 'after',
-			'wrap' => scbForms::TOKEN,
-			'wrap_each' => scbForms::TOKEN,
+			'wrap' => scb_MLWP_Forms::TOKEN,
+			'wrap_each' => scb_MLWP_Forms::TOKEN,
 		) );
 
 		// depends on $args['desc']
@@ -317,18 +317,18 @@ abstract class scbFormField implements scbFormField_I {
 
 		switch ( $args['type'] ) {
 		case 'radio':
-			return new scbRadiosField( $args );
+			return new scb_MLWP_RadiosField( $args );
 		case 'select':
-			return new scbSelectField( $args );
+			return new scb_MLWP_SelectField( $args );
 		case 'checkbox':
 			if ( isset( $args['choices'] ) )
-				return new scbMultipleChoiceField( $args );
+				return new scb_MLWP_MultipleChoiceField( $args );
 			else
-				return new scbSingleCheckboxField( $args );
+				return new scb_MLWP_SingleCheckboxField( $args );
 		case 'custom':
-			return new scbCustomField( $args );
+			return new scb_MLWP_CustomField( $args );
 		default:
-			return new scbTextField( $args );
+			return new scb_MLWP_TextField( $args );
 		}
 	}
 
@@ -353,9 +353,9 @@ abstract class scbFormField implements scbFormField_I {
 		if ( null !== $value )
 			$this->_set_value( $args, $value );
 
-		$args['name'] = scbForms::get_name( $args['name'] );
+		$args['name'] = scb_MLWP_Forms::get_name( $args['name'] );
 
-		return str_replace( scbForms::TOKEN, $this->_render( $args ), $this->wrap );
+		return str_replace( scb_MLWP_Forms::TOKEN, $this->_render( $args ), $this->wrap );
 	}
 
 	// Mutate the field arguments so that the value passed is rendered.
@@ -440,7 +440,7 @@ abstract class scbFormField implements scbFormField_I {
 }
 
 
-class scbTextField extends scbFormField {
+class scb_MLWP_TextField extends scb_MLWP_FormField {
 
 	public function validate( $value ) {
 		$sanitize = isset( $this->sanitize ) ? $this->sanitize : 'wp_filter_kses';
@@ -462,7 +462,7 @@ class scbTextField extends scbFormField {
 		if ( !isset( $extra['id'] ) && !is_array( $name ) && false === strpos( $name, '[' ) )
 			$extra['id'] = $name;
 
-		return scbFormField::_input_gen( $args );
+		return scb_MLWP_FormField::_input_gen( $args );
 	}
 
 	protected function _set_value( &$args, $value ) {
@@ -471,7 +471,7 @@ class scbTextField extends scbFormField {
 }
 
 
-abstract class scbSingleChoiceField extends scbFormField {
+abstract class scb_MLWP_SingleChoiceField extends scb_MLWP_FormField {
 
 	public function validate( $value ) {
 		if ( isset( $this->choices[ $value ] ) )
@@ -497,7 +497,7 @@ abstract class scbSingleChoiceField extends scbFormField {
 }
 
 
-class scbSelectField extends scbSingleChoiceField {
+class scb_MLWP_SelectField extends scb_MLWP_SingleChoiceField {
 
 	protected function _render_specific( $args ) {
 		extract( wp_parse_args( $args, array(
@@ -534,12 +534,12 @@ class scbSelectField extends scbSingleChoiceField {
 
 		$input = html( 'select', $extra, $opts );
 
-		return scbFormField::add_label( $input, $desc, $desc_pos );
+		return scb_MLWP_FormField::add_label( $input, $desc, $desc_pos );
 	}
 }
 
 
-class scbRadiosField extends scbSelectField {
+class scb_MLWP_RadiosField extends scb_MLWP_SelectField {
 
 	protected function _render_specific( $args ) {
 		extract( $args );
@@ -551,7 +551,7 @@ class scbRadiosField extends scbSelectField {
 
 		$opts = '';
 		foreach ( $choices as $value => $title ) {
-			$single_input = scbFormField::_checkbox( array(
+			$single_input = scb_MLWP_FormField::_checkbox( array(
 				'name' => $name,
 				'type' => 'radio',
 				'value' => $value,
@@ -560,15 +560,15 @@ class scbRadiosField extends scbSelectField {
 				'desc_pos' => 'after'
 			) );
 
-			$opts .= str_replace( scbForms::TOKEN, $single_input, $wrap_each );
+			$opts .= str_replace( scb_MLWP_Forms::TOKEN, $single_input, $wrap_each );
 		}
 
-		return scbFormField::add_desc( $opts, $desc, $desc_pos );
+		return scb_MLWP_FormField::add_desc( $opts, $desc, $desc_pos );
 	}
 }
 
 
-class scbMultipleChoiceField extends scbFormField {
+class scb_MLWP_MultipleChoiceField extends scb_MLWP_FormField {
 
 	public function validate( $value ) {
 		return array_intersect( array_keys( $this->choices ), (array) $value );
@@ -588,7 +588,7 @@ class scbMultipleChoiceField extends scbFormField {
 
 		$opts = '';
 		foreach ( $choices as $value => $title ) {
-			$single_input = scbFormField::_checkbox( array(
+			$single_input = scb_MLWP_FormField::_checkbox( array(
 				'name' => $name . '[]',
 				'type' => 'checkbox',
 				'value' => $value,
@@ -598,10 +598,10 @@ class scbMultipleChoiceField extends scbFormField {
 				'extra' => $extra
 			) );
 
-			$opts .= str_replace( scbForms::TOKEN, $single_input, $wrap_each );
+			$opts .= str_replace( scb_MLWP_Forms::TOKEN, $single_input, $wrap_each );
 		}
 
-		return scbFormField::add_desc( $opts, $desc, $desc_pos );
+		return scb_MLWP_FormField::add_desc( $opts, $desc, $desc_pos );
 	}
 
 	protected function _set_value( &$args, $value ) {
@@ -610,7 +610,7 @@ class scbMultipleChoiceField extends scbFormField {
 }
 
 
-class scbSingleCheckboxField extends scbFormField {
+class scb_MLWP_SingleCheckboxField extends scb_MLWP_FormField {
 
 	public function validate( $value ) {
 		return (bool) $value;
@@ -633,7 +633,7 @@ class scbSingleCheckboxField extends scbFormField {
 		if ( is_null( $desc ) && !is_bool( $value ) )
 			$desc = str_replace( '[]', '', $value );
 
-		return scbFormField::_input_gen( $args );
+		return scb_MLWP_FormField::_input_gen( $args );
 	}
 
 	protected function _set_value( &$args, $value ) {
@@ -642,7 +642,7 @@ class scbSingleCheckboxField extends scbFormField {
 }
 
 
-class scbCustomField implements scbFormField_I {
+class scb_MLWP_CustomField implements scb_MLWP_FormField_I {
 
 	protected $args;
 

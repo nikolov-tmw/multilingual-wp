@@ -2,7 +2,7 @@
 
 // Various utilities
 
-class scbUtil {
+class scb_MLWP_Util {
 
 	// Force script enqueue
 	static function do_scripts( $handles ) {
@@ -32,17 +32,17 @@ class scbUtil {
 		echo "</script>";
 	}
 
-	// Enable delayed activation; to be used with scb_init()
+	// Enable delayed activation; to be used with scb_MLWP_init()
 	static function add_activation_hook( $plugin, $callback ) {
-		if ( defined( 'SCB_LOAD_MU' ) )
+		if ( defined( 'SCB_MLWP_LOAD_MU' ) )
 			register_activation_hook( $plugin, $callback );
 		else
-			add_action( 'scb_activation_' . plugin_basename( $plugin ), $callback );
+			add_action( 'scb_MLWP_activation_' . plugin_basename( $plugin ), $callback );
 	}
 
 	// For debugging
 	static function do_activation( $plugin ) {
-		do_action( 'scb_activation_' . plugin_basename( $plugin ) );
+		do_action( 'scb_MLWP_activation_' . plugin_basename( $plugin ) );
 	}
 
 	// Allows more than one uninstall hooks.
@@ -91,8 +91,8 @@ class scbUtil {
 
 	// Transform a list of objects into an associative array
 	static function objects_to_assoc( $objects, $key, $value ) {
-		_deprecated_function( __CLASS__ . '::' . __FUNCTION__, 'r41', 'scb_list_fold()' );
-		return scb_list_fold( $objects, $key, $value );
+		_deprecated_function( __CLASS__ . '::' . __FUNCTION__, 'r41', 'scb_MLWP_list_fold()' );
+		return scb_MLWP_list_fold( $objects, $key, $value );
 	}
 
 	// Prepare an array for an IN statement
@@ -118,12 +118,12 @@ class scbUtil {
 }
 
 // Return a standard admin notice
-function scb_admin_notice( $msg, $class = 'updated' ) {
-	return html( "div class='$class fade'", html( "p", $msg ) );
+function scb_MLWP_admin_notice( $msg, $class = '' ) {
+	return html( "div class='$class fade mlwp-box updated'", html( "p", $msg ) );
 }
 
 // Transform a list of objects into an associative array
-function scb_list_fold( $list, $key, $value ) {
+function scb_MLWP_list_fold( $list, $key, $value ) {
 	$r = array();
 
 	if ( is_array( reset( $list ) ) ) {
@@ -187,7 +187,7 @@ function html_link( $url, $title = '' ) {
 }
 endif;
 
-function scb_get_query_flags( $wp_query = null ) {
+function scb_MLWP_get_query_flags( $wp_query = null ) {
 	if ( !$wp_query )
 		$wp_query = $GLOBALS['wp_query'];
 

@@ -1,6 +1,6 @@
 <?php
 
-class Multilingual_WP_Settings_Page extends scbAdminPage {
+class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 	protected $textdomain = 'multilingual-wp';
 	protected $admin_notice = false;
 
@@ -38,6 +38,15 @@ class Multilingual_WP_Settings_Page extends scbAdminPage {
 		$this->options->set( $new_data );
 
 		$this->admin_notice = __( 'Settings <strong>saved</strong>.', $this->textdomain );
+
+		if ( $this->options->dl_gettext ) {
+			if( !is_dir( WP_LANG_DIR ) || ! $ll = @fopen( trailingslashit( WP_LANG_DIR ) . 'mlwp.test', 'a' ) ) {
+				$error = sprintf( __( 'Could not write to "%s", Gettext Databases could not be downloaded!', $this->textdomain ), WP_LANG_DIR );
+			} else {
+				@fclose( $ll );
+				@unlink( trailingslashit( WP_LANG_DIR ) . 'mlwp.test' );
+			}
+		}
 	}
 
 	public function setup() {
@@ -81,6 +90,25 @@ class Multilingual_WP_Settings_Page extends scbAdminPage {
 	public function page_content() {
 		$languages = $this->options->languages;
 
+		if ( isset( $_GET['mlwp_dl_mofiles'] ) ) {
+			$this->admin_msg( __( 'Hold on, while we\'re updating the .mo files for you.', $this->textdomain ), 'mlwp-info fade_30' );
+			if ( apply_filters( 'mlwp_flush_mo_msg', true ) ) {
+				@ob_end_flush();
+				@ob_flush();
+			}
+
+			$success = _mlwp()->update_gettext( true, array_keys( $languages ) );
+			if ( $success ) {
+				$this->admin_msg( sprintf( __( 'Yay! We successfully downloaded the following .mo files: <br /> - %s', $this->textdomain ), implode( '<br /> - ', $success ) ), 'mlwp-success' );
+			} else {
+				$this->admin_msg( sprintf( __( 'Oh snap! We were unable to get any .mo files :( Please try <a target="_blank" href="%s">downloading them manually</a>.', $this->textdomain ), 'http://codex.wordpress.org/WordPress_in_Your_Language' ), 'mlwp-error nofade' );
+			}
+			if ( apply_filters( 'mlwp_flush_mo_msg', true ) ) {
+				@ob_end_flush();
+				@ob_flush();
+			}
+		}
+
 		// We want to put all of the output in a single <form>
 		ob_start();
 
@@ -118,6 +146,10 @@ class Multilingual_WP_Settings_Page extends scbAdminPage {
 
 	private function general_settings_tab( $languages ) {
 		echo '<div class="js-tab" id="tab_general" title="' . __( 'General Settings', $this->textdomain ) . '">';
+
+		if ( ! isset( $_GET['mlwp_dl_mofiles'] ) ) {
+			echo '<p><a class="button-primary" href="' . add_query_arg( 'mlwp_dl_mofiles', 1 ) . '">' . __( 'Update .mo files now', $this->textdomain ) . '</a></p>';
+		}
 
 		echo html( 'h3', 'Enabled Languages' );
 

@@ -1,8 +1,9 @@
 <?php
 
-class Multilingual_WP_Add_Language_Page extends scbAdminPage {
+class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 	protected $textdomain = 'multilingual-wp';
 	protected $admin_notice = false;
+	protected $force_mo_update = false;
 	public $admin_errors = array();
 
 	public function _page_content_hook() {
@@ -14,6 +15,16 @@ class Multilingual_WP_Add_Language_Page extends scbAdminPage {
 		}
 
 		$this->page_header();
+
+		if ( $this->force_mo_update != false ) {
+			$success = _mlwp()->update_gettext( true, $this->force_mo_update );
+			if ( $success ) {
+				$this->admin_msg( sprintf( __( 'Yay! We successfully downloaded the following .mo files: <br /> - %s', $this->textdomain ), implode( '<br /> - ', $success ) ), 'mlwp-success' );
+			} else {
+				$this->admin_msg( sprintf( __( 'Oh snap! We were unable to get the .mo files for the %1$s language :( Please try <a target="_blank" href="%2$s">downloading them manually</a>.', $this->textdomain ), $this->options->languages[ $this->force_mo_update ]['label'], 'http://codex.wordpress.org/WordPress_in_Your_Language' ), 'mlwp-error nofade' );
+			}
+		}
+		
 		$this->page_content();
 		$this->page_footer();
 	}
@@ -62,7 +73,8 @@ class Multilingual_WP_Add_Language_Page extends scbAdminPage {
 				$langs[ $id ] = $data;
 				$this->options->languages = $langs;
 
-				$this->admin_notice = sprintf( __( 'The language "%s" has been added.', 'multilingual-wp' ), $data['label'] );
+				$this->admin_notice = sprintf( __( 'The language "%s" has been added.<br />Hold on, while we\'re grabbing the .mo files for you.', 'multilingual-wp' ), $data['label'] );
+				$this->force_mo_update = $id;
 			}
 		}
 
