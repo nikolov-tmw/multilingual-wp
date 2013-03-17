@@ -12,9 +12,6 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		if ( $this->admin_errors ) {
 			$this->admin_errors();
 		}
-		// $_langs = $this->options->languages;
-		// unset( $_langs['zh'], $_langs['cn'] );
-		// $this->options->languages = $_langs;
 
 		$this->page_header();
 

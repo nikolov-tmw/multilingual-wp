@@ -202,6 +202,7 @@ class Multilingual_WP {
 			'def_lang_in_url' => false,
 			'dl_gettext' => true,
 			'next_mo_update' => time(),
+			'flush_rewrite_rules' => false,
 		) );
 
 		// Creating settings page objects
@@ -258,11 +259,11 @@ class Multilingual_WP {
 
 		wp_register_style( 'multilingual-wp-css', $this->plugin_url . 'css/multilingual-wp.css' );
 
-		$this->register_post_types();
-
 		$this->add_filters();
 
 		$this->add_actions();
+
+		$this->register_post_types();
 
 		$this->register_shortcodes();
 	}
@@ -1110,6 +1111,11 @@ class Multilingual_WP {
 
 		// Update the option
 		self::$options->generated_pt = $generated_pt;
+
+		if ( self::$options->flush_rewrite_rules ) {
+			flush_rewrite_rules();
+			self::$options->flush_rewrite_rules = false;
+		}
 	}
 
 	public function admin_scripts( $hook ) {

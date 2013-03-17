@@ -7,6 +7,9 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		if ( $this->admin_notice ) {
 			$this->admin_msg( $this->admin_notice, 'mlwp-notice' );
 		}
+		if ( $this->options->flush_rewrite_rules ) {
+			$this->admin_msg( sprintf( __( 'Please visit the <a href="%1$s">Fix Posts</a> page and click on the "Update all of my posts" button in order to make sure that all of your posts are available in all languages.', 'multilingual-wp' ), admin_url( 'admin.php?page=fix-posts' ) ), 'mlwp-notice nofade' );
+		}
 
 		$this->page_header();
 		$this->page_content();
@@ -33,6 +36,11 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 		// Use uasort() to sort the languages by their "order" field, while preserving the proper indices
 		uasort( $new_data['languages'], array( $this, 'langs_sort' ) );
+
+		if ( count( $new_data['enabled_langs'] ) != count( $this->options->enabled_langs ) ) {
+			// Queue a rewrite rules flush
+			$this->options->flush_rewrite_rules = true;
+		}
 
 		$this->options->set( $new_data );
 

@@ -34,7 +34,7 @@
 			nav.append("<span>&nbsp;&nbsp;</span>");
 
 			for(i in tabs) {
-				el = '<a href="#' + tabs[i].id + '" class="nav-tab' + ( $('#' + tabs[i].id).hasClass('mlwp-deflang') ? ' active' : '' ) + '">' + tabs[i].title + '</a>';
+				el = '<a href="#' + tabs[i].id + '" class="button button-' + ( $('#' + tabs[i].id).hasClass('mlwp-deflang') ? 'primary' : 'secondary' ) + '">' + tabs[i].title + '</a>';
 				nav.append(el);
 			}
 			nav.append('<div class="clear"></div>');
@@ -44,11 +44,11 @@
 				$(".js-tab").hide();
 				$( th.attr("href") ).show();
 
-				th.addClass("nav-tab-active").siblings().removeClass("nav-tab-active");
+				th.addClass("button-primary").siblings().removeClass("button-primary");
 
 				return false;
 			})
-			$(".js-tabs-nav a.active", parent).click();
+			$(".js-tabs-nav a.button-primary", parent).click();
 		}
 	}
 })(jQuery)
