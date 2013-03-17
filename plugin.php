@@ -24,9 +24,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+// Get the loading functions
 require dirname(__FILE__) . '/scb/load.php';
-require_once dirname( __FILE__ ) . '/flags_data.php';
 
 /**
 * 
@@ -110,11 +109,11 @@ class Multilingual_WP {
 	public $rel_langs;
 
 	/**
+	 * Whether we're running on Windows or not 
 	 *
-	 *
+	 * @var boolean
 	 **/
-	protected $textdomain = 'multilingual-wp';
-
+	public static $is_win = false;
 	
 	public $rel_posts;
 	public $parent_rel_langs;
@@ -169,6 +168,8 @@ class Multilingual_WP {
 	private $pt_prefix = 'mlwp_';
 
 	public function plugin_init() {
+		load_plugin_textdomain( 'multilingual-wp', false, 'multilingual-wp' );
+
 		// Creating an options object
 		self::$options = new scb_MLWP_Options( 'mlwp_options', __FILE__, array(
 			'languages' => array(
@@ -215,6 +216,18 @@ class Multilingual_WP {
 			new Multilingual_WP_Update_Posts_Page( __FILE__, self::$options );
 		}
 
+		global $Multilingual_WP;
+		$class_name = apply_filters( 'mlwp_class_name', 'Multilingual_WP' );
+		$Multilingual_WP = new $class_name();
+
+		// Include required files
+		self::include_additional_files();
+
+		$Multilingual_WP->is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
+
+		if ( $Multilingual_WP->is_win ) {
+			include_once( dirname( __FILE__ ) . '/win_locales.php' );
+		}
 	}
 
 	function __construct() {
@@ -224,6 +237,18 @@ class Multilingual_WP {
 		add_action( 'init', array( $this, 'init' ), 100 );
 
 		add_action( 'plugins_loaded', array( $this, 'setup_locale' ), $this->late_fp );
+
+		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
+
+		$this->is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
+	}
+
+	public static function include_additional_files() {
+		// Get the language flags data
+		require_once dirname( __FILE__ ) . '/flags_data.php';
+
+		// Register the template tags
+		include_once( dirname( __FILE__ ) . '/template-tags.php' );
 	}
 
 	public function init() {
@@ -248,36 +273,33 @@ class Multilingual_WP {
 	* @uses add_filter()
 	**/
 	private function add_filters() {
-		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
-
 		add_filter( 'wp_unique_post_slug', array( $this, 'fix_post_slug' ), $this->late_fp, 6 );
 
-
 		// Links fixing filters
-		add_filter( 'author_feed_link',				array( $this, 'convert_URL' ) );
-		add_filter( 'author_link',					array( $this, 'convert_URL' ) );
-		add_filter( 'author_feed_link',				array( $this, 'convert_URL' ) );
-		add_filter( 'day_link',						array( $this, 'convert_URL' ) );
-		add_filter( 'get_comment_author_url_link',	array( $this, 'convert_URL' ) );
-		add_filter( 'month_link',					array( $this, 'convert_URL' ) );
-		add_filter( 'year_link',					array( $this, 'convert_URL' ) );
-		add_filter( 'category_feed_link',			array( $this, 'convert_URL' ) );
-		add_filter( 'category_link',				array( $this, 'convert_URL' ) );
-		add_filter( 'tag_link',						array( $this, 'convert_URL' ) );
-		add_filter( 'term_link',					array( $this, 'convert_URL' ) );
-		add_filter( 'the_permalink',				array( $this, 'convert_URL' ) );
-		add_filter( 'feed_link',					array( $this, 'convert_URL' ) );
-		add_filter( 'post_comments_feed_link',		array( $this, 'convert_URL' ) );
-		add_filter( 'tag_feed_link',				array( $this, 'convert_URL' ) );
-		add_filter( 'get_pagenum_link',				array( $this, 'convert_URL' ) );
-		add_filter( 'home_url',						array( $this, 'convert_URL' ) );
+		add_filter( 'author_feed_link',             array( $this, 'convert_URL' ) );
+		add_filter( 'author_link',                  array( $this, 'convert_URL' ) );
+		add_filter( 'author_feed_link',             array( $this, 'convert_URL' ) );
+		add_filter( 'day_link',                     array( $this, 'convert_URL' ) );
+		add_filter( 'get_comment_author_url_link',  array( $this, 'convert_URL' ) );
+		add_filter( 'month_link',                   array( $this, 'convert_URL' ) );
+		add_filter( 'year_link',                    array( $this, 'convert_URL' ) );
+		add_filter( 'category_feed_link',           array( $this, 'convert_URL' ) );
+		add_filter( 'category_link',                array( $this, 'convert_URL' ) );
+		add_filter( 'tag_link',                     array( $this, 'convert_URL' ) );
+		add_filter( 'term_link',                    array( $this, 'convert_URL' ) );
+		add_filter( 'the_permalink',                array( $this, 'convert_URL' ) );
+		add_filter( 'feed_link',                    array( $this, 'convert_URL' ) );
+		add_filter( 'post_comments_feed_link',      array( $this, 'convert_URL' ) );
+		add_filter( 'tag_feed_link',                array( $this, 'convert_URL' ) );
+		add_filter( 'get_pagenum_link',             array( $this, 'convert_URL' ) );
+		add_filter( 'home_url',                     array( $this, 'convert_URL' ) );
 
-		add_filter( 'page_link',					array( $this, 'convert_post_URL' ), 10, 2 );
-		add_filter( 'post_link',					array( $this, 'convert_post_URL' ),	10, 2 );
+		add_filter( 'page_link',                    array( $this, 'convert_post_URL' ), 10, 2 );
+		add_filter( 'post_link',                    array( $this, 'convert_post_URL' ),	10, 2 );
 
-		add_filter( 'redirect_canonical',			array( $this, 'fix_redirect' ), 10, 2 );
+		add_filter( 'redirect_canonical',           array( $this, 'fix_redirect' ), 10, 2 );
 
-		add_filter( 'the_content', 					array( $this, 'parse_quicktags' ), 0 );
+		add_filter( 'the_content',                  array( $this, 'parse_quicktags' ), 0 );
 
 		// Comment-separating-related filters
 		add_filter( 'comments_array', array( $this, 'filter_comments_by_lang' ), 10, 2 );
@@ -347,7 +369,7 @@ class Multilingual_WP {
 	* @access public
 	**/
 	public function admin_init() {
-		add_meta_box( 'MLWP_Comments', __( 'Comment Language', $this->textdomain ), array( $this, 'comment_language_metabox' ), 'comment', 'normal' );
+		add_meta_box( 'MLWP_Comments', __( 'Comment Language', 'multilingual-wp' ), array( $this, 'comment_language_metabox' ), 'comment', 'normal' );
 	}
 
 	/**
@@ -391,13 +413,14 @@ class Multilingual_WP {
 			}
 		} else {
 			$languages = self::$options->languages;
+			$for_lang = array();
 		}
 
 		$version = $GLOBALS['wp_version'];
 		$success = array();
 
 		foreach ( $languages as $lang => $data ) {
-			if ( ! $this->is_enabled( $lang ) && ! isset( $for_lang[ $lang ] ) ) {
+			if ( ! $this->is_enabled( $lang ) && ! in_array( $lang, $for_lang ) ) {
 				continue;
 			}
 			$locale = $data['locale'];
@@ -460,25 +483,33 @@ class Multilingual_WP {
 	public function add_toolbar_langs( $admin_bar ) {
 		$admin_bar->add_menu( array(
 			'id'    => 'mlwp-lswitcher',
-			'title' => __( 'Languages', $this->textdomain ),
+			'title' => __( 'Languages', 'multilingual-wp' ),
 			'href'  => '#',
 			'meta'  => array(
-				'title' => __( 'Languages', $this->textdomain ),
+				'title' => __( 'Languages', 'multilingual-wp' ),
 			),
 		) );
 
 		$url = $this->curPageURL();
 
+		// Hack-around in order to give us the desired URL type :)
+		$_lang_mode = $this->lang_mode;
+		$this->lang_mode = self::LT_QUERY;
+
 		$langs = $this->build_lang_switcher( array( 'return' => 'array', 'flag_size' => 24 ) );
+
+		$this->lang_mode = $_lang_mode; // Restore the original language mode
+
 		foreach ( $langs as $lang => $data ) {
 			$admin_bar->add_menu( array(
 				'id'    => "mlwp-lang-{$lang}",
 				'parent' => 'mlwp-lswitcher',
-				'title' => '<img src="' . $data['image'] . '" alt="" /> ' . $data['label'],
+				'title' => '<img src="' . $data['image'] . '" alt="" style="margin-top: -6px;vertical-align: middle;" /> ' . $data['label'],
 				'href'  => $this->convert_URL( $url, $lang ),
 				'meta'  => array(
 					'title' => $data['label'],
-					'class' => 'mlwp-lswitcher-lang'
+					'class' => 'mlwp-lswitcher-lang',
+					'style' => '',
 				),
 			));
 		}
@@ -659,7 +690,19 @@ class Multilingual_WP {
 	public function set_locale( $locale ) {
 		if ( $this->locale ) {
 			$locale = $this->locale;
+
+			// try to figure out the correct locale - borrowed from qTranslate
+			$_locale = array();
+			$_locale[] = $this->locale . ".utf8";
+			$_locale[] = $this->locale . "@euro";
+			$_locale[] = $this->locale;
+			// $_locale[] = $q_config['windows_locale'][$q_config['language']];
+			$_locale[] = $this->current_lang;
+			// return the correct locale and most importantly set it (wordpress doesn't, which is bad)
+			// only set LC_TIME as everyhing else doesn't seem to work with windows
+			setlocale(LC_TIME, $_locale);
 		}
+
 		return $locale;
 	}
 
@@ -1195,16 +1238,11 @@ class Multilingual_WP {
 		$url = $url ? $url : $this->curPageURL();
 		$lang = $lang && $this->is_enabled( $lang ) ? $lang : $this->current_lang;
 
-		if ( is_admin() ) {
-			// var_dump( $url );
-			return add_query_arg( self::QUERY_VAR, $lang, $url );
-		}
-
 		// Fix the URL according to the current URL mode
 		switch ( $this->lang_mode ) {
 			case self::LT_QUERY :
 				// If this is the default language and the user doesn't want it in the URL's
-				if ( $lang == $this->default_lang && ! $this->options->def_lang_in_url ) {
+				if ( $lang == self::$options->default_lang && ! self::$options->def_lang_in_url ) {
 					$url = remove_query_arg( self::QUERY_VAR, $url );
 				} else {
 					$url = add_query_arg( self::QUERY_VAR, $lang, $url );
@@ -1663,7 +1701,7 @@ class Multilingual_WP {
 		<table class="form-table editcomment comment_xtra">
 			<tbody>
 				<tr valign="top">
-					<td class="first"><?php _e( 'Select the Comment\'s Language:', $this->textdomain ); ?></td>
+					<td class="first"><?php _e( 'Select the Comment\'s Language:', 'multilingual-wp' ); ?></td>
 					<td>
 						<select name="mlwpc_language" id="MLWP_Comments_language" class="widefat">
 							<?php foreach ( self::$options->enabled_langs as $lang ) : ?>
@@ -1703,7 +1741,7 @@ class Multilingual_WP {
 		if ( ! empty($columns) ) {
 			$response = $columns['response'];
 			unset($columns['response']);
-			$columns['comm_language'] = __( 'Language', $this->textdomain );
+			$columns['comm_language'] = __( 'Language', 'multilingual-wp' );
 			$columns['response'] = $response;
 		}
 
@@ -1720,7 +1758,7 @@ class Multilingual_WP {
 			if ( in_array( $comm_lang, self::$options->enabled_langs ) ) {
 				echo self::$options->languages[ $comm_lang ]['label'];
 			} else {
-				echo '<p class="help">' . sprintf( __( 'Language not set, or inactive(language ID is "%s")', $this->textdomain ), $comm_lang ) . '</p>';
+				echo '<p class="help">' . sprintf( __( 'Language not set, or inactive(language ID is "%s")', 'multilingual-wp' ), $comm_lang ) . '</p>';
 			}
 		}
 	}
@@ -1739,13 +1777,13 @@ class Multilingual_WP {
 
 			if ( ! in_array( $language, self::$options->enabled_langs ) ) {
 				$result['success'] = false;
-				$result['message'] = sprintf( __( 'The language with id "%s" is currently not enabled.', $this->textdomain ), $language );
+				$result['message'] = sprintf( __( 'The language with id "%s" is currently not enabled.', 'multilingual-wp' ), $language );
 			} else {
 				foreach ( $ids as $id ) {
 					update_comment_meta( $id, '_comment_language', $language );
 				}
 				$result['success'] = true;
-				$result['message'] = sprintf( __( 'The language of comments with ids "%s" has been successfully changed to "%s".', $this->textdomain ), implode( ', ', $ids ), self::$options->languages[ $language ]['label'] );
+				$result['message'] = sprintf( __( 'The language of comments with ids "%s" has been successfully changed to "%s".', 'multilingual-wp' ), implode( ', ', $ids ), self::$options->languages[ $language ]['label'] );
 			}
 			
 			echo json_encode( $result );
@@ -1775,7 +1813,7 @@ class Multilingual_WP {
 					ids = ids.length ? ids : false;
 
 					if ( ! no_alert && ! ids ) {
-						alert('<?php echo esc_js( __( "Please Select comment/s first!", $this->textdomain ) ); ?>');
+						alert('<?php echo esc_js( __( "Please Select comment/s first!", 'multilingual-wp' ) ); ?>');
 					};
 					return ids;
 				}
@@ -1832,7 +1870,7 @@ class Multilingual_WP {
 				$(document).ready(function(){
 					if ( MLWP_languages ) {
 						$('#comments-form .tablenav.top .tablenav-pages').before('<div class="alignleft actions MLWP_languages_div"></div>');
-						$('.MLWP_languages_div').append('<select id="mlwpc_language" name="mlwpc_language"></select> <input type="button" id="mlwpc_set_language" class="button-secondary action" value="<?php echo esc_js(__("Bulk Set Language", $this->textdomain)) ?>"> <img class="waiting" style="display:none;" src="<?php echo esc_url( admin_url( "images/wpspin_light.gif" ) ); ?>" alt="" />');
+						$('.MLWP_languages_div').append('<select id="mlwpc_language" name="mlwpc_language"></select> <input type="button" id="mlwpc_set_language" class="button-secondary action" value="<?php echo esc_js(__("Bulk Set Language", "multilingual-wp")) ?>"> <img class="waiting" style="display:none;" src="<?php echo esc_url( admin_url( "images/wpspin_light.gif" ) ); ?>" alt="" />');
 						var select = $('#mlwpc_language');
 						for (lang in MLWP_languages) {
 							select.append('<option value="' + lang + '">' + MLWP_languages[lang] + '</option>');
@@ -1937,12 +1975,5 @@ class Multilingual_WP {
 	}
 }
 
-scb_MLWP_init( array( 'Multilingual_WP', 'plugin_init' ) );
-
-global $Multilingual_WP;
-
 // Let's allow anyone to override our class definition - this way anyone can extend the plugin and add/overwrite functionality without having the need to modify the plugin files
-$mlwp_class_name = apply_filters( 'mlwp_class_name', 'Multilingual_WP' );
-$Multilingual_WP = new $mlwp_class_name();
-
-include_once( dirname( __FILE__ ) . '/template-tags.php' );
+scb_MLWP_init( array( apply_filters( 'mlwp_class_name', 'Multilingual_WP' ), 'plugin_init' ) );

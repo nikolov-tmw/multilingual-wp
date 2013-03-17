@@ -3,6 +3,21 @@
 		base_url;
 
 	$(document).ready(function(){
+		$('.mlwp-box.fade').each(function(){
+			var th = $(this);
+			if ( ! th.hasClass('nofade') ) {
+				var timeout = 8;
+				if ( th.attr('data-fade') ) {
+					timeout = parseInt( th.attr('data-fade') );
+				};
+				setTimeout( function(){
+					th.slideUp( function(){
+						th.remove();
+					} );
+				}, timeout * 1000 );
+			};
+		})
+
 		base_url = $('img.lang_icon:eq(0)').attr('src').replace(/(.*flags\/24\/).*/, '$1');
 		if ( ! wp_35_media ) {
 			tb_position();

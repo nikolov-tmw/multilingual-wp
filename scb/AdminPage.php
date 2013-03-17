@@ -32,7 +32,7 @@ abstract class scb_MLWP_AdminPage {
 	protected $option_name;
 
 	// l10n
-	protected $textdomain;
+	protected $textdomain = 'multilingual-wp';
 
 
 //  ____________REGISTRATION COMPONENT____________
@@ -167,11 +167,11 @@ abstract class scb_MLWP_AdminPage {
 	}
 
 	// Manually generate a standard admin notice ( use Settings API instead )
-	function admin_msg( $msg = '', $class = "updated" ) {
+	function admin_msg( $msg = '', $class = "updated", $fade_time = '' ) {
 		if ( empty( $msg ) )
-			$msg = __( 'Settings <strong>saved</strong>.', $this->textdomain );
+			$msg = __( 'Settings <strong>saved</strong>.', 'multilingual-wp' );
 
-		echo scb_MLWP_admin_notice( $msg, $class );
+		echo scb_MLWP_admin_notice( $msg, $class, $fade_time );
 	}
 
 
@@ -182,7 +182,7 @@ abstract class scb_MLWP_AdminPage {
 	function submit_button( $value = '', $action = 'action', $class = "button" ) {
 		if ( is_array( $value ) ) {
 			extract( wp_parse_args( $value, array(
-				'value' => __( 'Save Changes', $this->textdomain ),
+				'value' => __( 'Save Changes', 'multilingual-wp' ),
 				'action' => 'action',
 				'class' => 'button',
 				'ajax' => true
@@ -193,7 +193,7 @@ abstract class scb_MLWP_AdminPage {
 		}
 		else {
 			if ( empty( $value ) )
-				$value = __( 'Save Changes', $this->textdomain );
+				$value = __( 'Save Changes', 'multilingual-wp' );
 		}
 
 		$input_args = array(
@@ -346,7 +346,7 @@ abstract class scb_MLWP_AdminPage {
 			'menu_title' => $this->args['page_title'],
 			'page_slug' => '',
 			'nonce' => '',
-			'action_link' => __( 'Settings', $this->textdomain ),
+			'action_link' => __( 'Settings', 'multilingual-wp' ),
 			'ajax_submit' => false,
 			'admin_action_priority' => 10,
 		) );

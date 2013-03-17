@@ -1,7 +1,6 @@
 <?php
 
 class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
-	protected $textdomain = 'multilingual-wp';
 	protected $admin_notice = false;
 	protected $force_mo_update = false;
 	public $admin_errors = array();
@@ -13,15 +12,23 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		if ( $this->admin_errors ) {
 			$this->admin_errors();
 		}
+		// $_langs = $this->options->languages;
+		// unset( $_langs['zh'], $_langs['cn'] );
+		// $this->options->languages = $_langs;
 
 		$this->page_header();
 
 		if ( $this->force_mo_update != false ) {
+			if ( apply_filters( 'mlwp_flush_mo_msg', true ) ) {
+				@ob_end_flush();
+				@ob_flush();
+			}
+
 			$success = _mlwp()->update_gettext( true, $this->force_mo_update );
 			if ( $success ) {
-				$this->admin_msg( sprintf( __( 'Yay! We successfully downloaded the following .mo files: <br /> - %s', $this->textdomain ), implode( '<br /> - ', $success ) ), 'mlwp-success' );
+				$this->admin_msg( sprintf( __( 'Yay! We successfully downloaded the following .mo files: <br /> - %s', 'multilingual-wp' ), implode( '<br /> - ', $success ) ), 'mlwp-success' );
 			} else {
-				$this->admin_msg( sprintf( __( 'Oh snap! We were unable to get the .mo files for the %1$s language :( Please try <a target="_blank" href="%2$s">downloading them manually</a>.', $this->textdomain ), $this->options->languages[ $this->force_mo_update ]['label'], 'http://codex.wordpress.org/WordPress_in_Your_Language' ), 'mlwp-error nofade' );
+				$this->admin_msg( sprintf( __( 'Oh snap! We were unable to get the .mo files for the %1$s language :( Please try <a target="_blank" href="%2$s">downloading them manually</a>.', 'multilingual-wp' ), $this->options->languages[ $this->force_mo_update ]['label'], 'http://codex.wordpress.org/WordPress_in_Your_Language' ), 'mlwp-error nofade' );
 			}
 		}
 		
@@ -176,7 +183,14 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 				'value' => 'antarctica.png',
 				'extra' => array( 'class' => 'regular-text mlwp_flag_input' )
 				// 'render' => array( $this, 'render_lf_dd' )
-			)
+			),
+			array(
+				'title' => __( 'Language Order', 'multilingual-wp' ),
+				'type' => 'text',
+				'name' => "language[order]",
+				'desc' => __( 'Enter the position in which this language should appear( smallest to largest ).', 'multilingual-wp' ),
+				'value' => count( $this->options->languages )
+			),
 		) );
 
 		echo $this->form_wrap( ob_get_clean() );

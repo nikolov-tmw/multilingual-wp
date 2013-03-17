@@ -1,12 +1,11 @@
 <?php
 
 class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
-	protected $textdomain = 'multilingual-wp';
 	protected $admin_notice = false;
 
 	public function _page_content_hook() {
 		if ( $this->admin_notice ) {
-			$this->admin_msg( $this->admin_notice );
+			$this->admin_msg( $this->admin_notice, 'mlwp-notice' );
 		}
 
 		$this->page_header();
@@ -37,11 +36,11 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 		$this->options->set( $new_data );
 
-		$this->admin_notice = __( 'Settings <strong>saved</strong>.', $this->textdomain );
+		$this->admin_notice = __( 'Settings <strong>saved</strong>.', 'multilingual-wp' );
 
 		if ( $this->options->dl_gettext ) {
 			if( !is_dir( WP_LANG_DIR ) || ! $ll = @fopen( trailingslashit( WP_LANG_DIR ) . 'mlwp.test', 'a' ) ) {
-				$error = sprintf( __( 'Could not write to "%s", Gettext Databases could not be downloaded!', $this->textdomain ), WP_LANG_DIR );
+				$error = sprintf( __( 'Could not write to "%s", Gettext Databases could not be downloaded!', 'multilingual-wp' ), WP_LANG_DIR );
 			} else {
 				@fclose( $ll );
 				@unlink( trailingslashit( WP_LANG_DIR ) . 'mlwp.test' );
@@ -51,9 +50,9 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 	public function setup() {
 		$this->args = array(
-			'menu_title' => __( 'Multilingual WP', $this->textdomain ),
-			'page_title' => __( 'Settings', $this->textdomain ),
-			'page_slug' => $this->textdomain,
+			'menu_title' => __( 'Multilingual WP', 'multilingual-wp' ),
+			'page_title' => __( 'Settings', 'multilingual-wp' ),
+			'page_slug' => 'multilingual-wp',
 			'toplevel' => 'menu'
 		);
 
@@ -91,7 +90,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$languages = $this->options->languages;
 
 		if ( isset( $_GET['mlwp_dl_mofiles'] ) ) {
-			$this->admin_msg( __( 'Hold on, while we\'re updating the .mo files for you.', $this->textdomain ), 'mlwp-info fade_30' );
+			$this->admin_msg( __( 'Hold on, while we\'re updating the .mo files for you.', 'multilingual-wp' ), 'mlwp-notice', '30' );
 			if ( apply_filters( 'mlwp_flush_mo_msg', true ) ) {
 				@ob_end_flush();
 				@ob_flush();
@@ -99,9 +98,9 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 			$success = _mlwp()->update_gettext( true, array_keys( $languages ) );
 			if ( $success ) {
-				$this->admin_msg( sprintf( __( 'Yay! We successfully downloaded the following .mo files: <br /> - %s', $this->textdomain ), implode( '<br /> - ', $success ) ), 'mlwp-success' );
+				$this->admin_msg( sprintf( __( 'Yay! We successfully downloaded the following .mo files: <br /> - %s', 'multilingual-wp' ), implode( '<br /> - ', $success ) ), 'mlwp-success' );
 			} else {
-				$this->admin_msg( sprintf( __( 'Oh snap! We were unable to get any .mo files :( Please try <a target="_blank" href="%s">downloading them manually</a>.', $this->textdomain ), 'http://codex.wordpress.org/WordPress_in_Your_Language' ), 'mlwp-error nofade' );
+				$this->admin_msg( sprintf( __( 'Oh snap! We were unable to get any .mo files :( Please try <a target="_blank" href="%s">downloading them manually</a>.', 'multilingual-wp' ), 'http://codex.wordpress.org/WordPress_in_Your_Language' ), 'mlwp-error nofade' );
 			}
 			if ( apply_filters( 'mlwp_flush_mo_msg', true ) ) {
 				@ob_end_flush();
@@ -145,10 +144,10 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 	}
 
 	private function general_settings_tab( $languages ) {
-		echo '<div class="js-tab" id="tab_general" title="' . __( 'General Settings', $this->textdomain ) . '">';
+		echo '<div class="js-tab" id="tab_general" title="' . __( 'General Settings', 'multilingual-wp' ) . '">';
 
 		if ( ! isset( $_GET['mlwp_dl_mofiles'] ) ) {
-			echo '<p><a class="button-primary" href="' . add_query_arg( 'mlwp_dl_mofiles', 1 ) . '">' . __( 'Update .mo files now', $this->textdomain ) . '</a></p>';
+			echo '<p><a class="button-primary" href="' . add_query_arg( 'mlwp_dl_mofiles', 1 ) . '">' . __( 'Update .mo files now', 'multilingual-wp' ) . '</a></p>';
 		}
 
 		echo html( 'h3', 'Enabled Languages' );
@@ -159,21 +158,21 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$lang_mode = $this->options->lang_mode;
 
 		foreach ( $languages as $lang => $data ) {
-			$l_opts[$lang] = '<img style="margin-bottom:-8px;padding:0 5px;" src="' . $this->plugin_url . '/flags/24/' . $data['icon'] . '" alt="' . esc_attr( $data['label'] ) . '" /> ' . $data['label'] . '<br />';
+			$l_opts[$lang] = '<img style="margin-bottom:-8px;padding:0 5px;" src="' . _mlwp()->get_flag( $lang, 24 ) . '" alt="' . esc_attr( $data['label'] ) . '" /> ' . $data['label'] . '<br />';
 		}
 
 		$default_settings[] = array(
-			'title' => __( 'Default Language', $this->textdomain ),
+			'title' => __( 'Default Language', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "default_lang",
-			'desc' => __( 'Please select your blog\'s default language.', $this->textdomain ),
+			'desc' => __( 'Please select your blog\'s default language.', 'multilingual-wp' ),
 			'value' => $default_lang,
 			'choices' => array_map( 'strip_tags', $l_opts ),
 			'extra' => array( 'id' => 'default_lang' )
 		);
 		
 		$default_settings[] = array(
-			'title' => __( 'Please select the languages that you want your website to support.', $this->textdomain ),
+			'title' => __( 'Please select the languages that you want your website to support.', 'multilingual-wp' ),
 			'type' => 'checkbox',
 			'name' => "enabled_langs",
 			'checked' => $enabled_langs,
@@ -183,16 +182,19 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$dfs = $this->options->dfs;
 
 		$default_settings[] = array(
-			'title' => __( 'Default Flag Size', $this->textdomain ),
+			'title' => __( 'Default Flag Size', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "dfs",
-			'desc' => sprintf( __( 'Set the default size of the flags used to represent each language(usually in language-select widgets). You can override this on a per-widget bassis. Here is an example of the selected size: <br />%s', $this->textdomain ), '<img style="margin-bottom:-8px;padding:0 5px;" src="' . $this->plugin_url . '/flags/' . intval( $dfs ) . '/antarctica.png" alt="' . __( 'Antarctica', $this->textdomain ) . '" />' ),
+			'desc' => sprintf( __( 'Set the default size of the flags used to represent each language(usually in language-select widgets). You can override this on a per-widget bassis. Here is an example of the selected size: <br />%s', 'multilingual-wp' ), '<img style="margin-bottom:-8px;padding:0 5px;" src="' . $this->plugin_url . 'flags/' . intval( $dfs ) . '/antarctica.png" alt="' . __( 'Antarctica', 'multilingual-wp' ) . '" />' ),
 			'value' => $dfs,
 			'choices' => array( '16' => '16 x 16', '24' => '24 x 24', '32' => '32 x 32', '48' => '48 x 48', '64' => '64 x 64' ),
 			'extra' => array( 'id' => 'flag_size_select' )
 		);
 
-		$pts_opts = array( 'post' => __( 'Post' ) . '<br />', 'page' => __( 'Page' ) . '<br />' );
+		$pts_opts = array(
+			'post' => __( 'Post', 'multilingual-wp' ) . '<br />',
+			'page' => __( 'Page', 'multilingual-wp' ) . '<br />'
+		);
 		$post_types = get_post_types( array( 'show_ui' => true, '_builtin' => false ), 'objects' );
 		if ( $post_types ) {
 			foreach ($post_types as $pt => $data) {
@@ -205,7 +207,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$enabled_pt = $this->options->enabled_pt;
 
 		$default_settings[] = array(
-			'title' => __( 'Please select which post types you want to be multilingual.', $this->textdomain ),
+			'title' => __( 'Please select which post types you want to be multilingual.', 'multilingual-wp' ),
 			'type' => 'checkbox',
 			'name' => "enabled_pt",
 			'checked' => $enabled_langs,
@@ -213,30 +215,30 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		);
 
 		$default_settings[] = array(
-			'title' => __( 'Show UI?', $this->textdomain ),
+			'title' => __( 'Show UI?', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "show_ui",
 			'value' => $this->options->show_ui ? true : false,
-			'choices' => array( '' => __( 'No', $this->textdomain ), '1' => __( 'Yes', $this->textdomain ) ),
-			'desc' => __( 'Whether to display the User Interface for the post types added by Multilingual WP.', $this->textdomain )
+			'choices' => array( '' => __( 'No', 'multilingual-wp' ), '1' => __( 'Yes', 'multilingual-wp' ) ),
+			'desc' => __( 'Whether to display the User Interface for the post types added by Multilingual WP.', 'multilingual-wp' )
 		);
 
 		$default_settings[] = array(
-			'title' => __( 'Language Rewrite Mode', $this->textdomain ),
+			'title' => __( 'Language Rewrite Mode', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "lang_mode",
 			'value' => $lang_mode,
-			'choices' => array( Multilingual_WP::LT_PRE => __( 'Pre-Path mode', $this->textdomain ), Multilingual_WP::LT_QUERY => __( 'Query Variable mode', $this->textdomain ), Multilingual_WP::LT_SD => __( 'Sub-Domain mode', $this->textdomain ) ),
-			'desc' => __( 'Select the type of link rewriting.<br /><code>Pre-Path mode</code> will add {xx}/ to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional server configuration.', $this->textdomain )
+			'choices' => array( Multilingual_WP::LT_PRE => __( 'Pre-Path mode', 'multilingual-wp' ), Multilingual_WP::LT_QUERY => __( 'Query Variable mode', 'multilingual-wp' ), Multilingual_WP::LT_SD => __( 'Sub-Domain mode', 'multilingual-wp' ) ),
+			'desc' => __( 'Select the type of link rewriting.<br /><code>Pre-Path mode</code> will add {xx}/ to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional server configuration.', 'multilingual-wp' )
 		);
 
 		$default_settings[] = array(
-			'title' => __( 'Default Language in URL\'s?', $this->textdomain ),
+			'title' => __( 'Default Language in URL\'s?', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "def_lang_in_url",
 			'value' => $this->options->def_lang_in_url ? true : false,
-			'choices' => array( '' => __( 'No', $this->textdomain ), '1' => __( 'Yes', $this->textdomain ) ),
-			'desc' => __( 'Whether to modify URL\'s to include language information for the default language. For instance if the default language is English and you have selected "Yes", the home page URL will be <code>http://example.com/en/</code> otherwise it will be <code>http://example.com/</code>.', $this->textdomain )
+			'choices' => array( '' => __( 'No', 'multilingual-wp' ), '1' => __( 'Yes', 'multilingual-wp' ) ),
+			'desc' => __( 'Whether to modify URL\'s to include language information for the default language. For instance if the default language is English and you have selected "Yes", the home page URL will be <code>http://example.com/en/</code> otherwise it will be <code>http://example.com/</code>.', 'multilingual-wp' )
 		);
 
 		echo $this->table( $default_settings );
@@ -245,61 +247,61 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 	}
 
 	private function languages_tab( $languages ) {
-		echo '<div class="js-tab" id="tab_languages" title="' . __( 'Language Settings', $this->textdomain ) . '">';
-		apply_filters( 'the_content', __( 'Here you can change the settings for each supported language.', $this->textdomain ) );
+		echo '<div class="js-tab" id="tab_languages" title="' . __( 'Language Settings', 'multilingual-wp' ) . '">';
+		apply_filters( 'the_content', __( 'Here you can change the settings for each supported language.', 'multilingual-wp' ) );
 
 		foreach ($languages as $lang => $data) {
 			$this->start_box( $data['label'] );
 
 			echo $this->table( array(
 				array(
-					'title' => __( 'Language Label <span class="required">*</span>', $this->textdomain ),
+					'title' => __( 'Language Label <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][label]",
-					'desc' => __( 'Enter the label that will be used to represent this language. This will be used in the admin interface, language selector widget, etc.', $this->textdomain ),
+					'desc' => __( 'Enter the label that will be used to represent this language. This will be used in the admin interface, language selector widget, etc.', 'multilingual-wp' ),
 					'value' => $data['label']
 				),
 				array(
-					'title' => __( 'Language Locale <span class="required">*</span>', $this->textdomain ),
+					'title' => __( 'Language Locale <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][locale]",
-					'desc' => __( 'Enter the PHP/WordPress locale for this language. For instance: <code>en_US</code>.', $this->textdomain ),
+					'desc' => __( 'Enter the PHP/WordPress locale for this language. For instance: <code>en_US</code>.', 'multilingual-wp' ),
 					'value' => $data['locale']
 				),
 				array(
-					'title' => __( 'Language Flag <span class="required">*</span>', $this->textdomain ),
+					'title' => __( 'Language Flag <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][icon]",
-					'desc' => __( 'Select the flag that will represent this language. The current flag is <img src="' . $this->plugin_url . 'flags/24/' . $data['icon'] . '" class="lang_icon" alt="" />', $this->textdomain ),
+					'desc' => __( 'Select the flag that will represent this language. The current flag is <img src="' . $this->plugin_url . 'flags/24/' . $data['icon'] . '" class="lang_icon" alt="" />', 'multilingual-wp' ),
 					'value' => $data['icon'],
 					'extra' => array( 'class' => 'regular-text mlwp_flag_input' )
 				),
 				array(
-					'title' => __( 'Not Available Message <span class="required">*</span>', $this->textdomain ),
+					'title' => __( 'Not Available Message <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'textarea',
 					'name' => "languages[$lang][na_message]",
-					'desc' => __( 'Enter the message that will be displayed when the requested post/page is not available in this language.', $this->textdomain ),
+					'desc' => __( 'Enter the message that will be displayed when the requested post/page is not available in this language.', 'multilingual-wp' ),
 					'value' => $data['na_message']
 				),
 				array(
-					'title' => __( 'Date Format', $this->textdomain ),
+					'title' => __( 'Date Format', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][date_format]",
-					'desc' => __( 'Enter a custom date format for this language.', $this->textdomain ),
+					'desc' => __( 'Enter a custom date format for this language.', 'multilingual-wp' ),
 					'value' => $data['date_format']
 				),
 				array(
-					'title' => __( 'Time Format', $this->textdomain ),
+					'title' => __( 'Time Format', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][time_format]",
-					'desc' => __( 'Enter a custom time format for this language.', $this->textdomain ),
+					'desc' => __( 'Enter a custom time format for this language.', 'multilingual-wp' ),
 					'value' => $data['time_format']
 				),
 				array(
-					'title' => __( 'Language Order', $this->textdomain ),
+					'title' => __( 'Language Order', 'multilingual-wp' ),
 					'type' => 'text',
 					'name' => "languages[$lang][order]",
-					'desc' => __( 'Enter the position in which this language should appear( smallest to largest ).', $this->textdomain ),
+					'desc' => __( 'Enter the position in which this language should appear( smallest to largest ).', 'multilingual-wp' ),
 					'value' => $data['order']
 				),
 			) );
@@ -318,9 +320,9 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 				<div class="inside">
 					<div class="col col3">
 						<?php if ( version_compare( $wp_version, '3.5', '>=' ) ) : ?>
-							<a class="button-primary add_media" href="#"><?php _e( 'Custom Flag', $this->textdomain ); ?></a>
+							<a class="button-primary add_media" href="#"><?php _e( 'Custom Flag', 'multilingual-wp' ); ?></a>
 						<?php else : ?>
-							<a class="button-primary thickbox" href="<?php echo admin_url( 'media-upload.php?post_id=0&amp;mlwp_media=1&amp;TB_iframe=1&amp;width=640&amp;height=198' ) ?>"><?php _e( 'Custom Flag', $this->textdomain ); ?></a>
+							<a class="button-primary thickbox" href="<?php echo admin_url( 'media-upload.php?post_id=0&amp;mlwp_media=1&amp;TB_iframe=1&amp;width=640&amp;height=198' ) ?>"><?php _e( 'Custom Flag', 'multilingual-wp' ); ?></a>
 						<?php endif; ?>
 					</div>
 					<?php foreach ( $MULTILINGUAL_WP_FLAGS as $val => $label ) :

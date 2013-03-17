@@ -1,7 +1,6 @@
 <?php
 
 class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
-	protected $textdomain = 'multilingual-wp';
 	protected $admin_notice = false;
 	public $admin_errors = array();
 
@@ -30,7 +29,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 			if ( $is_ajax ) {
 				echo json_encode( array( 'success' => false, 'message' => '<p class="error">Cheating, huh?</p>' ) );
 			} else {
-				wp_die( __( 'Cheatin&#8217; uh?' ) );
+				wp_die( __( 'Cheatin&#8217; uh?', 'multilingual-wp' ) );
 			}
 		}
 
@@ -43,7 +42,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 		global $Multilingual_WP;
 		foreach ( $posts as $post ) {
 			if ( $post->post_parent && get_post_meta( $post->post_parent, '_mlwp_batch_updated', true ) != 'yes' ) {
-				$message[] = '<p class="error">' . sprintf( __( 'The post "%s" was ignored, because it\'s parent post has not been updated yet.', $this->textdomain ), get_the_title( $post->post_parent ) ) . '</p>';
+				$message[] = '<p class="error">' . sprintf( __( 'The post "%s" was ignored, because it\'s parent post has not been updated yet.', 'multilingual-wp' ), get_the_title( $post->post_parent ) ) . '</p>';
 				continue;
 			}
 			$Multilingual_WP->setup_post_vars( $post->ID );
@@ -78,13 +77,13 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 			update_post_meta( $post->ID, '_mlwp_batch_updated', 'yes' );
 
-			$message[] = '<p class="success">' . sprintf( __( 'The post "%s" has been successfully updated.', $this->textdomain ), get_the_title( $post->ID ) ) . '</p>';
+			$message[] = '<p class="success">' . sprintf( __( 'The post "%s" has been successfully updated.', 'multilingual-wp' ), get_the_title( $post->ID ) ) . '</p>';
 			$updated ++;
 		}
 
 		$end = $this->get_posts() ? false : true;
 		if ( $end ) {
-			$message[] = '<h3 class="success">' . __( 'All posts have been successfully updated!', $this->textdomain ) . '</h3>';
+			$message[] = '<h3 class="success">' . __( 'All posts have been successfully updated!', 'multilingual-wp' ) . '</h3>';
 		}
 
 		if ( $is_ajax ) {
