@@ -168,7 +168,7 @@ class Multilingual_WP {
 	private $pt_prefix = 'mlwp_';
 
 	public function plugin_init() {
-		load_plugin_textdomain( 'multilingual-wp', false, 'multilingual-wp' );
+		load_plugin_textdomain( 'multilingual-wp', false, 'multilingual-wp/languages/' );
 
 		// Creating an options object
 		self::$options = new scb_MLWP_Options( 'mlwp_options', __FILE__, array(

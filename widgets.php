@@ -48,10 +48,10 @@ class MLWP_Lang_Switcher_Widget extends scb_MLWP_Widget {
 			'desc' => __( 'Switcher Type', 'multilingual-wp' ),
 			'name' => parent::get_field_name( 'type' ),
 			'choices' => array(
-				'text' => __( 'Language Labels Only', 'c2a' ),
-				'image' => __( 'Language Flags Only', 'c2a' ),
-				'both' => __( 'Language Labels and Flags', 'c2a' ),
-				'select' => __( 'Drop-down', 'c2a' ),
+				'text' => __( 'Language Labels Only', 'multilingual-wp' ),
+				'image' => __( 'Language Flags Only', 'multilingual-wp' ),
+				'both' => __( 'Language Labels and Flags', 'multilingual-wp' ),
+				'select' => __( 'Drop-down', 'multilingual-wp' ),
 			),
 			'selected' => $_instance['type'],
 		), $_instance ) . '</p>';
