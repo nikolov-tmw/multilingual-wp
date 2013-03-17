@@ -250,6 +250,9 @@ class Multilingual_WP {
 
 		// Register the template tags
 		include_once( dirname( __FILE__ ) . '/template-tags.php' );
+
+		// Register the template tags
+		include_once( dirname( __FILE__ ) . '/widgets.php' );
 	}
 
 	public function init() {
@@ -493,20 +496,14 @@ class Multilingual_WP {
 
 		$url = $this->curPageURL();
 
-		// Hack-around in order to give us the desired URL type :)
-		$_lang_mode = $this->lang_mode;
-		$this->lang_mode = self::LT_QUERY;
-
 		$langs = $this->build_lang_switcher( array( 'return' => 'array', 'flag_size' => 24 ) );
-
-		$this->lang_mode = $_lang_mode; // Restore the original language mode
 
 		foreach ( $langs as $lang => $data ) {
 			$admin_bar->add_menu( array(
 				'id'    => "mlwp-lang-{$lang}",
 				'parent' => 'mlwp-lswitcher',
 				'title' => '<img src="' . $data['image'] . '" alt="" style="margin-top: -6px;vertical-align: middle;" /> ' . $data['label'],
-				'href'  => $this->convert_URL( $url, $lang ),
+				'href'  => add_query_arg( self::QUERY_VAR, $lang, $url ),
 				'meta'  => array(
 					'title' => $data['label'],
 					'class' => 'mlwp-lswitcher-lang',
@@ -1247,6 +1244,7 @@ class Multilingual_WP {
 		// Fix the URL according to the current URL mode
 		switch ( $this->lang_mode ) {
 			case self::LT_QUERY :
+			default :
 				// If this is the default language and the user doesn't want it in the URL's
 				if ( $lang == self::$options->default_lang && ! self::$options->def_lang_in_url ) {
 					$url = remove_query_arg( self::QUERY_VAR, $url );
@@ -1278,12 +1276,11 @@ class Multilingual_WP {
 				break;
 
 			case self::LT_SD : // Sub-domain setup is not enabled yet
-			default :
 				// Get/add language domain info here
 
 				break;
 		}
-
+		
 		return $url;
 	}
 
