@@ -201,6 +201,7 @@ class Multilingual_WP {
 			'generated_pt' => array(),
 			'show_ui' => false,
 			'lang_mode' => false,
+			'na_message' => true,
 			'def_lang_in_url' => false,
 			'dl_gettext' => true,
 			'next_mo_update' => time(),
@@ -802,6 +803,7 @@ class Multilingual_WP {
 	}
 
 	public function filter_posts( $posts, $wp_query ) {
+		// If the query explicitly states the language - respect that, otherwise use current language
 		$language = isset( $wp_query->query[ self::QUERY_VAR ] ) ? $wp_query->query[ self::QUERY_VAR ] : $this->current_lang;
 		if ( $language && $this->is_enabled( $language ) ) {
 			$old_id = $this->ID;
@@ -835,8 +837,8 @@ class Multilingual_WP {
 			$this->setup_post_vars( $orig_id );
 			if ( isset( $this->rel_langs[ $language ] ) && ( $_post = get_post( $this->rel_langs[ $language ] ) ) ) {
 				$post->mlwp_lang = $language;
-				$post->post_content = $_post->post_content;
-				$post->post_title = $_post->post_title;
+				$post->post_content = $_post->post_content == '' ? $this->na_message( $language, $post->post_content ) : $_post->post_content;
+				$post->post_title = $_post->post_title == '' ? ( self::$options->na_message ? '(' . self::$options->default_lang . ') ' : '' ) . $post->post_title : $_post->post_title;
 				$post->post_name = $_post->post_name;
 				$post->post_excerpt = $_post->post_excerpt;
 			}
@@ -896,6 +898,15 @@ class Multilingual_WP {
 		}
 
 		return $menu_item;
+	}
+
+	public function na_message( $lang = false, $def_message = '' ) {
+		$lang = $lang && $this->is_enabled( $lang ) ? $lang : $this->current_lang;
+		if ( self::$options->na_message ) {
+			return self::$options->languages[ $lang ]['na_message'];
+		} else {
+			return $def_message;
+		}
 	}
 
 	/**

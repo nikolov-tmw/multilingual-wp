@@ -223,6 +223,15 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		);
 
 		$default_settings[] = array(
+			'title' => __( 'Empty translation ', 'multilingual-wp' ),
+			'type' => 'select',
+			'name' => "na_message",
+			'value' => $this->options->na_message ? true : false,
+			'choices' => array( '1' => __( 'Display the "Not Available Message" for that language', 'multilingual-wp' ), '' => __( 'Display the original content', 'multilingual-wp' ) ),
+			'desc' => __( 'What to display if a translation post is empty.<br /><small>Tip: if you want to display empty content on a specific translation on purpose, but also want to display the default language content, just set the translation\'s content to an empty space(like "<code>&amp;nbsp;</code>")</small>', 'multilingual-wp' )
+		);
+
+		$default_settings[] = array(
 			'title' => __( 'Show UI?', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "show_ui",
