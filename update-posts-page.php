@@ -160,7 +160,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 			<p><input type="submit" class="button-secondary action" value="<?php esc_attr_e( 'Update all of my posts', 'multilingual-wp' ); ?>" /> <button style="margin-left: 15px;" type="button" class="button-secondary action disable" id="stop_continue"><?php _e( 'Stop!', 'multilingual-wp' ); ?></button></p>
 			<br />
 		</form>
-		<div id="update_results"></div>
+		<div id="update_results" style="display: none;" class="updated mlwp-box mlwp-notice"></div>
 
 		<?php 
 	}

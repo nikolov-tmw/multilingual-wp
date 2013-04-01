@@ -165,7 +165,9 @@ class Multilingual_WP {
 	const LT_SD = 'sd';
 
 	private $_doing_save = false;
+	private $_doing_delete = false;
 	private $pt_prefix = 'mlwp_';
+	private $reg_shortcodes = array();
 
 	public function plugin_init() {
 		load_plugin_textdomain( 'multilingual-wp', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
@@ -192,8 +194,8 @@ class Multilingual_WP {
 					'order' => 10,
 				)
 			),
-			'default_lang' => false,
-			'enabled_langs' => array(  ),
+			'default_lang' => 'en',
+			'enabled_langs' => array( 'en' ),
 			'dfs' => '24',
 			'enabled_pt' => array( 'post', 'page' ),
 			'generated_pt' => array(),
@@ -258,7 +260,8 @@ class Multilingual_WP {
 	public function init() {
 		$this->plugin_url = plugin_dir_url( __FILE__ );
 
-		wp_register_script( 'multilingual-wp-js', $this->plugin_url . 'js/multilingual-wp.js', array( 'jquery' ) );
+		wp_register_script( 'multilingual-wp-js', $this->plugin_url . 'js/multilingual-wp.js', array( 'jquery', 'schedule', 'word-count' ), false, true );
+		wp_register_script( 'multilingual-wp-autosave-js', $this->plugin_url . 'js/multilingual-wp-autosave.js', array( 'multilingual-wp-js', 'autosave' ), false, true );
 
 		wp_register_style( 'multilingual-wp-css', $this->plugin_url . 'css/multilingual-wp.css' );
 
@@ -304,6 +307,12 @@ class Multilingual_WP {
 		add_filter( 'redirect_canonical',           array( $this, 'fix_redirect' ), 10, 2 );
 
 		add_filter( 'the_content',                  array( $this, 'parse_quicktags' ), 0 );
+		add_filter( 'gettext',                      array( $this, 'parse_quicktags' ), 0 );
+		add_filter( 'the_title',                    array( $this, 'parse_quicktags' ), 0 );
+		add_filter( 'gettext',                      array( $this, 'parse_transl_shortcodes' ), 0 );
+		add_filter( 'the_title',                    array( $this, 'parse_transl_shortcodes' ), 0 );
+
+		// add_filter( 'wp_setup_nav_menu_item',       array( $this, 'custom_menu_item_url_filter' ), 0 );
 
 		// Comment-separating-related filters
 		add_filter( 'comments_array', array( $this, 'filter_comments_by_lang' ), 10, 2 );
@@ -329,6 +338,13 @@ class Multilingual_WP {
 		add_action( 'submitpage_box', array( $this, 'insert_editors' ), 0 );
 
 		add_action( 'save_post', array( $this, 'save_post_action' ), 10 );
+
+		// Default action for not-authenticated autosave
+		add_action( 'wp_ajax_nopriv_mlwp_autosave', 'wp_ajax_nopriv_autosave', 1 );
+		add_action( 'wp_ajax_mlwp_autosave', array( $this, 'autosave_action' ), 1 );
+
+		add_action( 'before_delete_post', array( $this, 'delete_post_action' ) );
+		add_action( 'wp_trash_post', array( $this, 'delete_post_action' ) );
 
 		if ( ! is_admin() ) {
 			add_action( 'parse_request', array( $this, 'set_locale_from_query' ), 0 );
@@ -503,7 +519,7 @@ class Multilingual_WP {
 				'id'    => "mlwp-lang-{$lang}",
 				'parent' => 'mlwp-lswitcher',
 				'title' => '<img src="' . $data['image'] . '" alt="" style="margin-top: -6px;vertical-align: middle;" /> ' . $data['label'],
-				'href'  => add_query_arg( self::QUERY_VAR, $lang, $url ),
+				'href'  => is_admin() ? add_query_arg( self::QUERY_VAR, $lang, $url ) : $this->convert_URL( '', $lang ),
 				'meta'  => array(
 					'title' => $data['label'],
 					'class' => 'mlwp-lswitcher-lang',
@@ -517,13 +533,18 @@ class Multilingual_WP {
 	* Registers all of the plugin's shortcodes
 	**/
 	private function register_shortcodes() {
-		add_shortcode( 'mlwp-lswitcher', array( $this, 'mlwp_lang_switcher_shortcode' ) );
+		$this->add_shortcode( 'mlwp-lswitcher', array( $this, 'mlwp_lang_switcher_shortcode' ) );
 
-		add_shortcode( 'mlwp', array( $this, 'mlwp_translation_shortcode' ) );
+		$this->add_shortcode( 'mlwp', array( $this, 'mlwp_translation_shortcode' ) );
 
 		foreach ( self::$options->enabled_langs as $language ) {
-			add_shortcode( $language, array( $this, 'translation_shortcode' ) );
+			$this->add_shortcode( $language, array( $this, 'translation_shortcode' ) );
 		}
+	}
+
+	public function add_shortcode( $handle, $callback ) {
+		$this->reg_shortcodes[ $handle ] = $callback;
+		add_shortcode( $handle, $callback );
 	}
 
 	public function mlwp_lang_switcher_shortcode( $atts, $content = null ) {
@@ -562,17 +583,65 @@ class Multilingual_WP {
 		return '';
 	}
 
+	/**
+	 * Translates a string using our methods(quicktags/shortcodes)
+	 *
+	 * @param String $text - Text to be translated
+	 * @access public
+	 * @uses Multilingual_WP::parse_quicktags()
+	 * @uses Multilingual_WP::parse_transl_shortcodes()
+	 * @uses apply_filters() calls "mlwp_gettext"
+	 * 
+	 * @return String - The [maybe]translated string
+	 **/
+	public function __( $text ) {
+		$text = $this->parse_quicktags( $text );
+		$text = $this->parse_transl_shortcodes( $text );
+
+		return apply_filters( 'mlwp_gettext', $text );
+	}
+
+	/**
+	 * Translates and echoes a string using our methods(quicktags/shortcodes)
+	 *
+	 * @param String $text - Text to be translated
+	 * @access public
+	 * @uses Multilingual_WP::__()
+	 * 
+	 * @return Null
+	 **/
+	public function _e( $text ) {
+		echo $this->__( $text );
+	}
+
 	public function parse_quicktags( $content ) {
 		// Code borrowed and modified from qTranslate's quicktag parsing mechanism
 		$regex = "#(\[:[a-z]{2}\](?:(?!\[:[a-z]{2}\]).)*)#";
 
 		$blocks = preg_split( $regex, $content, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE );
+		// var_dump( $blocks );
+		$return = '';
 
 		foreach ( $blocks as $block ) {
-			if ( preg_match( "#^\[:([a-z]{2})\]#ism", $block, $matches ) && $this->is_enabled( $matches[1] ) && $this->current_lang == $matches[1] ) {
-				return preg_replace( "#^\[:([a-z]{2})\]#ism", '', $block );
+			if ( preg_match( "#^\[:([a-z]{2})\]#ism", $block, $matches ) ) {
+				$return .= $this->is_enabled( $matches[1] ) && $this->current_lang == $matches[1] ? preg_replace( "#^\[:([a-z]{2})\]#ism", '', $block ) : '';
+			} else {
+				$return .= $block;
 			}
 		}
+
+		return $return ? $return : $content;
+	}
+
+	public function parse_transl_shortcodes( $content ) {
+		global $shortcode_tags;
+		$_shortcode_tags = $shortcode_tags;
+		$shortcode_tags = $this->reg_shortcodes;
+
+		$content = do_shortcode( $content );
+
+		$shortcode_tags = $_shortcode_tags;
+		unset( $_shortcode_tags );
 
 		return $content;
 	}
@@ -652,7 +721,7 @@ class Multilingual_WP {
 				
 				case self::LT_PRE :
 					$home = $this->home_url;
-					$home = preg_replace( '~^.*' . preg_quote( $_SERVER['SERVER_NAME'], '~' ) . '~', '', $home );
+					$home = preg_replace( '~^.*' . preg_quote( $_SERVER['HTTP_HOST'], '~' ) . '~', '', $home );
 					$request = str_replace( $home, '', $request );
 					$lang = preg_match( '~^([a-z]{2})~', $request, $matches );
 
@@ -820,6 +889,15 @@ class Multilingual_WP {
 		}
 	}
 
+	public function custom_menu_item_url_filter( $menu_item ) {
+		// Only fix custom menu items - the rest will be properly fixed by other filters
+		if ( isset( $menu_item->post_type ) && 'nav_menu_item' == $menu_item->post_type && ! in_array( $menu_item->type, array( 'post_type', 'taxonomy' ) ) ) {
+			$menu_item->url = $this->__( $menu_item->url );
+		}
+
+		return $menu_item;
+	}
+
 	/**
 	* Fixes hierarchical requests by finding the slug of the requested page/post only(vs "some/page/path")
 	*
@@ -953,6 +1031,173 @@ class Multilingual_WP {
 		}
 	}
 
+	public function autosave_action() {
+		global $login_grace_period;
+
+		// This should never occur, but let's just make sure
+		if ( ! $this->is_enabled_pt( get_post_type( $_POST['post_ID'] ) ) ) {
+			wp_die( __( 'This is not a multilingual post.', 'multilingual-wp' ) );
+		}
+
+		define( 'DOING_AUTOSAVE', true );
+
+		$nonce_age = check_ajax_referer( 'autosave', 'autosavenonce' );
+
+		$do_autosave = (bool) $_POST['autosave'];
+		$do_lock = true;
+
+		$data = $alert = '';
+		/* translators: draft saved date format, see http://php.net/date */
+		$draft_saved_date_format = __( 'g:i:s a' );
+		/* translators: %s: date and time */
+		$message = sprintf( __( 'Draft saved at %s.' ), date_i18n( $draft_saved_date_format ) );
+
+		$supplemental = array();
+		if ( isset( $login_grace_period ) )
+			$alert .= sprintf( __('Your login has expired. Please open a new browser window and <a href="%s" target="_blank">log in again</a>. '), add_query_arg( 'interim-login', 1, wp_login_url() ) );
+
+		$id = $revision_id = 0;
+
+		$post_ID = (int) $_POST['post_ID'];
+		$_POST['ID'] = $post_ID;
+		$post = get_post( $post_ID, ARRAY_A );
+		if ( 'auto-draft' == $post['post_status'] )
+			$_POST['post_status'] = 'draft';
+
+		if ( $last = wp_check_post_lock( $post['ID'] ) ) {
+			$do_autosave = $do_lock = false;
+
+			$last_user = get_userdata( $last );
+			$last_user_name = $last_user ? $last_user->display_name : __( 'Someone' );
+			$data = __( 'Autosave disabled.' );
+
+			$supplemental['disable_autosave'] = 'disable';
+			$alert .= sprintf( __( '%s is currently editing this article. If you update it, you will overwrite the changes.' ), esc_html( $last_user_name ) );
+		}
+
+		if ( 'page' == $post['post_type'] ) {
+			if ( !current_user_can('edit_page', $post_ID) )
+				wp_die( __( 'You are not allowed to edit this page.' ) );
+		} else {
+			if ( !current_user_can('edit_post', $post_ID) )
+				wp_die( __( 'You are not allowed to edit this post.' ) );
+		}
+
+		$new_slugs = '';
+
+		if ( $do_autosave ) {
+			$this->setup_post_vars( $post_ID );
+			foreach ( self::$options->enabled_langs as $lang ) {
+				$_post = $post;
+				if ( ! isset( $this->rel_langs[ $lang ] ) ) {
+					unset( $_post['ID'] );
+				} else {
+					$_post['ID'] = $this->rel_langs[ $lang ];
+				}
+				$_post['post_title'] = $_POST[ "title_{$lang}" ];
+				$_post['post_name'] = $_POST[ "post_name_{$lang}" ];
+				$_post['post_content'] = $_POST[ "content_{$lang}" ];
+				$_post['post_type'] = "{$this->pt_prefix}{$this->post_type}_{$lang}";
+
+				if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
+					$_post['post_parent'] = $this->parent_rel_langs[ $lang ];
+				}
+
+				$_id = $this->save_post( $_post );
+				if ( ! is_wp_error( $_id ) ) {
+					$_post = get_post( $_id, ARRAY_A );
+					$new_slugs .= "|||{$lang}_slug={$_post['post_name']}";
+					update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
+				}
+
+				if ( $lang == self::$options->default_lang ) {
+					$this->post->post_title = $_post['post_title'];
+					$this->post->post_content = $_post['post_content'];
+					$this->post->post_name = $_post['post_name'];
+
+					$this->save_post( $this->post );
+				}
+			}
+			$data = $message;
+			$id = $post['ID'];
+		} else {
+			if ( ! empty( $_POST['auto_draft'] ) )
+				$id = 0; // This tells us it didn't actually save
+			else
+				$id = $post['ID'];
+		}
+
+		if ( $do_lock && empty( $_POST['auto_draft'] ) && $id && is_numeric( $id ) ) {
+			$lock_result = wp_set_post_lock( $id );
+			$supplemental['active-post-lock'] = implode( ':', $lock_result );
+		}
+
+		if ( $nonce_age == 2 ) {
+			$supplemental['replace-autosavenonce'] = wp_create_nonce('autosave');
+			$supplemental['replace-getpermalinknonce'] = wp_create_nonce('getpermalink');
+			$supplemental['replace-samplepermalinknonce'] = wp_create_nonce('samplepermalink');
+			$supplemental['replace-closedpostboxesnonce'] = wp_create_nonce('closedpostboxes');
+			$supplemental['replace-_ajax_linking_nonce'] = wp_create_nonce( 'internal-linking' );
+			if ( $id ) {
+				if ( $_POST['post_type'] == 'post' )
+					$supplemental['replace-_wpnonce'] = wp_create_nonce('update-post_' . $id);
+				elseif ( $_POST['post_type'] == 'page' )
+					$supplemental['replace-_wpnonce'] = wp_create_nonce('update-page_' . $id);
+			}
+		}
+		$data = $new_slugs ? "data={$data}{$new_slugs}" : $data;
+
+		if ( ! empty($alert) )
+			$supplemental['alert'] = $alert;
+
+		$x = new WP_Ajax_Response( array(
+			'what' => 'autosave',
+			'id' => $id,
+			'data' => $id ? $data : '',
+			'supplemental' => $supplemental,
+		) );
+		$x->send();
+	}
+
+	public function delete_post( $pid, $force_delelte = false ) {
+		$this->_doing_delete = true;
+
+		$result = wp_delete_post( $pid, $force_delelte );
+
+		$this->_doing_delete = false;
+
+		return $result;
+	}
+
+	public function delete_post_action( $pid ) {
+		$current_filter = current_filter();
+		// We'll only delete related posts on actual wp_delete_post() or wp_trash_post() calls
+		if ( ! in_array( $current_filter, array( 'wp_trash_post', 'before_delete_post' ) ) ) {
+			return;
+		}
+
+		// If we're currently deleting a post via a $this->delete_post() call
+		if ( $this->_doing_delete ) {
+			return;
+		}
+
+		// A post from a not-enabled post type is deleted - we don't care about it
+		if ( ! $this->is_enabled_pt( get_post_type( $pid ) ) ) {
+			return;
+		}
+
+		$old_id = $this->ID;
+		$this->setup_post_vars( $pid );
+		$force = $current_filter == 'wp_delete_post' ? true : false;
+
+		// Loop through all of the related posts and delete them
+		foreach ( $this->rel_langs as $lang => $rel_id ) {
+			$this->delete_post( $rel_id, $force );
+		}
+
+		$this->setup_post_vars( $old_id );
+	}
+
 	public function update_rel_default_language( $post_id, $post = false ) {
 		$post = $post ? $post : get_post( $post_id );
 
@@ -974,7 +1219,7 @@ class Multilingual_WP {
 				// If this is not the default language, we want to preserve the old content, title, etc
 				$__post['post_title'] = $_post['post_title'];
 				$__post['post_name'] = $_post['post_name'];
-				$__post['post_content'] = $_post['postcontent'];
+				$__post['post_content'] = $_post['post_content'];
 				// $__post['post_title'] = $_post['post_title'];
 			}
 
@@ -992,6 +1237,7 @@ class Multilingual_WP {
 
 		// Store the current post's related languages data
 		$this->rel_langs = get_post_meta( $this->ID, $this->languages_meta_key, true );
+		$this->rel_langs = $this->rel_langs && is_array( $this->rel_langs ) ? $this->rel_langs : array();
 		$this->parent_rel_langs = $this->post->post_parent ? get_post_meta( $this->post->post_parent, $this->languages_meta_key, true ) : false;
 		$this->post_type = get_post_type( $this->ID );
 
@@ -1001,6 +1247,7 @@ class Multilingual_WP {
 
 	public function update_rel_langs( $post = false ) {
 		if ( $post ) {
+			$old_id = $this->ID;
 			$this->setup_post_vars( $post->ID );
 		}
 
@@ -1034,8 +1281,11 @@ class Multilingual_WP {
 				$_post['post_modified_gmt'] = $this->post->post_modified_gmt;
 				$_post['menu_order'] = $this->post->menu_order;
 
-				update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
-				$this->save_post( $_post );
+				$_id = $this->save_post( $_post );
+				if ( ! is_wp_error( $_id ) ) {
+					$_post = get_post( $_id, ARRAY_A );
+					update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
+				}
 
 				// If this is the default language - copy over the title/content/etc over
 				if ( $lang == self::$options->default_lang ) {
@@ -1045,11 +1295,12 @@ class Multilingual_WP {
 
 					$this->save_post( $this->post );
 				}
+				unset( $_post );
 			}
 		}
 
-		if ( $post ) {
-			$this->setup_post_vars( get_the_ID() );
+		if ( $post && $old_id ) {
+			$this->setup_post_vars( $old_id );
 		}
 	}
 
@@ -1115,14 +1366,22 @@ class Multilingual_WP {
 		}
 	}
 
+	public function is_allowed_admin_page( $page = false ) {
+		global $pagenow;
+		$page = $page ? $page : $pagenow;
+
+		return in_array( $page, array( 'post.php', 'post-new.php' ) ) && $this->is_enabled_pt( get_post_type( get_the_ID() ) );
+	}
+
 	public function admin_scripts( $hook ) {
-		if ( 'post.php' == $hook && $this->is_enabled_pt( get_post_type( get_the_ID() ) ) ) {
+		if ( $this->is_allowed_admin_page( $hook ) ) {
 			$this->setup_post_vars();
 			
 			$this->create_rel_posts();
 
 			// Enqueue scripts and styles
 			wp_enqueue_script( 'multilingual-wp-js' );
+			wp_enqueue_script( 'multilingual-wp-autosave-js' );
 			wp_enqueue_style( 'multilingual-wp-css' );
 		}
 	}
@@ -1185,7 +1444,9 @@ class Multilingual_WP {
 				$id = $this->save_post( $data );
 				if ( $id ) {
 					$this->rel_langs[ $lang ] = $id;
-					$this->rel_posts[ $lang ] = (object) $data;
+					$this->rel_posts[ $lang ] = get_post( $id );
+					// Set an empty title if this is a draft
+					$this->rel_posts[ $lang ]->post_title = $this->rel_posts[ $lang ]->post_status == 'auto-draft' && $this->rel_posts[ $lang ]->post_title == __( 'Auto Draft' ) ? '' : $this->rel_posts[ $lang ]->post_title;
 					update_post_meta( $id, $this->rel_p_meta_key, $this->ID );
 					update_post_meta( $id, '_mlwp_post_slug', $data['post_name'] );
 				}
@@ -1197,21 +1458,37 @@ class Multilingual_WP {
 	}
 
 	public function insert_editors() {
-		global $pagenow;
-		if ( 'post.php' == $pagenow && $this->is_enabled_pt( get_post_type( get_the_ID() ) ) ) {
-			echo '<div class="hide-if-js" id="mlwp-editors">';
-				echo '<h2>' . __( 'Language', 'multilingual-wp' ) . '</h2>';
-				foreach (self::$options->enabled_langs as $i => $lang) {
-					echo '<div class="js-tab mlwp-lang-editor lang-' . $lang . ( $lang == self::$options->default_lang ? ' mlwp-deflang' : '' ) . '" id="mlwp_tab_lang_' . $lang . '" title="' . self::$options->languages[ $lang ]['label'] . '">';
-					
-					echo '<input type="text" class="mlwp-title" name="title_' . $lang . '" size="30" value="' . esc_attr( $this->rel_posts[ $lang ]->post_title ) . '" id="title_' . $lang . '" autocomplete="off" />';
-					echo '<p>' . __( 'Slug:', 'multilingual-wp' ) . ' <input type="text" class="mlwp-slug" name="post_name_' . $lang . '" size="30" value="' . esc_attr( $this->rel_posts[ $lang ]->post_name ) . '" id="post_name_' . $lang . '" autocomplete="off" /></p>';
+		if ( $this->is_allowed_admin_page() ) { ?>
+			<div class="hide-if-js" id="mlwp-editors">
+				<h2><?php _e( 'Language', 'multilingual-wp' ); ?></h2>
+				<?php foreach ( self::$options->enabled_langs as $i => $lang ) :
+					$this->rel_posts[ $lang ]->post_title = $this->rel_posts[ $lang ]->post_status == 'auto-draft' && $this->rel_posts[ $lang ]->post_title == __( 'Auto Draft' ) ? '' : $this->rel_posts[ $lang ]->post_title; ?>
+					<div class="js-tab mlwp-lang-editor lang-<?php echo $lang . ( $lang == self::$options->default_lang ? ' mlwp-deflang' : '' ); ?>" id="mlwp_tab_lang_<?php echo $lang; ?>" title="<?php echo self::$options->languages[ $lang ]['label']; ?>" mlwp-lang="<?php echo $lang; ?>">
+						<input type="text" class="mlwp-title" name="title_<?php echo $lang; ?>" size="30" value="<?php echo esc_attr( htmlspecialchars( $this->rel_posts[ $lang ]->post_title ) ); ?>" id="title_<?php echo $lang; ?>" autocomplete="off" />
+						<p><?php _e( 'Slug:', 'multilingual-wp' ); ?> <input type="text" class="mlwp-slug" name="post_name_<?php echo $lang; ?>" size="30" value="<?php echo esc_attr( $this->rel_posts[ $lang ]->post_name ); ?>" id="post_name_<?php echo $lang; ?>" autocomplete="off" /></p>
 
-					wp_editor( $this->rel_posts[ $lang ]->post_content, "content_{$lang}" );
-
-					echo '</div>';
-				}
-			echo '</div>';
+						<?php wp_editor( $this->rel_posts[ $lang ]->post_content, "content_{$lang}" ); ?>
+						<table class="post-status-info" cellspacing="0"><tbody><tr>
+							<td class="wp-word-count"><?php printf( __( 'Word count: %s' ), '<span class="word-count">0</span>' ); ?></td>
+							<td class="autosave-info">
+								<span class="autosave-message">&nbsp;</span>
+							<?php
+							if ( 'auto-draft' != get_post_status( $this->rel_posts[ $lang ] ) ) {
+								echo '<span id="last-edit">';
+								if ( $last_id = get_post_meta( $this->rel_posts[ $lang ]->ID, '_edit_last', true ) ) {
+									$last_user = get_userdata( $last_id );
+									printf( __('Last edited by %1$s on %2$s at %3$s'), esc_html( $last_user->display_name ), mysql2date( get_option( 'date_format' ), $this->rel_posts[ $lang ]->post_modified ), mysql2date( get_option( 'time_format' ), $post->post_modified ) );
+								} else {
+									printf( __( 'Last edited on %1$s at %2$s'), mysql2date( get_option( 'date_format' ), $this->rel_posts[ $lang ]->post_modified ), mysql2date( get_option( 'time_format' ), $this->rel_posts[ $lang ]->post_modified ) );
+								}
+								echo '</span>';
+							} ?>
+							</td>
+						</tr></tbody></table>
+					</div>
+				<?php 
+				endforeach; ?>
+			</div><?php
 		}
 	}
 
@@ -1519,9 +1796,9 @@ class Multilingual_WP {
 		}
 		$pageURL .= "://";
 		if ( $_SERVER["SERVER_PORT"] != "80" ) {
-			$pageURL .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] . $_SERVER["REQUEST_URI"];
+			$pageURL .= $_SERVER["HTTP_HOST"] . ":" . $_SERVER["SERVER_PORT"] . $_SERVER["REQUEST_URI"];
 		} else {
-			$pageURL .= $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
+			$pageURL .= $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
 		}
 		return $pageURL;
 	}
