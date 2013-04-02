@@ -4,6 +4,28 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 	protected $admin_notice = false;
 	public $admin_errors = array();
 
+	public function setup() {
+		$this->args = array(
+			'page_title' => __( 'Fix Posts', 'multilingual-wp' ),
+			'parent' => 'multilingual-wp',
+			'action_link' => __( 'Fix Posts', 'multilingual-wp' ),
+		);
+
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
+
+		add_action( 'load-multilingual-wp_page_fix-posts', array( $this, 'form_handler' ), 100 );
+	}
+
+	public function enqueue_scripts( $handle ) {
+		if ( 'multilingual-wp_page_fix-posts' == $handle ) {
+			global $wp_version;
+
+			wp_enqueue_script( 'multilingual-wp-fix-posts', $this->plugin_url . 'js/multilingual-wp-fix-posts.js', array( 'jquery' ) );
+
+			wp_enqueue_style( 'multilingual-wp-settings-css', $this->plugin_url . 'css/multilingual-wp-settings.css' );
+		}
+	}
+
 	public function _page_content_hook() {
 		if ( $this->admin_notice ) {
 			$this->admin_msg( $this->admin_notice );
@@ -28,6 +50,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 		if ( ! $this->check_admin_referer() ) {
 			if ( $is_ajax ) {
 				echo json_encode( array( 'success' => false, 'message' => '<p class="error">Cheating, huh?</p>' ) );
+				exit;
 			} else {
 				wp_die( __( 'Cheatin&#8217; uh?', 'multilingual-wp' ) );
 			}
@@ -39,12 +62,15 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 		$message = array();
 
-		global $Multilingual_WP;
+		global $Multilingual_WP, $qtranslate_slug;
+		$qtslug = class_exists( 'QtranslateSlug' ) && $qtranslate_slug;
+
 		foreach ( $posts as $post ) {
 			if ( $post->post_parent && get_post_meta( $post->post_parent, '_mlwp_batch_updated', true ) != 'yes' ) {
 				$message[] = '<p class="error">' . sprintf( __( 'The post "%s" was ignored, because it\'s parent post has not been updated yet.', 'multilingual-wp' ), get_the_title( $post->post_parent ) ) . '</p>';
 				continue;
 			}
+			@set_time_limit( 30 );
 			$Multilingual_WP->setup_post_vars( $post->ID );
 
 			$Multilingual_WP->create_rel_posts();
@@ -61,8 +87,11 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 						} else {
 							$_POST[ "content_{$lang}" ] = $cont;
 							$_POST[ "title_{$lang}" ] = $cont;
-							// TODO: Get post slug if qTranslate slug plugin is enabled
-							// $_POST[ "post_name_{$lang}" ] = ???;
+
+							// Import slug for this language from the qTranslate Slug plugin
+							if ( $qtslug ) {
+								$_POST[ "post_name_{$lang}" ] = get_post_meta( $post->ID, $qtranslate_slug->get_meta_key( $lang ), true );
+							}
 						}
 					}
 				}
@@ -89,27 +118,6 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 		if ( $is_ajax ) {
 			$data = array( 'message' => implode( "\n", array_reverse( $message ) ), 'nonce' => wp_nonce_field( $this->nonce, '_wpnonce', true, false ), 'success' => true, 'updated' => $updated, 'end' => $end );
 			exit( json_encode( $data ) );
-		}
-	}
-
-	public function setup() {
-		$this->args = array(
-			'page_title' => __( 'Fix Posts', 'multilingual-wp' ),
-			'parent' => 'multilingual-wp'
-		);
-
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
-
-		add_action( 'load-multilingual-wp_page_fix-posts', array( $this, 'form_handler' ), 100 );
-	}
-
-	public function enqueue_scripts( $handle ) {
-		if ( 'multilingual-wp_page_fix-posts' == $handle ) {
-			global $wp_version;
-
-			wp_enqueue_script( 'multilingual-wp-fix-posts', $this->plugin_url . 'js/multilingual-wp-fix-posts.js', array( 'jquery' ) );
-
-			wp_enqueue_style( 'multilingual-wp-settings-css', $this->plugin_url . 'css/multilingual-wp-settings.css' );
 		}
 	}
 
@@ -140,9 +148,11 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 	}
 
 	public function page_content() {
-		global $wpdb;
-		// Clear batch update info from previous updates - let's start over
-		$wpdb->query( "UPDATE $wpdb->postmeta SET meta_value = '' WHERE meta_key = '_mlwp_batch_updated'" );
+		if ( $_SERVER['REQUEST_METHOD'] != 'POST' ) {
+			global $wpdb;
+			// Clear batch update info from previous updates - let's start over
+			$wpdb->query( "UPDATE $wpdb->postmeta SET meta_value = '' WHERE meta_key = '_mlwp_batch_updated'" );
+		}
 
 		$posts = $this->get_posts( -1 );
 
@@ -157,7 +167,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 			<p><label><?php _e( 'Posts Per Batch:', 'multilingual-wp' ); ?> <input size="1" type="text" name="posts_per_batch" value="20" /></label></p>
 			<p class="loading" style="display: none;"><img src="<?php echo plugins_url( 'images/loader.gif', __FILE__ ); ?>" alt="<?php esc_attr_e( 'Loading...', 'multilingual-wp' ); ?>" /></p>
 			<p class="waiting" style="display: none;"><?php printf( __( 'Waiting for %s seconds, until next batch...', 'multilingual-wp' ), '<span></span>' ); ?></p>
-			<p><input type="submit" class="button-secondary action" value="<?php esc_attr_e( 'Update all of my posts', 'multilingual-wp' ); ?>" /> <button style="margin-left: 15px;" type="button" class="button-secondary action disable" id="stop_continue"><?php _e( 'Stop!', 'multilingual-wp' ); ?></button></p>
+			<p><input type="submit" class="button-primary action" value="<?php esc_attr_e( 'Update all of my posts', 'multilingual-wp' ); ?>" /> <button style="margin-left: 15px;" type="button" class="button-secondary action disable" id="stop_continue"><?php _e( 'Stop!', 'multilingual-wp' ); ?></button></p>
 			<br />
 		</form>
 		<div id="update_results" style="display: none;" class="updated mlwp-box mlwp-notice"></div>

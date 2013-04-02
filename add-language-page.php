@@ -5,14 +5,43 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 	protected $force_mo_update = false;
 	public $admin_errors = array();
 
+	public function setup() {
+		$this->args = array(
+			'page_title' => __( 'Add New Language', 'multilingual-wp' ),
+			'parent' => 'multilingual-wp',
+			'action_link' => false,
+		);
+
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
+
+		add_action( 'load-multilingual-wp_page_add-new-language', array( $this, 'form_handler' ), 100 );
+	}
+
+	public function enqueue_scripts( $handle ) {
+		if ( 'multilingual-wp_page_add-new-language' == $handle ) {
+			global $wp_version;
+
+			if ( version_compare( $wp_version, '3.5', '>=' ) ) {
+				if ( ! did_action( 'wp_enqueue_media' ) ) {
+					wp_enqueue_media();
+				}
+
+				wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery' ), null, true );
+			} else {
+				wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery', 'thickbox' ), null, true );
+				wp_enqueue_style( 'thickbox-css' );
+			}
+
+			wp_enqueue_style( 'multilingual-wp-settings-css', $this->plugin_url . 'css/multilingual-wp-settings.css' );
+		}
+	}
+
 	public function _page_content_hook() {
 		if ( $this->admin_notice ) {
 			$this->admin_msg( $this->admin_notice );
 		}
 
-		$this->admin_errors();
-
-		$this->page_header();
+		$this->page_header( 'mlwp-add-new-wrap' );
 
 		if ( $this->force_mo_update != false ) {
 			if ( apply_filters( 'mlwp_flush_mo_msg', true ) ) {
@@ -84,42 +113,6 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		$this->admin_errors = $errors;
 	}
 
-	public function setup() {
-		$this->args = array(
-			'page_title' => __( 'Add New Language', 'multilingual-wp' ),
-			'parent' => 'multilingual-wp'
-		);
-
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
-
-		add_action( 'load-multilingual-wp_page_add-new-language', array( $this, 'form_handler' ), 100 );
-	}
-
-	public function enqueue_scripts( $handle ) {
-		if ( 'multilingual-wp_page_add-new-language' == $handle ) {
-			global $wp_version;
-
-			if ( version_compare( $wp_version, '3.5', '>=' ) ) {
-				if ( ! did_action( 'wp_enqueue_media' ) ) {
-					wp_enqueue_media();
-				}
-
-				wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery' ), null, true );
-			} else {
-				wp_enqueue_script( 'multilingual-wp-settings-js', $this->plugin_url . 'js/multilingual-wp-settings.js', array( 'jquery', 'thickbox' ), null, true );
-				wp_enqueue_style( 'thickbox-css' );
-			}
-
-			wp_enqueue_style( 'multilingual-wp-settings-css', $this->plugin_url . 'css/multilingual-wp-settings.css' );
-		}
-	}
-
-	public function page_header() {
-		echo "<div class='wrap mlwp-wrap mlwp-add-new-wrap'>\n";
-		screen_icon( $this->args['screen_icon'] );
-		echo html( "h2", $this->args['page_title'] );
-	}
-
 	public function page_content() {
 		// We want to put all of the output in a single <form>
 		ob_start();
@@ -189,7 +182,7 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 			),
 		) );
 
-		echo $this->form_wrap( ob_get_clean() );
+		echo $this->form_wrap( ob_get_clean(), array( 'value' => __( 'Add New Language', 'multilingual-wp' ) ) );
 	}
 
 	public function start_box( $title, $id = false, $closed = true ) {
@@ -214,8 +207,6 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 				</div>
 			</div>';
 	}
-	// public function add_new_tab() {
-	// }
 
 	public function page_footer() {
 		global $MULTILINGUAL_WP_FLAGS, $wp_version;

@@ -126,10 +126,12 @@ abstract class scb_MLWP_AdminPage {
 	function page_help(){}
 
 	// A generic page header
-	function page_header() {
-		echo "<div class='wrap'>\n";
+	function page_header( $add_class = '' ) {
+		echo "<div class='wrap mlwp-wrap {$add_class}'>\n";
 		screen_icon( $this->args['screen_icon'] );
 		echo html( "h2", $this->args['page_title'] );
+
+		$this->admin_errors();
 	}
 
 	// This is where the page content goes
@@ -195,7 +197,7 @@ abstract class scb_MLWP_AdminPage {
 			extract( wp_parse_args( $value, array(
 				'value' => __( 'Save Changes', 'multilingual-wp' ),
 				'action' => 'action',
-				'class' => 'button',
+				'class' => 'button-primary',
 				'ajax' => true
 			) ) );
 
@@ -261,7 +263,6 @@ abstract class scb_MLWP_AdminPage {
 		if ( $wrap ) {
 			$output = $this->form_table_wrap( $output );
 		}
-		// var_dump($wrap);
 
 		return $output;
 	}

@@ -216,6 +216,9 @@ class Multilingual_WP {
 			require_once( dirname( __FILE__ ) . '/add-language-page.php' );
 			new Multilingual_WP_Add_Language_Page( __FILE__, self::$options );
 
+			require_once( dirname( __FILE__ ) . '/remove-language-page.php' );
+			new Multilingual_WP_Remove_Language_Page( __FILE__, self::$options );
+
 			require_once( dirname( __FILE__ ) . '/update-posts-page.php' );
 			new Multilingual_WP_Update_Posts_Page( __FILE__, self::$options );
 		}
@@ -645,7 +648,6 @@ class Multilingual_WP {
 		}
 
 		$blocks = preg_split( $regex, $content, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE );
-		// var_dump( $blocks );
 		$return = '';
 
 		foreach ( $blocks as $block ) {
@@ -664,9 +666,7 @@ class Multilingual_WP {
 		$_shortcode_tags = $shortcode_tags;
 		$shortcode_tags = $this->reg_shortcodes;
 
-		// var_dump( $content );
 		$content = do_shortcode( $content );
-		// var_dump( $content );
 
 		$shortcode_tags = $_shortcode_tags;
 		unset( $_shortcode_tags );
@@ -1314,8 +1314,15 @@ class Multilingual_WP {
 		}
 
 		if ( $this->rel_langs ) {
-			foreach ( self::$options->enabled_langs as $lang ) {
-				if ( ! isset( $this->rel_langs[ $lang ] ) || ! ( $_post = get_post( $this->rel_langs[ $lang ], ARRAY_A ) ) ) {
+			foreach ( $this->rel_langs as $lang => $rel_pid ) {
+				if ( ! $this->is_enabled( $lang ) ) {
+					// This language doesn't exist, which most-likely means that the user has removed it, so let's clean it up
+					if ( ! isset( self::$options->languages[ $lang ] ) ) {
+						$this->delete_post( $rel_pid, true );
+					}
+					continue;
+				}
+				if ( ! ( $_post = get_post( $rel_pid, ARRAY_A ) ) ) {
 					continue;
 				}
 				if ( isset( $_POST[ "content_{$lang}" ] ) ) {
