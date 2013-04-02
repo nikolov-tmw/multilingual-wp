@@ -2,6 +2,7 @@
 
 class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 	protected $admin_notice = false;
+	public $admin_errors = array();
 
 	public function _page_content_hook() {
 		if ( $this->admin_notice ) {
@@ -34,12 +35,37 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 		$new_data = $this->validate( $new_data, $this->options->get() );
 
+		$new_data['enabled_langs'] = isset( $new_data['enabled_langs'] ) && is_array( $new_data['enabled_langs'] ) ? $new_data['enabled_langs'] : array();
 		// Use uasort() to sort the languages by their "order" field, while preserving the proper indices
 		uasort( $new_data['languages'], array( $this, 'langs_sort' ) );
 
+		// Is the user trying to disable all languages?
+		if ( empty( $new_data['enabled_langs'] ) ) {
+			$this->admin_errors[] = __( "You can't disable all languages. You need to have at least one enabled language.", 'multilingual-wp' );
+
+			// Restore the previously enabled languages
+			$new_data['enabled_langs'] = $this->options->enabled_langs;
+		}
+
+		// If the user tried to disable the current default language
+		if ( ! in_array( $new_data['default_lang'], $new_data['enabled_langs'] ) ) {
+			$this->admin_errors[] = __( "You can't disable your default language. Please try changing the default language first.", 'multilingual-wp' );
+
+			// Restore the previously enabled languages
+			$new_data['enabled_langs'] = $this->options->enabled_langs;
+		}
+
+		// Check if the enabled languages have changed
 		if ( count( $new_data['enabled_langs'] ) != count( $this->options->enabled_langs ) ) {
 			// Queue a rewrite rules flush
 			$this->options->flush_rewrite_rules = true;
+		} else { // Well the number of languages could be the same, so let's make sure they're actually the same
+			foreach ( $new_data['enabled_langs'] as $lang ) {
+				if ( array_search( $lang, $this->options->enabled_langs ) === false ) {
+					$this->options->flush_rewrite_rules = true;
+					break;
+				}
+			}
 		}
 
 		$this->options->set( $new_data );
@@ -92,6 +118,8 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		echo "<div class='wrap mlwp-wrap'>\n";
 		screen_icon( $this->args['screen_icon'] );
 		echo html( "h2", $this->args['page_title'] );
+
+		$this->admin_errors();
 	}
 
 	public function page_content() {
@@ -154,19 +182,24 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 	private function general_settings_tab( $languages ) {
 		echo '<div class="js-tab" id="tab_general" title="' . __( 'General Settings', 'multilingual-wp' ) . '">';
 
+		echo '<p>' . $this->submit_button( '', 'action', 'button-primary', '' );
 		if ( ! isset( $_GET['mlwp_dl_mofiles'] ) ) {
-			echo '<p><a class="button-primary" href="' . add_query_arg( 'mlwp_dl_mofiles', 1 ) . '">' . __( 'Update .mo files now', 'multilingual-wp' ) . '</a></p>';
+			echo '<a class="button alignright" href="' . add_query_arg( 'mlwp_dl_mofiles', 1 ) . '">' . __( 'Update .mo files now', 'multilingual-wp' ) . '</a>';
 		}
+		echo '</p>';
 
 		echo html( 'h3', 'Enabled Languages' );
 
-		$default_settings = $l_opts = array();
+		$default_settings = $l_opts = $enabled_langs_opts = array();
 		$enabled_langs = $this->options->enabled_langs;
 		$default_lang = $this->options->default_lang;
 		$lang_mode = $this->options->lang_mode;
 
 		foreach ( $languages as $lang => $data ) {
-			$l_opts[$lang] = '<img style="margin-bottom:-8px;padding:0 5px;" src="' . _mlwp()->get_flag( $lang, 24 ) . '" alt="' . esc_attr( $data['label'] ) . '" /> ' . $data['label'] . '<br />';
+			$l_opts[ $lang ] = '<img style="margin-bottom:-8px;padding:0 5px;" src="' . _mlwp()->get_flag( $lang, 24 ) . '" alt="' . esc_attr( $data['label'] ) . '" /> ' . $data['label'] . '<br />';
+		}
+		foreach ( $enabled_langs as $lang ) {
+			$enabled_langs_opts[ $lang ] = $languages[ $lang ]['label'];
 		}
 
 		$default_settings[] = array(
@@ -175,7 +208,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			'name' => "default_lang",
 			'desc' => __( 'Please select your blog\'s default language.', 'multilingual-wp' ),
 			'value' => $default_lang,
-			'choices' => array_map( 'strip_tags', $l_opts ),
+			'choices' => $enabled_langs_opts,
 			'extra' => array( 'id' => 'default_lang' )
 		);
 		
@@ -265,6 +298,9 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 	private function languages_tab( $languages ) {
 		echo '<div class="js-tab" id="tab_languages" title="' . __( 'Language Settings', 'multilingual-wp' ) . '">';
+
+		echo '<p>' . $this->submit_button( '', 'action', 'button-primary', '' ) . '</p>';
+
 		apply_filters( 'the_content', __( 'Here you can change the settings for each supported language.', 'multilingual-wp' ) );
 
 		foreach ($languages as $lang => $data) {

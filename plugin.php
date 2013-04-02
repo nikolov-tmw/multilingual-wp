@@ -313,6 +313,11 @@ class Multilingual_WP {
 		add_filter( 'gettext',                      array( $this, 'parse_transl_shortcodes' ), 0 );
 		add_filter( 'the_title',                    array( $this, 'parse_transl_shortcodes' ), 0 );
 
+		add_filter( 'list_cats',                    array( $this, 'parse_quicktags' ), $this->late_fp );
+		add_filter( 'list_cats',                    array( $this, 'parse_transl_shortcodes' ), $this->late_fp );
+
+		add_filter( 'get_pages',                    array( $this, 'filter_posts' ) );
+
 		// add_filter( 'wp_setup_nav_menu_item',       array( $this, 'custom_menu_item_url_filter' ), 0 );
 
 		// Comment-separating-related filters
@@ -615,9 +620,28 @@ class Multilingual_WP {
 		echo $this->__( $text );
 	}
 
+	public function __recursive( $data ) {
+		if ( is_object( $data ) ) {
+			foreach ( get_object_vars( $data ) as $key => $value ) {
+				$data->$key = $this->__recursive( $value );
+			}
+		} elseif ( is_array( $data ) ) {
+			foreach ( $data as $key => $value ) {
+				$data[ $key ] = $this->__recursive( $value );
+			}
+		} elseif ( is_string( $data ) ) {
+			$data = $this->__( $data );
+		}
+
+		return $data;
+	}
+
 	public function parse_quicktags( $content ) {
 		// Code borrowed and modified from qTranslate's quicktag parsing mechanism
 		$regex = "#(\[:[a-z]{2}\](?:(?!\[:[a-z]{2}\]).)*)#";
+		if ( ! preg_match( $regex, $content ) ) {
+			return $content;
+		}
 
 		$blocks = preg_split( $regex, $content, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE );
 		// var_dump( $blocks );
@@ -639,7 +663,9 @@ class Multilingual_WP {
 		$_shortcode_tags = $shortcode_tags;
 		$shortcode_tags = $this->reg_shortcodes;
 
+		// var_dump( $content );
 		$content = do_shortcode( $content );
+		// var_dump( $content );
 
 		$shortcode_tags = $_shortcode_tags;
 		unset( $_shortcode_tags );
@@ -802,9 +828,9 @@ class Multilingual_WP {
 		return $slug;
 	}
 
-	public function filter_posts( $posts, $wp_query ) {
+	public function filter_posts( $posts, $wp_query = false ) {
 		// If the query explicitly states the language - respect that, otherwise use current language
-		$language = isset( $wp_query->query[ self::QUERY_VAR ] ) ? $wp_query->query[ self::QUERY_VAR ] : $this->current_lang;
+		$language = $wp_query && isset( $wp_query->query[ self::QUERY_VAR ] ) ? $wp_query->query[ self::QUERY_VAR ] : $this->current_lang;
 		if ( $language && $this->is_enabled( $language ) ) {
 			$old_id = $this->ID;
 

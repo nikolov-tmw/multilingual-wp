@@ -9,9 +9,8 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		if ( $this->admin_notice ) {
 			$this->admin_msg( $this->admin_notice );
 		}
-		if ( $this->admin_errors ) {
-			$this->admin_errors();
-		}
+
+		$this->admin_errors();
 
 		$this->page_header();
 
@@ -247,17 +246,5 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		</div>
 <?php
 		parent::page_footer();
-	}
-
-	public function admin_errors( $errors = false ) {
-		$errors = $errors ? $errors : $this->admin_errors;
-
-		if ( $errors ) {
-			$errors = is_array( $errors ) ? implode( "\n\n", $errors ) : $errors; ?> 
-			<div class="error">
-				<?php echo wpautop( $errors ); ?>
-			</div>
-		<?php 
-		}
 	}
 }

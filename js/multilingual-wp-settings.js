@@ -119,19 +119,19 @@
 			nav.append("<span>&nbsp;&nbsp;</span>");
 
 			for(i in tabs) {
-				el = '<a href="#' + tabs[i].id + '" class="nav-tab">' + tabs[i].title + '</a>';
+				el = '<a href="#mlwp_' + tabs[i].id + '" class="nav-tab">' + tabs[i].title + '</a>';
 				nav.append(el);
 			}
 
-			$(".js-tabs-nav a").click(function() {
+			$(".js-tabs-nav a").click(function(e) {
 				var th = $(this);
 				$(".js-tab").hide();
-				$( th.attr("href") ).show();
+				$( th.attr("href").replace(/mlwp_/, '') ).show();
 
 				th.addClass("nav-tab-active").siblings().removeClass("nav-tab-active");
 				$('.mlwp-wrap form').attr('action', th.attr('href') );
 
-				// return false;
+				// return e.preventDefault();
 			}).eq(0).click();
 		}
 		if ( window.location.hash ) {

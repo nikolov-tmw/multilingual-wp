@@ -34,6 +34,8 @@ abstract class scb_MLWP_AdminPage {
 	// l10n
 	protected $textdomain = 'multilingual-wp';
 
+	public $admin_errors = array();
+
 
 //  ____________REGISTRATION COMPONENT____________
 
@@ -174,12 +176,21 @@ abstract class scb_MLWP_AdminPage {
 		echo scb_MLWP_admin_notice( $msg, $class, $fade_time );
 	}
 
+	public function admin_errors( $errors = false ) {
+		$errors = $errors ? $errors : $this->admin_errors;
+
+		if ( $errors ) {
+			$errors = is_array( $errors ) ? implode( "\n\n", $errors ) : $errors;
+			$this->admin_msg( wpautop( $errors ), 'mlwp-error nofade' );
+		}
+	}
 
 //  ____________UTILITIES____________
 
 
 	// Generates a form submit button
-	function submit_button( $value = '', $action = 'action', $class = "button" ) {
+	function submit_button( $value = '', $action = 'action', $class = "button-primary", $wrap = true ) {
+		$wrap = $wrap === true ? html( 'p class="submit"', scb_MLWP_Forms::TOKEN ) : '';
 		if ( is_array( $value ) ) {
 			extract( wp_parse_args( $value, array(
 				'value' => __( 'Save Changes', 'multilingual-wp' ),
@@ -201,9 +212,11 @@ abstract class scb_MLWP_AdminPage {
 			'name' => $action,
 			'value' => $value,
 			'extra' => '',
-			'desc' => false,
-			'wrap' => html( 'p class="submit"', scb_MLWP_Forms::TOKEN )
+			'desc' => false
 		);
+		if ( $wrap ) {
+			$input_args['wrap'] = $wrap;
+		}
 
 		if ( ! empty( $class ) )
 			$input_args['extra'] = compact( 'class' );
