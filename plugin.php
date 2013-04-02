@@ -316,7 +316,8 @@ class Multilingual_WP {
 		add_filter( 'list_cats',                    array( $this, 'parse_quicktags' ), $this->late_fp );
 		add_filter( 'list_cats',                    array( $this, 'parse_transl_shortcodes' ), $this->late_fp );
 
-		add_filter( 'get_pages',                    array( $this, 'filter_posts' ) );
+		add_filter( 'get_pages',                    array( $this, 'filter_posts' ), 0 );
+		add_filter( 'wp_nav_menu_objects',          array( $this, 'filter_nav_menu_objects' ), 0 );
 
 		// add_filter( 'wp_setup_nav_menu_item',       array( $this, 'custom_menu_item_url_filter' ), 0 );
 
@@ -828,9 +829,33 @@ class Multilingual_WP {
 		return $slug;
 	}
 
+	public function filter_nav_menu_objects( $items ) {
+		foreach ( $items as $i => $item ) {
+			if ( isset( $item->type ) && $item->type == 'post_type' && $this->is_enabled_pt( $item->object ) ) {
+				$old_pt = $item->post_type;
+				$old_id = $item->ID;
+				// filter_post() won't recognize the "nav_menu_item" post_type
+				$item->post_type = $item->object;
+				$item->ID = $item->object_id;
+
+				$item = $this->filter_post( $item );
+
+				$item->post_type = $old_pt;
+				$item->ID = $old_id;
+				$item->title = $item->post_title;
+
+				$items[ $i ] = $item;
+			} else {
+				$items[ $i ]->title = $this->__( $item->title );
+			}
+		}
+
+		return $items;
+	}
+
 	public function filter_posts( $posts, $wp_query = false ) {
 		// If the query explicitly states the language - respect that, otherwise use current language
-		$language = $wp_query && isset( $wp_query->query[ self::QUERY_VAR ] ) ? $wp_query->query[ self::QUERY_VAR ] : $this->current_lang;
+		$language = $wp_query && is_a( $wp_query, 'WP_Query' ) && isset( $wp_query->query[ self::QUERY_VAR ] ) ? $wp_query->query[ self::QUERY_VAR ] : $this->current_lang;
 		if ( $language && $this->is_enabled( $language ) ) {
 			$old_id = $this->ID;
 
@@ -1372,7 +1397,8 @@ class Multilingual_WP {
 						'labels' => $labels,
 						'public' => true,
 						'exclude_from_search' => true,
-						'show_ui' => $show_ui, 
+						'show_ui' => $show_ui,
+						'show_in_nav_menus' => $show_ui,
 						'query_var' => false,
 						'rewrite' => true,
 						'capability_type' => $pt->capability_type,
