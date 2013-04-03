@@ -130,7 +130,7 @@ class Multilingual_WP {
 	/**
 	 * Late Filter Priority
 	 *
-	 * Holds the priority for filters that need to be applied last - therefore it should be a really hight number
+	 * Holds the priority for filters that need to be applied last - therefore it should be a really high number
 	 *
 	 * @var Integer
 	 **/
@@ -242,6 +242,8 @@ class Multilingual_WP {
 		// Make sure we have the home url before adding all the filters
 		$this->home_url = home_url( '/' );
 
+		$this->lang_mode = self::$options->lang_mode;
+
 		add_action( 'init', array( $this, 'init' ), 100 );
 
 		add_action( 'plugins_loaded', array( $this, 'setup_locale' ), $this->late_fp );
@@ -277,6 +279,9 @@ class Multilingual_WP {
 		$this->register_post_types();
 
 		$this->register_shortcodes();
+
+		global $wp_rewrite;
+		$this->use_trailing_slashes = $wp_rewrite->use_trailing_slashes;
 	}
 
 	/**
@@ -306,8 +311,8 @@ class Multilingual_WP {
 		add_filter( 'get_pagenum_link',             array( $this, 'convert_URL' ) );
 		add_filter( 'home_url',                     array( $this, 'convert_URL' ) );
 
-		add_filter( 'page_link',                    array( $this, 'convert_post_URL' ), 10, 2 );
-		add_filter( 'post_link',                    array( $this, 'convert_post_URL' ),	10, 2 );
+		add_filter( 'page_link',                    array( $this, 'convert_post_URL' ), $this->late_fp, 2 );
+		add_filter( 'post_link',                    array( $this, 'convert_post_URL' ),	$this->late_fp, 2 );
 
 		add_filter( 'redirect_canonical',           array( $this, 'fix_redirect' ), 10, 2 );
 
@@ -335,6 +340,10 @@ class Multilingual_WP {
 
 			add_filter( 'the_posts', array( $this, 'filter_posts' ), $this->late_fp, 2 );
 		}
+
+		if ( $this->lang_mode == self::LT_QUERY && ( $this->current_lang != self::$options->default_lang || self::$options->def_lang_in_url ) ) {
+			add_filter( 'user_trailingslashit', array( $this, 'remove_single_post_trailingslash' ), $this->late_fp, 2 );
+		}
 	}
 
 	/**
@@ -359,6 +368,10 @@ class Multilingual_WP {
 
 		if ( ! is_admin() ) {
 			add_action( 'parse_request', array( $this, 'set_locale_from_query' ), 0 );
+
+			if ( $this->lang_mode == self::LT_QUERY ) {
+				add_action( 'parse_request', array( $this, 'set_pt_from_query' ), $this->late_fp );
+			}
 
 			add_action( 'parse_request', array( $this, 'fix_home_page' ), 0 );
 
@@ -408,8 +421,8 @@ class Multilingual_WP {
 	*
 	* @access public
 	* 
-	* @param Boolean $force - whether to force the update or wait until two weeks since the last update have passed
-	* @param Boolean|String $for_lang - whether to only attempt a download for a specific language
+	* @param boolean $force Whether to force the update or wait until two weeks since the last update have passed
+	* @param boolean|string $for_lang Whether to only attempt a download for a specific language
 	**/
 	public function update_gettext( $force = false, $for_lang = false ) {
 		if ( ! is_dir( WP_LANG_DIR ) ) {
@@ -597,13 +610,13 @@ class Multilingual_WP {
 	/**
 	 * Translates a string using our methods(quicktags/shortcodes)
 	 *
-	 * @param String $text - Text to be translated
+	 * @param string $text Text to be translated
 	 * @access public
 	 * @uses Multilingual_WP::parse_quicktags()
 	 * @uses Multilingual_WP::parse_transl_shortcodes()
 	 * @uses apply_filters() calls "mlwp_gettext"
 	 * 
-	 * @return String - The [maybe]translated string
+	 * @return string - The [maybe]translated string
 	 **/
 	public function __( $text ) {
 		$text = $this->parse_quicktags( $text );
@@ -615,7 +628,7 @@ class Multilingual_WP {
 	/**
 	 * Translates and echoes a string using our methods(quicktags/shortcodes)
 	 *
-	 * @param String $text - Text to be translated
+	 * @param string $text Text to be translated
 	 * @access public
 	 * @uses Multilingual_WP::__()
 	 * 
@@ -677,6 +690,10 @@ class Multilingual_WP {
 	
 	public function add_rewrite_rules( $wp_rewrite ) {
 		static $did_rules = false;
+		// Don't know what to do with sub-domains yet, let's skip that for now :)
+		if ( $this->lang_mode != self::LT_PRE ) {
+			return;
+		}
 		if ( ! $did_rules ) {
 			$additional_rules = array();
 			foreach ( $wp_rewrite->rules as $regex => $match ) {
@@ -688,7 +705,7 @@ class Multilingual_WP {
 						}
 
 						// Add the proper language query information
-						$_match = $this->add_query_arg( self::QUERY_VAR , $lang, $match );
+						$_match = $this->add_query_arg( self::QUERY_VAR, $lang, $match );
 
 						// Replace the original post type with the proper post type(this allows different slugs for each language)
 						$additional_rules[ "$lang/$regex" ] = $this->fix_rwr_post_types( $_match, $lang );
@@ -732,8 +749,7 @@ class Multilingual_WP {
 		return $rw_match;
 	}
 
-	public function setup_locale(  ) {
-		$this->lang_mode = self::$options->lang_mode;
+	public function setup_locale() {
 		if ( ! is_admin() ) {
 			$request = $_SERVER['REQUEST_URI'];
 
@@ -932,6 +948,26 @@ class Multilingual_WP {
 
 		if ( ! isset( $wp->query_vars[ self::QUERY_VAR ] ) ) {
 			$wp->query_vars[ self::QUERY_VAR ] = $this->current_lang;
+		}
+	}
+
+	public function set_pt_from_query( $wp ) {
+		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) ) {
+			$post_type = false;
+			if ( isset( $wp->query_vars['post_type'] ) ) {
+				$post_type = $wp->query_vars['post_type'];
+			} elseif ( isset( $wp->query_vars['pagename'] ) && ! empty( $wp->query_vars['pagename'] ) ) {
+				$post_type = 'page';
+			} elseif ( isset( $wp->query_vars['name'] ) && ! empty( $wp->query_vars['name'] ) ) {
+				$post_type = 'post';
+			}
+			if ( $post_type ) {
+				$wp->query_vars['post_type'] = "{$this->pt_prefix}{$post_type}_" . $wp->query_vars[self::QUERY_VAR];
+				if ( isset( $wp->query_vars[ $post_type ] ) ) {
+					$wp->query_vars[ "{$this->pt_prefix}{$post_type}_" . $wp->query_vars[self::QUERY_VAR] ] = $wp->query_vars[ $post_type ];
+					unset( $wp->query_vars[ $post_type ] );
+				}
+			}
 		}
 	}
 
@@ -1605,7 +1641,8 @@ class Multilingual_WP {
 				if ( $lang == self::$options->default_lang && ! self::$options->def_lang_in_url ) {
 					$url = remove_query_arg( self::QUERY_VAR, $url );
 				} else {
-					$url = add_query_arg( self::QUERY_VAR, $lang, $url );
+					$url = $this->use_trailing_slashes ? trailingslashit( $url ) : untrailingslashit( $url );
+					$url = untrailingslashit( add_query_arg( self::QUERY_VAR, $lang, $url ) );
 				}
 
 				break;
@@ -1677,24 +1714,41 @@ class Multilingual_WP {
 	}
 
 	/**
+	* Gets rid of the trailing slash for singular posts
+	*
+	* If we're using the query argument mode, we want to make sure that single posts don't have the trailing slash at the end.
+	*
+	* @access public
+	* @param string $url The url with or without a trailing slash.
+	* @param string $type The type of URL being considered (e.g. single, category, etc).
+	* @return string
+	**/
+	public function remove_single_post_trailingslash( $url, $type = '' ) {
+		if ( $type == 'single' || $type == 'page' ) {
+			$url = untrailingslashit( $url );
+		}
+		return $url;
+	}
+
+	/**
 	* Generates a language switcher
 	*
 	* @access public
 	* 
-	* @param Array|String $options - If array - one or more of the following options. If string - the type
+	* @param array|string $options - If array - one or more of the following options. If string the type
 	* of the swticher(see $type bellow for options)
 	* 
 	* Available options in the $options Array:
-	* @param String $type - the type of the switcher. One of the following: 'text'(language labels only),
+	* @param string $type The type of the switcher. One of the following: 'text'(language labels only),
 	* 'image'(language flags only), 'both'(labels and flags), 'select'|'dropdown'(use labels to create a
 	* <select> drop-down with redirection on language select). Default: 'image'
-	* @param String $wrap - the wrapping HTML element for each language. Examples: 'li', 'span', 'div', 'p'... Default: 'li'
-	* @param String $outer_wrap - the wrapping HTML element for each language. Examples: 'ul', 'ol', 'div'... Default: 'ul'
-	* @param String $class - the value for the HTML 'class' attribute for the $outer_wrap element. Default: 'mlwp-lang-switcher'
-	* @param String $id - the value for the HTML 'id' attribute for the $outer_wrap element. Default: "mlwp_lang_switcher_X",
+	* @param string $wrap The wrapping HTML element for each language. Examples: 'li', 'span', 'div', 'p'... Default: 'li'
+	* @param string $outer_wrap The wrapping HTML element for each language. Examples: 'ul', 'ol', 'div'... Default: 'ul'
+	* @param string $class The value for the HTML 'class' attribute for the $outer_wrap element. Default: 'mlwp-lang-switcher'
+	* @param string $id The value for the HTML 'id' attribute for the $outer_wrap element. Default: "mlwp_lang_switcher_X",
 	* where "X" is an incrementing number starting from 1(it increments any time this function is called without passing 'id' option)
-	* @param String $active_class - the value for the HTML 'class' attribute for the currently active language's element. Default: 'active'
-	* @param Boolean|String $return - Whether to return or echo the output. Pass false for echo. Pass 'html' to get the ready html. Pass
+	* @param string $active_class The value for the HTML 'class' attribute for the currently active language's element. Default: 'active'
+	* @param boolean|string $return Whether to return or echo the output. Pass false for echo. Pass 'html' to get the ready html. Pass
 	* 'array' to retrieve a multidimensional array with the following structure:
 	* array(
 	* 	'xx' => array(
@@ -1706,8 +1760,8 @@ class Multilingual_WP {
 	* 	)
 	* )
 	* That's useful for when trying to build a highly customized switcher. Default: false
-	* @param Boolean $hide_current - whether to display or not the currently active language
-	* @param String|Integer $flag_size - the size for the flag image. One of: 16, 24, 32, 48, 64. Default: gets user's preference(plugin option)
+	* @param boolean $hide_current Whether to display or not the currently active language
+	* @param string|integer $flag_size The size for the flag image. One of: 16, 24, 32, 48, 64. Default: gets user's preference(plugin option)
 	*
 	* @uses apply_filters() Calls "mlwp_lang_switcher_pre" passing the user options and the defaults. If output is provided, returns that 
 	*
@@ -1833,10 +1887,10 @@ class Multilingual_WP {
 	*
 	* @uses apply_filters() calls "mlwp_get_flag", passing the found flag, language and size as additional parameters. Return something different than false to override this function
 	*
-	* @param String $language - the language for which to retreive the flag. Optional, defaults to current
-	* @param Integer $size - the size at which to get the flag. Optional, defaults to plugin settings
+	* @param string $language The language for which to retreive the flag. Optional, defaults to current
+	* @param integer $size The size at which to get the flag. Optional, defaults to plugin settings
 	*
-	* @return String - the URL for the flag, or a general "earth.png" flag if none was found
+	* @return string - the URL for the flag, or a general "earth.png" flag if none was found
 	**/
 	public function get_flag( $language = '', $size = '' ) {
 		$language = $language && isset( self::$options->languages[ $language ] ) ? $language : $this->current_lang;
@@ -2014,8 +2068,8 @@ class Multilingual_WP {
 	/**
 	* Gets the slug of an object - uses own cache
 	* 
-	* @param Integer $id - the ID of the object that the slug is requested
-	* @param String $type - the type of the object in question. "post"(any general post type), "category"(any terms) or mlwp_post(plugin-created post types)
+	* @param integer $id The ID of the object that the slug is requested
+	* @param string $type The type of the object in question. "post"(any general post type), "category"(any terms) or mlwp_post(plugin-created post types)
 	**/
 	public function get_obj_slug( $id, $type ) {
 		$_id = "_{$id}";

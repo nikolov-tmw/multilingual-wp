@@ -101,6 +101,26 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			}
 		}
 
+		if ( ! $this->options->flush_rewrite_rules ) {
+			// Check if the enabled post types have changed
+			if ( count( $new_data['enabled_pt'] ) != count( $this->options->enabled_pt ) ) {
+				// Queue a rewrite rules flush
+				$this->options->flush_rewrite_rules = true;
+			} else { // Well the number of post types could be the same, so let's make sure they're actually the same
+				foreach ( $new_data['enabled_pt'] as $pt ) {
+					if ( array_search( $lang, $this->options->enabled_pt ) === false ) {
+						$this->options->flush_rewrite_rules = true;
+						break;
+					}
+				}
+			}
+		}
+
+		// Has the language mode changed?
+		if ( ! $this->options->flush_rewrite_rules && $new_data['lang_mode'] != $this->options->lang_mode ) {
+			$this->options->flush_rewrite_rules = true;
+		}
+
 		$this->options->set( $new_data );
 
 		$this->admin_notice = __( 'Settings <strong>saved</strong>.', 'multilingual-wp' );
