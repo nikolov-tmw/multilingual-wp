@@ -64,13 +64,14 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 		global $Multilingual_WP, $qtranslate_slug;
 		$qtslug = class_exists( 'QtranslateSlug' ) && $qtranslate_slug;
+		$langs_count = count( $this->options->enabled_langs );
 
 		foreach ( $posts as $post ) {
 			if ( $post->post_parent && get_post_meta( $post->post_parent, '_mlwp_batch_updated', true ) != 'yes' ) {
 				$message[] = '<p class="error">' . sprintf( __( 'The post "%s" was ignored, because it\'s parent post has not been updated yet.', 'multilingual-wp' ), get_the_title( $post->post_parent ) ) . '</p>';
 				continue;
 			}
-			@set_time_limit( 30 );
+			@set_time_limit( 30 * $langs_count );
 			$Multilingual_WP->setup_post_vars( $post->ID );
 
 			$Multilingual_WP->create_rel_posts();

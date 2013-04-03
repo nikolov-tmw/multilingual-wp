@@ -199,6 +199,7 @@ class Multilingual_WP {
 			'dfs' => '24',
 			'enabled_pt' => array( 'post', 'page' ),
 			'generated_pt' => array(),
+			'_generated_pt' => array(),
 			'show_ui' => false,
 			'lang_mode' => false,
 			'na_message' => true,
@@ -1377,6 +1378,7 @@ class Multilingual_WP {
 		$enabled_pt = self::$options->enabled_pt;
 
 		$generated_pt = array();
+		$_generated_pt = self::$options->_generated_pt && is_array( self::$options->_generated_pt ) ? self::$options->_generated_pt : array();
 
 		if ( $enabled_pt ) {
 			$enabled_langs = self::$options->enabled_langs;
@@ -1398,7 +1400,10 @@ class Multilingual_WP {
 					$name = "{$this->pt_prefix}{$pt_name}_{$lang}";
 					$labels = array_merge(
 						(array) $pt->labels,
-						array( 'menu_name' => $pt->labels->menu_name . ' - ' . $languages[ $lang ]['label'], )
+						array(
+							'menu_name' => $pt->labels->menu_name . ' [' . $lang . ']',
+							'name' => $pt->labels->name . ' [' . $lang . ']',
+						)
 					);
 					$args = array(
 						'labels' => $labels,
@@ -1421,6 +1426,9 @@ class Multilingual_WP {
 					$result = register_post_type($name, $args);
 					if ( ! is_wp_error( $result ) ) {
 						$generated_pt[] = $name;
+						if ( in_array( $name, $_generated_pt ) === false ) {
+							$_generated_pt[] = $name;
+						}
 					}
 				}
 
@@ -1429,6 +1437,7 @@ class Multilingual_WP {
 
 		// Update the option
 		self::$options->generated_pt = $generated_pt;
+		self::$options->_generated_pt = $_generated_pt;
 
 		if ( self::$options->flush_rewrite_rules ) {
 			flush_rewrite_rules();
@@ -1641,7 +1650,7 @@ class Multilingual_WP {
 		if ( $this->is_enabled_pt( $post->post_type ) ) {
 			if ( $post->post_parent ) {
 				$slugs = array();
-				foreach ( get_post_ancestors( $id ) as $a_id ) {
+				foreach ( get_post_ancestors( $post ) as $a_id ) {
 					$rel_langs = get_post_meta( $a_id, $this->languages_meta_key, true );
 					if ( ! isset( $rel_langs[ $this->current_lang ] ) ) {
 						continue;
