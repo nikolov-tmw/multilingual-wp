@@ -167,6 +167,7 @@ class Multilingual_WP {
 	private $_doing_save = false;
 	private $_doing_delete = false;
 	private $pt_prefix = 'mlwp_';
+	private $tax_prefix = 'mlwp_t_';
 	private $reg_shortcodes = array();
 
 	public function plugin_init() {
@@ -198,8 +199,11 @@ class Multilingual_WP {
 			'enabled_langs' => array( 'en' ),
 			'dfs' => '24',
 			'enabled_pt' => array( 'post', 'page' ),
+			'enabled_tax' => array( 'category', 'post_tag' ),
 			'generated_pt' => array(),
 			'_generated_pt' => array(),
+			'generated_tax' => array(),
+			'_generated_tax' => array(),
 			'show_ui' => false,
 			'lang_mode' => false,
 			'na_message' => true,
@@ -277,6 +281,8 @@ class Multilingual_WP {
 		$this->add_actions();
 
 		$this->register_post_types();
+
+		$this->register_taxonomies();
 
 		$this->register_shortcodes();
 
@@ -687,7 +693,37 @@ class Multilingual_WP {
 
 		return $content;
 	}
+
+	public function hash_pt_name( $pt, $lang = false ) {
+		static $hashed_names;
+		$hashed_names = $hashed_names ? $hashed_names : array();
+
+		$lang = $lang ? $lang : $this->current_lang;
+
+		$id = "{$this->pt_prefix}{$pt}_{$lang}";
+		if ( ! isset( $hashed_names[ $id ] ) ) {
+			$hashed_names[ $id ] = substr( sha1( $id ), 0, 20 );
+		}
+		var_dump( $hashed_names );
+
+		return $hashed_names[ $id ];
+	}
 	
+	public function hash_tax_name( $tax, $lang = false ) {
+		static $hashed_names;
+		$hashed_names = $hashed_names ? $hashed_names : array();
+
+		$lang = $lang ? $lang : $this->current_lang;
+
+		$id = "{$this->tax_prefix}{$tax}_{$lang}";
+		if ( ! isset( $hashed_names[ $id ] ) ) {
+			$hashed_names[ $id ] = substr( sha1( $id ), 0, 20 );
+		}
+		// var_dump( $hashed_names );
+
+		return $hashed_names[ $id ];
+	}
+
 	public function add_rewrite_rules( $wp_rewrite ) {
 		static $did_rules = false;
 		// Don't know what to do with sub-domains yet, let's skip that for now :)
@@ -739,12 +775,14 @@ class Multilingual_WP {
 
 	public function fix_rwr_post_types( $rw_match, $lang ) {
 		foreach ( self::$options->enabled_pt as $pt ) {
+			$pt_name = $this->hash_pt_name( $pt, $lang );
 			if ( 'page' == $pt ) {
-				$rw_match = str_replace( 'pagename', "post_type={$this->pt_prefix}{$pt}_{$lang}&name", $rw_match );
+				// $rw_match = str_replace( 'pagename', "post_type={$this->pt_prefix}{$pt}_{$lang}&name", $rw_match );
+				$rw_match = str_replace( 'pagename', "post_type={$pt_name}&name", $rw_match );
 				continue;
 			}
-			$rw_match = str_replace( "$pt=", "{$this->pt_prefix}{$pt}_{$lang}", $rw_match );
-			$rw_match = str_replace( "post_type=$pt&", "{$this->pt_prefix}{$pt}_{$lang}", $rw_match );
+			$rw_match = str_replace( "{$pt}=", "{$pt_name}=", $rw_match );
+			$rw_match = str_replace( "post_type=$pt&", "{$pt_name}&", $rw_match );
 		}
 		return $rw_match;
 	}
@@ -964,9 +1002,11 @@ class Multilingual_WP {
 				$pt_holder = 'name';
 			}
 			if ( $post_type ) {
-				$wp->query_vars['post_type'] = "{$this->pt_prefix}{$post_type}_" . $wp->query_vars[self::QUERY_VAR];
+				$pt_name = $this->hash_pt_name( $post_type, $wp->query_vars[self::QUERY_VAR] );
+				$wp->query_vars['post_type'] = $pt_name;
+
 				if ( isset( $wp->query_vars[ $post_type ] ) ) {
-					$wp->query_vars[ "{$this->pt_prefix}{$post_type}_" . $wp->query_vars[self::QUERY_VAR] ] = $wp->query_vars[ $pt_holder ];
+					$wp->query_vars[  $pt_name ] = $wp->query_vars[ $pt_holder ];
 					unset( $wp->query_vars[ $post_type ] );
 				}
 			}
@@ -1024,7 +1064,7 @@ class Multilingual_WP {
 					$wp->query_vars['post_type'] = 'post';
 				}
 			} else {
-				$pt = "{$this->pt_prefix}post_{$lang}";
+				$pt = $this->hash_pt_name( 'post', $lang );
 				if ( $this->is_gen_pt( $pt ) && $this->is_enabled_pt( 'post' ) ) {
 					$wp->query_vars['post_type'] = $pt;
 				}
@@ -1198,7 +1238,8 @@ class Multilingual_WP {
 				$_post['post_title'] = $_POST[ "title_{$lang}" ];
 				$_post['post_name'] = $_POST[ "post_name_{$lang}" ];
 				$_post['post_content'] = $_POST[ "content_{$lang}" ];
-				$_post['post_type'] = "{$this->pt_prefix}{$this->post_type}_{$lang}";
+				// $_post['post_type'] = "{$this->pt_prefix}{$this->post_type}_{$lang}";
+				$_post['post_type'] = $this->hash_pt_name( $this->post_type, $lang );
 
 				if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
 					$_post['post_parent'] = $this->parent_rel_langs[ $lang ];
@@ -1435,15 +1476,17 @@ class Multilingual_WP {
 					continue;
 				}
 				foreach ($enabled_langs as $lang) {
-					$name = "{$this->pt_prefix}{$pt_name}_{$lang}";
+					$name = $this->hash_pt_name( $pt_name, $lang );
 					$labels = array_merge(
 						(array) $pt->labels,
 						array(
 							'menu_name' => $pt->labels->menu_name . ' [' . $lang . ']',
 							'name' => $pt->labels->name . ' [' . $lang . ']',
+							'name_admin_bar' => ( isset( $pt->labels->name_admin_bar ) ? $pt->labels->name_admin_bar : $pt->labels->name ) . ' [' . $lang . ']',
 						)
 					);
 					$args = array(
+						'label' => $pt->label . ' [' . $lang . ']',
 						'labels' => $labels,
 						'public' => true,
 						'exclude_from_search' => true,
@@ -1462,6 +1505,7 @@ class Multilingual_WP {
 					);
 
 					$result = register_post_type($name, $args);
+
 					if ( ! is_wp_error( $result ) ) {
 						$generated_pt[] = $name;
 						if ( in_array( $name, $_generated_pt ) === false ) {
@@ -1476,6 +1520,84 @@ class Multilingual_WP {
 		// Update the option
 		self::$options->generated_pt = $generated_pt;
 		self::$options->_generated_pt = $_generated_pt;
+
+		if ( self::$options->flush_rewrite_rules ) {
+			flush_rewrite_rules();
+			self::$options->flush_rewrite_rules = false;
+		}
+	}
+
+	private function register_taxonomies() {
+		$enabled_tax = self::$options->enabled_tax;
+
+		$generated_tax = array();
+		$_generated_tax = self::$options->_generated_tax && is_array( self::$options->_generated_tax ) ? self::$options->_generated_tax : array();
+
+		if ( $enabled_tax ) {
+			$enabled_langs = self::$options->enabled_langs;
+			if ( ! $enabled_langs ) {
+				return false;
+			}
+
+			$taxonomies = get_taxonomies( array(  ), 'objects' );
+
+			$languages = self::$options->languages;
+			$show_ui = (bool) self::$options->show_ui;
+
+			foreach ( $enabled_tax as $tax_name ) {
+				$tax = isset( $taxonomies[ $tax_name ] ) ? $taxonomies[ $tax_name ] : false;
+				if ( ! $tax ) {
+					continue;
+				}
+				foreach ( $enabled_langs as $lang ) {
+					$name = $this->hash_tax_name( $tax_name, $lang );
+					$labels = array_merge(
+						(array) $tax->labels,
+						array(
+							'menu_name' => $tax->labels->menu_name . ' [' . $lang . ']',
+							'name' => $tax->labels->name . ' [' . $lang . ']',
+						)
+					);
+					$args = array(
+						'label' => $tax->label,
+						'labels' => $labels,
+						'public' => true,
+						'show_ui' => $show_ui,
+						'show_in_nav_menus' => $show_ui,
+						'show_tagcloud' => $tax->show_tagcloud,
+						'show_admin_column' => $tax->show_admin_column,
+						'hierarchical' => $tax->hierarchical,
+						'update_count_callback' => '',
+						'query_var' => false,
+						'rewrite' => $this->lang_mode == self::LT_PRE,
+						'capabilities' => (array) $tax->cap,
+					);
+					if ( isset( $tax->sort ) ) {
+						$args['sort'] = $tax->sort;
+					}
+					
+					$object_types = (array) $tax->object_type;
+					foreach ( $object_types as $i => $pt ) {
+						if ( $this->is_enabled_pt( $pt ) ) {
+							$object_types[ $i ] = $this->hash_pt_name( $pt, $lang );
+						}
+					}
+					
+					$result = register_taxonomy( $name, $object_types, $args );
+					if ( ! is_wp_error( $result ) ) {
+						$generated_tax[] = $name;
+						if ( in_array( $name, $_generated_tax ) === false ) {
+							$_generated_tax[] = $name;
+						}
+					}
+				}
+
+			}
+		}
+
+		// Update the option
+		self::$options->generated_tax = $generated_tax;
+		self::$options->_generated_tax = $_generated_tax;
 
 		if ( self::$options->flush_rewrite_rules ) {
 			flush_rewrite_rules();
@@ -1533,7 +1655,8 @@ class Multilingual_WP {
 		// If the creation queue is not empty, loop through all languages and create corresponding posts
 		if ( ! empty( $to_create ) ) {
 			foreach ( $to_create as $lang ) {
-				$pt = "{$this->pt_prefix}{$this->post_type}_{$lang}";
+				// $pt = "{$this->pt_prefix}{$this->post_type}_{$lang}";
+				$pt = $this->hash_pt_name( $this->post_type, $lang );
 				$parent = 0;
 				// Look-up for a parent post
 				if ( $this->parent_rel_langs && isset( $this->parent_rel_langs[ $lang ] ) ) {
