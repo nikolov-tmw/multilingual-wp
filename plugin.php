@@ -952,19 +952,21 @@ class Multilingual_WP {
 	}
 
 	public function set_pt_from_query( $wp ) {
-		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) ) {
+		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) && $wp->query_vars[ self::QUERY_VAR ] != self::$options->default_lang ) {
 			$post_type = false;
 			if ( isset( $wp->query_vars['post_type'] ) ) {
-				$post_type = $wp->query_vars['post_type'];
+				$pt_holder = $post_type = $wp->query_vars['post_type'];
 			} elseif ( isset( $wp->query_vars['pagename'] ) && ! empty( $wp->query_vars['pagename'] ) ) {
 				$post_type = 'page';
+				$pt_holder = 'pagename';
 			} elseif ( isset( $wp->query_vars['name'] ) && ! empty( $wp->query_vars['name'] ) ) {
 				$post_type = 'post';
+				$pt_holder = 'name';
 			}
 			if ( $post_type ) {
 				$wp->query_vars['post_type'] = "{$this->pt_prefix}{$post_type}_" . $wp->query_vars[self::QUERY_VAR];
 				if ( isset( $wp->query_vars[ $post_type ] ) ) {
-					$wp->query_vars[ "{$this->pt_prefix}{$post_type}_" . $wp->query_vars[self::QUERY_VAR] ] = $wp->query_vars[ $post_type ];
+					$wp->query_vars[ "{$this->pt_prefix}{$post_type}_" . $wp->query_vars[self::QUERY_VAR] ] = $wp->query_vars[ $pt_holder ];
 					unset( $wp->query_vars[ $post_type ] );
 				}
 			}
@@ -1448,7 +1450,7 @@ class Multilingual_WP {
 						'show_ui' => $show_ui,
 						'show_in_nav_menus' => $show_ui,
 						'query_var' => false,
-						'rewrite' => true,
+						'rewrite' => $this->lang_mode == self::LT_PRE,
 						'capability_type' => $pt->capability_type,
 						'capabilities' => (array) $pt->cap,
 						'map_meta_cap' => $pt->map_meta_cap,
