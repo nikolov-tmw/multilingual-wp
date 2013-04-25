@@ -704,7 +704,7 @@ class Multilingual_WP {
 		if ( ! isset( $hashed_names[ $id ] ) ) {
 			$hashed_names[ $id ] = substr( sha1( $id ), 0, 20 );
 		}
-		var_dump( $hashed_names );
+		// var_dump( $hashed_names );
 
 		return $hashed_names[ $id ];
 	}
