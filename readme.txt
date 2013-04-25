@@ -10,9 +10,6 @@ This plugins allows you to easily integrate multiple language support in your Wo
 
 == Description ==
 
-=== IMPORTANT NOTE ===
-From the 25.04.2013 commit, custom post type names have changed drastically. If you've used an older version and you still want to keep all of your translation posts, follow this guide here - https://github.com/nikolov-tmw/multilingual-wp/wiki/Migrating-from-non-hashed-to-hashed-CPT-names 
-
 === WARNING: ===
 This plugin is still in development! It's only tested in a development environment and with every release things could get fixed or break. Use it in production environments on your own risk! 
 This plugin adds translations by creating a new post for every language that you have enabled. So if you have 10 posts and 3 enabled languages, you'll end-up(in your database) with 30 posts. While this seems fine for smaller websites/blogs, I can't guarantee that it will behave properly in larger scale installs. If you have thousands of posts that you want to translate, then this might NOT be the plugin you're looking for.

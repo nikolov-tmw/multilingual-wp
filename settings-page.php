@@ -245,13 +245,10 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			'extra' => array( 'id' => 'flag_size_select' )
 		);
 
-		$pts_opts = array();
-		if ( post_type_exists( 'post' ) ) {
-			$pts_opts['post'] = __( 'Post', 'multilingual-wp' ) . '<br />';
-		}
-		if ( post_type_exists( 'page' ) ) {
-			$pts_opts['page'] = __( 'Page', 'multilingual-wp' ) . '<br />';
-		}
+		$pts_opts = array(
+			'post' => __( 'Post', 'multilingual-wp' ) . '<br />',
+			'page' => __( 'Page', 'multilingual-wp' ) . '<br />'
+		);
 		$post_types = get_post_types( array( 'show_ui' => true, '_builtin' => false ), 'objects' );
 		if ( $post_types ) {
 			foreach ($post_types as $pt => $data) {
@@ -269,32 +266,6 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			'name' => "enabled_pt",
 			'checked' => $enabled_langs,
 			'choices' => $pts_opts
-		);
-
-		$tax_opts = array();
-		if ( taxonomy_exists( 'category' ) ) {
-			$tax_opts['category'] = __( 'Categories', 'multilingual-wp' ) . '<br />';
-		}
-		if ( taxonomy_exists( 'post_tag' ) ) {
-			$tax_opts['post_tag'] = __( 'Tags', 'multilingual-wp' ) . '<br />';
-		}
-		$taxonomies = get_taxonomies( array( 'show_ui' => true, '_builtin' => false ), 'objects' );
-		if ( $taxonomies ) {
-			foreach ( $taxonomies as $tax => $data ) {
-				if ( in_array( $tax, $this->options->generated_tax ) ) {
-					continue;
-				}
-				$tax_opts[ $tax ] = $data->labels->name . '<br />';
-			}
-		}
-		$enabled_tax = $this->options->enabled_tax;
-
-		$default_settings[] = array(
-			'title' => __( 'Please select which taxonomies you want to be multilingual.', 'multilingual-wp' ),
-			'type' => 'checkbox',
-			'name' => "enabled_tax",
-			'checked' => $enabled_tax,
-			'choices' => $tax_opts
 		);
 
 		$default_settings[] = array(
