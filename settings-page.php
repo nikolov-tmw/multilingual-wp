@@ -108,7 +108,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 				$this->options->flush_rewrite_rules = true;
 			} else { // Well the number of post types could be the same, so let's make sure they're actually the same
 				foreach ( $new_data['enabled_pt'] as $pt ) {
-					if ( array_search( $lang, $this->options->enabled_pt ) === false ) {
+					if ( array_search( $pt, $this->options->enabled_pt ) === false ) {
 						$this->options->flush_rewrite_rules = true;
 						break;
 					}

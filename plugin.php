@@ -8,7 +8,7 @@ Author URI: http://themoonwatch.com
 Plugin URI: http://themoonwatch.com/multilingual-wp
 
 
-Copyright (C) 2012 Nikola Nikolov (nikolov.tmw@gmail.com)
+Copyright (C) 2012-2013 Nikola Nikolov (nikolov.tmw@gmail.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -109,6 +109,41 @@ class Multilingual_WP {
 	public $rel_langs;
 
 	/**
+	 * Holds a reference to the ID of the term we're currently interacting with
+	 *
+	 * @var string|Integer
+	 **/
+	public $term_ID;
+
+	/**
+	 * Holds a reference to the term object with which we're currently interacting
+	 *
+	 * @var stdClass|WP_Post object
+	 **/
+	public $term;
+
+	/**
+	 * Holds a reference to the taxonomy of the term we're currently interacting with
+	 *
+	 * @var string
+	 **/
+	public $taxonomy;
+
+	/**
+	 * Holds a reference to the ID's of all related languages for the term we're currently interacting with
+	 *
+	 * @var array
+	 **/
+	public $rel_t_langs;
+
+	/**
+	 * Holds a reference to the ID's of all related languages for the parent of the term we're currently interacting with
+	 *
+	 * @var array
+	 **/
+	public $parent_rel_t_langs;
+
+	/**
 	 * Whether we're running on Windows or not 
 	 *
 	 * @var boolean
@@ -119,6 +154,8 @@ class Multilingual_WP {
 	public $parent_rel_langs;
 
 	private $home_url;
+
+	private $t_slug_sfx = 'mlwp-sfx';
 
 	/**
 	* Caches various object's slugs(posts/pages/categories/etc.)
@@ -166,6 +203,7 @@ class Multilingual_WP {
 
 	private $_doing_save = false;
 	private $_doing_delete = false;
+	private $_doing_t_save = false;
 	private $pt_prefix = 'mlwp_';
 	private $tax_prefix = 'mlwp_t_';
 	private $reg_shortcodes = array();
@@ -273,6 +311,7 @@ class Multilingual_WP {
 
 		wp_register_script( 'multilingual-wp-js', $this->plugin_url . 'js/multilingual-wp.js', array( 'jquery', 'schedule', 'word-count' ), false, true );
 		wp_register_script( 'multilingual-wp-autosave-js', $this->plugin_url . 'js/multilingual-wp-autosave.js', array( 'multilingual-wp-js', 'autosave' ), false, true );
+		wp_register_script( 'multilingual-wp-tax-js', $this->plugin_url . 'js/multilingual-wp-tax.js', array( 'jquery' ), false, true );
 
 		wp_register_style( 'multilingual-wp-css', $this->plugin_url . 'css/multilingual-wp.css' );
 
@@ -307,9 +346,6 @@ class Multilingual_WP {
 		add_filter( 'month_link',                   array( $this, 'convert_URL' ) );
 		add_filter( 'year_link',                    array( $this, 'convert_URL' ) );
 		add_filter( 'category_feed_link',           array( $this, 'convert_URL' ) );
-		add_filter( 'category_link',                array( $this, 'convert_URL' ) );
-		add_filter( 'tag_link',                     array( $this, 'convert_URL' ) );
-		add_filter( 'term_link',                    array( $this, 'convert_URL' ) );
 		add_filter( 'the_permalink',                array( $this, 'convert_URL' ) );
 		add_filter( 'feed_link',                    array( $this, 'convert_URL' ) );
 		add_filter( 'post_comments_feed_link',      array( $this, 'convert_URL' ) );
@@ -319,6 +355,10 @@ class Multilingual_WP {
 
 		add_filter( 'page_link',                    array( $this, 'convert_post_URL' ), $this->late_fp, 2 );
 		add_filter( 'post_link',                    array( $this, 'convert_post_URL' ),	$this->late_fp, 2 );
+
+		add_filter( 'category_link',                array( $this, 'convert_term_URL' ), $this->late_fp, 3 );
+		add_filter( 'tag_link',                     array( $this, 'convert_term_URL' ), $this->late_fp, 3 );
+		add_filter( 'term_link',                    array( $this, 'convert_term_URL' ), $this->late_fp, 3 );
 
 		add_filter( 'redirect_canonical',           array( $this, 'fix_redirect' ), 10, 2 );
 
@@ -360,10 +400,10 @@ class Multilingual_WP {
 	private function add_actions() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 
-		add_action( 'submitpost_box', array( $this, 'insert_editors' ), 0 );
-		add_action( 'submitpage_box', array( $this, 'insert_editors' ), 0 );
-
 		add_action( 'save_post', array( $this, 'save_post_action' ), 10 );
+
+		add_action( 'edited_term', array( $this, 'edited_term_action' ), 10, 3 );
+		add_action( 'created_term', array( $this, 'created_term_action' ), 10, 3 );
 
 		// Default action for not-authenticated autosave
 		add_action( 'wp_ajax_nopriv_mlwp_autosave', 'wp_ajax_nopriv_autosave', 1 );
@@ -371,6 +411,8 @@ class Multilingual_WP {
 
 		add_action( 'before_delete_post', array( $this, 'delete_post_action' ) );
 		add_action( 'wp_trash_post', array( $this, 'delete_post_action' ) );
+
+		add_action( 'set_object_terms', array( $this, 'set_object_terms_action' ), 10, 6 );
 
 		if ( ! is_admin() ) {
 			add_action( 'parse_request', array( $this, 'set_locale_from_query' ), 0 );
@@ -388,6 +430,13 @@ class Multilingual_WP {
 			add_action( 'template_redirect', array( $this, 'canonical_redirect' ), 0 );
 		} else {
 			add_action( 'admin_init', array( $this, 'update_gettext' ) );
+
+			add_action( 'submitpost_box', array( $this, 'insert_editors' ), 0 );
+			add_action( 'submitpage_box', array( $this, 'insert_editors' ), 0 );
+
+			foreach ( self::$options->enabled_tax as $tax ) {
+				add_action( "{$tax}_edit_form_fields", array( $this, 'edit_tax_fields' ), 0, 2 );
+			}
 		}
 
 		add_action( 'generate_rewrite_rules', array( $this, 'add_rewrite_rules' ), $this->late_fp );
@@ -704,7 +753,6 @@ class Multilingual_WP {
 		if ( ! isset( $hashed_names[ $id ] ) ) {
 			$hashed_names[ $id ] = substr( sha1( $id ), 0, 20 );
 		}
-		// var_dump( $hashed_names );
 
 		return $hashed_names[ $id ];
 	}
@@ -719,7 +767,6 @@ class Multilingual_WP {
 		if ( ! isset( $hashed_names[ $id ] ) ) {
 			$hashed_names[ $id ] = substr( sha1( $id ), 0, 20 );
 		}
-		// var_dump( $hashed_names );
 
 		return $hashed_names[ $id ];
 	}
@@ -746,10 +793,24 @@ class Multilingual_WP {
 						// Replace the original post type with the proper post type(this allows different slugs for each language)
 						$additional_rules[ "$lang/$regex" ] = $this->fix_rwr_post_types( $_match, $lang );
 					}
+				} elseif ( $this->should_build_t_rwr( $match ) ) {
+					foreach ( self::$options->enabled_langs as $lang ) {
+						// Don't create rewrite rules for the default language if the user doesn't want it
+						if ( $lang == self::$options->default_lang && ! self::$options->def_lang_in_url ) {
+							continue;
+						}
+
+						// Add the proper language query information
+						$_match = $this->add_query_arg( self::QUERY_VAR, $lang, $match );
+
+						// Replace the original post type with the proper post type(this allows different slugs for each language)
+						$additional_rules[ "$lang/$regex" ] = $this->fix_rwr_taxonomies( $_match, $lang );
+					}
 				}
 			}
 			// Add our rewrite rules at the beginning of all rewrite rules - they are with a higher priority
 			$wp_rewrite->rules = array_merge( $additional_rules, $wp_rewrite->rules );
+			// var_dump( $wp_rewrite->rules );
 		}
 	}
 
@@ -763,6 +824,24 @@ class Multilingual_WP {
 		}
 		if ( ! $should && $this->is_enabled_pt( 'page' ) ) {
 			$should = (bool) strpos( $rw_match, "pagename=" ) !== false;
+		}
+
+		return $should;
+	}
+
+	public function should_build_t_rwr( $rw_match ) {
+		$should = false;
+		foreach ( self::$options->enabled_tax as $tax ) {
+			if ( strpos( $rw_match, "$tax=" ) !== false /*|| strpos( $rw_match, "post_type=$pt&" ) !== false*/ ) {
+				$should = true;
+				break;
+			}
+		}
+		if ( ! $should && $this->is_enabled_tax( 'category' ) ) {
+			$should = (bool) strpos( $rw_match, "category_name=" ) !== false;
+		}
+		if ( ! $should && $this->is_enabled_tax( 'post_tag' ) ) {
+			$should = (bool) strpos( $rw_match, "tag=" ) !== false;
 		}
 
 		return $should;
@@ -783,6 +862,24 @@ class Multilingual_WP {
 			}
 			$rw_match = str_replace( "{$pt}=", "{$pt_name}=", $rw_match );
 			$rw_match = str_replace( "post_type=$pt&", "{$pt_name}&", $rw_match );
+		}
+		return $rw_match;
+	}
+
+	public function fix_rwr_taxonomies( $rw_match, $lang ) {
+		foreach ( self::$options->enabled_tax as $tax ) {
+			$tax_name = $this->hash_tax_name( $tax, $lang );
+			if ( 'category' == $tax ) {
+				// $rw_match = str_replace( 'pagename', "post_type={$this->pt_prefix}{$pt}_{$lang}&name", $rw_match );
+				$rw_match = str_replace( 'category_name', "{$tax_name}", $rw_match );
+				continue;
+			} elseif ( 'post_tag' == $tax ) {
+				// $rw_match = str_replace( 'pagename', "post_type={$this->pt_prefix}{$pt}_{$lang}&name", $rw_match );
+				$rw_match = str_replace( 'tag', "{$tax_name}", $rw_match );
+				continue;
+			}
+			$rw_match = str_replace( "{$tax}=", "{$tax_name}=", $rw_match );
+			// $rw_match = str_replace( "$tax", "{$pt_name}&", $rw_match );
 		}
 		return $rw_match;
 	}
@@ -916,6 +1013,22 @@ class Multilingual_WP {
 
 			foreach ( $posts as $key => $post ) {
 				$posts[ $key ] = $this->filter_post( $post, $language, false );
+			}
+
+			if ( isset( $wp_query->queried_object ) && $this->is_gen_tax( $wp_query->queried_object->taxonomy ) ) {
+				$taxonomy = false;
+				$rel_term = $this->get_term_lang( $wp_query->queried_object->term_id );
+				if ( $rel_term && $rel_term != -1 ) {
+					foreach ( self::$options->enabled_tax as $tax ) {
+						if ( $this->hash_tax_name( $tax, $language ) == $wp_query->queried_object->taxonomy ) {
+							$taxonomy = $tax;
+							break;
+						}
+					}
+					if ( $taxonomy && ! is_wp_error( ( $term = get_term( $rel_term, $taxonomy ) ) ) ) {
+						$wp_query->queried_object = $term;
+					}
+				}
 			}
 
 			if ( $old_id ) {
@@ -1091,10 +1204,65 @@ class Multilingual_WP {
 				}
 			}
 		}
+
+		// Do some checks about language information in the URL for default language
+		if ( $this->current_lang == self::$options->default_lang ) {
+			switch ( $this->lang_mode ) {
+				case self::LT_QUERY :
+				default :
+					// If the query arg is present and shouldn't be and vice-versa, redirect to proper URL
+					if ( self::$options->def_lang_in_url ) {
+						if ( ! isset( $_GET[ self::QUERY_VAR ] ) ) {
+							wp_redirect( add_query_arg( self::QUERY_VAR, $this->current_lang ), 301 );
+							exit;
+						}
+					} else {
+						if ( isset( $_GET[ self::QUERY_VAR ] ) ) {
+							wp_redirect( remove_query_arg( self::QUERY_VAR ), 301 );
+							exit;
+						}
+					}
+
+					break;
+				
+				case self::LT_PRE :
+					$home = $this->home_url;
+
+					$curr = $this->curPageURL();
+					// If this is the default language and the user doesn't want it in the URL's
+					if ( ! self::$options->def_lang_in_url ) {
+						$url = preg_replace( '~^(.*' . preg_quote( $home, '~' ) . ')(?:[a-z]{2}\/)?(.*)$~', '$1$2', $curr );
+						if ( $url != $curr ) {
+							wp_redirect( $url, 301 );
+							exit;
+						}
+					} else {
+						preg_match( '~^.*' . preg_quote( $home, '~' ) . '([a-z]{2})(/.*)?$~', $curr, $matches );
+
+						// No matches - redirect to proper URL
+						if ( empty( $matches ) ) {
+							$url = preg_replace( '~^(.*' . preg_quote( $home, '~' ) . ')(.*)?$~', '$1' . $this->current_lang . '/$2', $curr );
+							wp_redirect( $url, 301 );
+							exit;
+						}
+					}
+					
+					break;
+
+				case self::LT_SD : // Sub-domain setup is not enabled yet
+					// Get/add language domain info here
+
+					break;
+			}
+		}
 	}
 
 	public function is_gen_pt( $post_type ) {
 		return in_array( $post_type, self::$options->generated_pt );
+	}
+
+	public function is_gen_tax( $tax ) {
+		return in_array( $tax, self::$options->generated_tax );
 	}
 
 	public function is_enabled( $language ) {
@@ -1103,6 +1271,10 @@ class Multilingual_WP {
 
 	public function is_enabled_pt( $pt ) {
 		return in_array( $pt, self::$options->enabled_pt );
+	}
+
+	public function is_enabled_tax( $tax ) {
+		return in_array( $tax, self::$options->enabled_tax );
 	}
 
 	public function clear_lang_info( $subject, $lang = false ) {
@@ -1144,6 +1316,32 @@ class Multilingual_WP {
 		return $result;
 	}
 
+	public function insert_term( $title, $taxonomy, $args = array() ) {
+		$this->_doing_t_save = true;
+
+		$args = is_array( $args ) ? $args : (array) $args;
+
+		if ( ! isset( $args['term_id'] ) ) {
+			$result = wp_insert_term( $title, $taxonomy, $args );
+		} else {
+			$term_id = $args['term_id'];
+			unset( $args['term_id'] );
+			$result = wp_update_term( $term_id, $taxonomy, $args );
+		}
+		if ( is_wp_error( $result ) ) {
+			// var_dump( $result );
+		} else {
+			$_term = get_term( $result['term_id'], $taxonomy );
+			if ( ! is_wp_error( $_term ) ) {
+				$this->update_term_slug_c( $_term );
+			}
+		}
+
+		$this->_doing_t_save = false;
+
+		return $result;
+	}
+
 	public function save_post_action( $post_id, $post = false ) {
 		// If this is called during a post insert/update initiated by the plugin, skip it
 		if ( $this->_doing_save ) {
@@ -1170,6 +1368,52 @@ class Multilingual_WP {
 		} else {
 			$this->update_rel_default_language( $post_id, $post );
 		}
+	}
+
+	public function edited_term_action( $term_id, $tt_id, $taxonomy ) {
+		// If this is called during a term insert/update initiated by the plugin, skip it
+		if ( $this->_doing_t_save ) {
+			return;
+		}
+
+		// If this is an update on one of the terms generated by the plugin - skip it.
+		if ( $this->is_gen_tax( $taxonomy ) ) {
+			return;
+		}
+
+		// If the current taxonomy is not in the supported taxonomies, skip it
+		if ( ! $this->is_enabled_tax( $taxonomy ) ) {
+			return;
+		}
+
+		global $pagenow;
+
+		if ( 'edit-tags.php' == $pagenow && 'POST' == $_SERVER['REQUEST_METHOD'] ) {
+			$this->setup_term_vars( $term_id );
+
+			$this->update_rel_t_langs();
+		} else {
+			// $this->gen_rel_terms( $term_id, $taxonomy );
+		}
+	}
+
+	public function created_term_action( $term_id, $tt_id, $taxonomy ) {
+		// If this is called during a term insert/update initiated by the plugin, skip it
+		if ( $this->_doing_t_save ) {
+			return;
+		}
+
+		// If this is an update on one of the terms generated by the plugin - skip it.
+		if ( $this->is_gen_tax( $taxonomy ) ) {
+			return;
+		}
+
+		// If the current taxonomy is not in the supported taxonomies, skip it
+		if ( ! $this->is_enabled_tax( $taxonomy ) ) {
+			return;
+		}
+
+		$this->gen_rel_terms( $term_id, $taxonomy );
 	}
 
 	public function autosave_action() {
@@ -1258,6 +1502,11 @@ class Multilingual_WP {
 					$this->post->post_name = $_post['post_name'];
 
 					$this->save_post( $this->post );
+
+					$_post = get_post( $this->ID, ARRAY_A );
+					if ( $_post ) {
+						update_post_meta( $this->ID, '_mlwp_post_slug', $_post['post_name'] );
+					}
 				}
 			}
 			$data = $message;
@@ -1370,6 +1619,17 @@ class Multilingual_WP {
 		}
 	}
 
+	public function gen_rel_terms( $term_id, $taxonomy ) {
+		$old_t_id = $this->term_ID;
+		$this->setup_term_vars( $term_id, $taxonomy );
+
+		$this->create_rel_terms( false, false, false );
+
+		if ( $old_t_id ) {
+			$this->setup_term_vars( $old_t_id );
+		}
+	}
+
 	public function setup_post_vars( $post_id = false ) {
 		// Store the current post's ID for quick access
 		$this->ID = $post_id ? $post_id : get_the_ID();
@@ -1385,6 +1645,151 @@ class Multilingual_WP {
 
 		// Related posts to the current post
 		$this->rel_posts = array();
+	}
+
+	public function setup_term_vars( $term_ID = false, $tax = false ) {
+		global $tag_ID, $taxonomy, $tag;
+		// Store the current terms's ID and taxonomy for quick access
+		$this->term_ID = $term_ID ? intval( $term_ID ) : intval( $tag_ID );
+		$this->taxonomy = $tax ? $tax : $taxonomy;
+
+		// Store the current term data for quick access
+		$this->term = isset( $tag ) && $this->term_ID == $tag->term_id ? $tag : get_term( $this->term_ID, $this->taxonomy );
+
+		// Store the current post's related languages data
+		$this->rel_t_langs = $this->get_term_langs( $this->term_ID );
+		$this->parent_rel_t_langs = $this->term->parent ? $this->get_term_langs( $this->term->parent ) : false;
+
+		// Related posts to the current post
+		$this->rel_terms = array();
+	}
+
+	public function get_term_langs( $term_ID = false ) {
+		// Static cache
+		static $term_langs;
+		
+		global $tag_ID;
+		// Store the current post's ID for quick access
+		$term_ID = $term_ID ? $term_ID : $tag_ID;
+
+		$term_langs = $term_langs ? $term_langs : array();
+		if ( isset( $term_langs[ $term_ID ] ) ) {
+			return $term_langs[ $term_ID ];
+		}
+
+		$langs = get_option( "_mlwp_term_relations_{$term_ID}", false );
+		// Option not added yet
+		if ( $langs === false ) {
+			// No auto-loading - try to prevent big amounts of data being loaded into memory for sites with a lot of terms
+			add_option( "_mlwp_term_relations_{$term_ID}", array(), '', 'no' );
+			$langs = array();
+		} else {
+			$langs = is_array( $langs ) ? $langs : array();
+		}
+		$term_langs[ $term_ID ] = $langs;
+
+		return $langs;
+	}
+
+	public function set_term_langs( $term_ID, $term_langs ) {
+		global $tag_ID;
+		// Store the current post's ID for quick access
+		$term_ID = $term_ID ? $term_ID : $tag_ID;
+
+		$langs = get_option( "_mlwp_term_relations_{$term_ID}", false );
+		// Option not added yet
+		if ( $langs === false ) {
+			// No auto-loading - try to prevent big amounts of data being loaded into memory for sites with a lot of terms
+			add_option( "_mlwp_term_relations_{$term_ID}", array(), '', 'no' );
+			$langs = array();
+		}
+
+		return update_option( "_mlwp_term_relations_{$term_ID}", $term_langs );
+	}
+
+	public function set_term_lang( $term_ID, $orig_id ) {
+		global $tag_ID;
+		// Store the current post's ID for quick access
+		$term_ID = $term_ID ? $term_ID : $tag_ID;
+
+		$_orig = get_option( "_mlwp_term_relation_{$term_ID}", false );
+		// Option not added yet
+		if ( $_orig === false ) {
+			// No auto-loading - try to prevent big amounts of data being loaded into memory for sites with a lot of terms
+			add_option( "_mlwp_term_relation_{$term_ID}", -1, '', 'no' );
+		}
+
+		return update_option( "_mlwp_term_relation_{$term_ID}", $orig_id );
+	}
+
+	public function get_term_lang( $term_ID = false ) {
+		global $tag_ID;
+		// Store the current post's ID for quick access
+		$term_ID = $term_ID ? $term_ID : $tag_ID;
+
+		$_orig = get_option( "_mlwp_term_relation_{$term_ID}", false );
+		// Option not added yet
+		if ( $_orig === false ) {
+			// No auto-loading - try to prevent big amounts of data being loaded into memory for sites with a lot of terms
+			add_option( "_mlwp_term_relation_{$term_ID}", -1, '', 'no' );
+		}
+
+		return $_orig;
+	}
+
+	public function update_term_slug_c( $term ) {
+		$term_ID = $term->term_id;
+
+		$_orig = get_option( "_mlwp_term_slug_{$term_ID}", false );
+		// Option not added yet
+		if ( $_orig === false ) {
+			// No auto-loading - try to prevent big amounts of data being loaded into memory for sites with a lot of terms
+			add_option( "_mlwp_term_slug_{$term_ID}", -1, '', 'no' );
+		}
+
+		return update_option( "_mlwp_term_slug_{$term_ID}", $term->slug );
+	}
+
+	public function get_term_slug_c( $term_id, $taxonomy = false ) {
+		$slug = get_option( "_mlwp_term_slug_{$term_id}", false );
+		// Option not added yet
+		if ( $slug === false && $taxonomy !== false ) {
+			$term = get_term( $term_id, $taxonomy );
+			if ( ! is_wp_error( $term ) ) {
+				$this->update_term_slug_c( $term );
+				return $term->slug;
+			} else {
+				return false;
+			}
+		}
+
+		return $slug;
+	}
+
+	public function set_object_terms_action( $obj_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids ) {
+		if ( $this->is_enabled_pt( get_post_type( $obj_id ) ) && $this->is_enabled_tax( $taxonomy ) ) {
+			$old_id = $this->ID;
+			$this->setup_post_vars( $obj_id );
+
+			$terms = wp_get_object_terms( $obj_id, $taxonomy, array( 'fields' => 'ids' ) );
+			if ( $terms && ! is_wp_error( $terms ) ) {
+				foreach ( $this->rel_langs as $lang => $pid ) {
+					$_taxonomy = $this->hash_tax_name( $taxonomy, $lang );
+					$new_terms = array();
+					foreach ( $terms as $term_id ) {
+						$_rel_terms = $this->get_term_langs( $term_id );
+						if ( isset( $_rel_terms[ $lang ] ) ) {
+							$new_terms[] = $_rel_terms[ $lang ];
+						}
+					}
+					wp_set_object_terms( $pid, $new_terms, $_taxonomy, false );
+				}
+			}
+
+			if ( $old_id ) {
+				$this->setup_post_vars( $old_id );
+			}
+		}
 	}
 
 	public function update_rel_langs( $post = false ) {
@@ -1453,6 +1858,76 @@ class Multilingual_WP {
 		}
 	}
 
+	public function update_rel_t_langs( $term = false ) {
+		if ( $term ) {
+			$old_id = $this->term_ID;
+			if ( is_object( $term ) ) {
+				$this->setup_term_vars( $term->term_id );
+			} else {
+				$this->setup_term_vars( intval( $term ) );
+			}
+		}
+
+		if ( $this->rel_t_langs ) {
+			foreach ( $this->rel_t_langs as $lang => $rel_tid ) {
+				$_tax = $this->hash_tax_name( $this->taxonomy, $lang );
+
+				if ( ! $this->is_enabled( $lang ) ) {
+					// This language doesn't exist, which most-likely means that the user has removed it, so let's clean it up
+					if ( ! isset( self::$options->languages[ $lang ] ) ) {
+						$this->delete_term( $rel_tid, true );
+					}
+					continue;
+				}
+				if ( ! ( $_term = get_term( intval( $rel_tid ), $_tax, ARRAY_A ) ) ) {
+					continue;
+				}
+				if ( isset( $_POST[ "description_{$lang}" ] ) ) {
+					$_term['description'] = $_POST[ "description_{$lang}" ];
+				}
+				if ( isset( $_POST[ "name_{$lang}" ] ) ) {
+					$_term['name'] = $_POST[ "name_{$lang}" ];
+				}
+				if ( isset( $_POST[ "slug_{$lang}" ] ) ) {
+					$_term['slug'] = $_POST[ "slug_{$lang}" ];
+				}
+				if ( $this->parent_rel_t_langs && isset( $this->parent_rel_t_langs[ $lang ] ) ) {
+					$_term['parent'] = $this->parent_rel_t_langs[ $lang ];
+				}
+				// Add a special suffix for default languages
+				if ( $lang == self::$options->default_lang && stripos( $_term['slug'], $this->t_slug_sfx ) === false ) {
+					$_term['slug'] = $_term['slug'] . $this->t_slug_sfx;
+				}
+				// Remove the suffix if this is no-longer the default language
+				if ( $lang != self::$options->default_lang && stripos( $_term['slug'], $this->t_slug_sfx ) !== false ) {
+					$_term['slug'] = str_ireplace( $this->t_slug_sfx, '', $_term['slug'] );
+				}
+
+				$_id = $this->insert_term( $_term['name'], $_tax, $_term );
+				if ( ! is_wp_error( $_id ) ) {
+					$_term = get_term( $_id['term_id'], $_tax, ARRAY_A );
+					// If this is the default language - copy over the title/content/etc over
+					if ( $lang == self::$options->default_lang ) {
+						$this->term->name = $_term['name'];
+						$this->term->description = $_term['description'];
+						$this->term->slug = str_ireplace( $this->t_slug_sfx, '', $_term['slug'] );
+
+						$this->insert_term( $this->term );
+					}
+					
+					update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
+				}
+
+				unset( $_term );
+			}
+		}
+
+		if ( $term && $old_id ) {
+			$this->setup_term_vars( $old_id );
+		}
+		// exit;
+	}
+
 	private function register_post_types() {
 		$enabled_pt = self::$options->enabled_pt;
 
@@ -1489,7 +1964,7 @@ class Multilingual_WP {
 						'label' => $pt->label . ' [' . $lang . ']',
 						'labels' => $labels,
 						'public' => true,
-						'exclude_from_search' => true,
+						'exclude_from_search' => false,
 						'show_ui' => $show_ui,
 						'show_in_nav_menus' => $show_ui,
 						'query_var' => false,
@@ -1568,7 +2043,7 @@ class Multilingual_WP {
 						'show_admin_column' => $tax->show_admin_column,
 						'hierarchical' => $tax->hierarchical,
 						'update_count_callback' => '',
-						'query_var' => false,
+						'query_var' => true,
 						'rewrite' => $this->lang_mode == self::LT_PRE,
 						'capabilities' => (array) $tax->cap,
 					);
@@ -1605,11 +2080,15 @@ class Multilingual_WP {
 		}
 	}
 
-	public function is_allowed_admin_page( $page = false ) {
+	public function is_allowed_admin_page( $page = false, $type = 'post' ) {
 		global $pagenow;
 		$page = $page ? $page : $pagenow;
-
-		return in_array( $page, array( 'post.php', 'post-new.php' ) ) && $this->is_enabled_pt( get_post_type( get_the_ID() ) );
+		if ( $type == 'tax' ) {
+			global $taxonomy;
+			return in_array( $page, array( 'edit-tags.php' ) ) && $this->is_enabled_tax( $taxonomy );
+		} else {
+			return in_array( $page, array( 'post.php', 'post-new.php' ) ) && $this->is_enabled_pt( get_post_type( get_the_ID() ) );
+		}
 	}
 
 	public function admin_scripts( $hook ) {
@@ -1621,6 +2100,19 @@ class Multilingual_WP {
 			// Enqueue scripts and styles
 			wp_enqueue_script( 'multilingual-wp-js' );
 			wp_enqueue_script( 'multilingual-wp-autosave-js' );
+			wp_enqueue_style( 'multilingual-wp-css' );
+		}
+		if ( $this->is_allowed_admin_page( $hook, 'tax' ) ) {
+			global $tag;
+			if ( isset( $tag ) ) {
+				$this->setup_term_vars();
+				
+				$this->create_rel_terms();
+			}
+
+			// Enqueue scripts and styles
+			wp_enqueue_script( 'multilingual-wp-tax-js' );
+			// wp_enqueue_script( 'multilingual-wp-autosave-js' );
 			wp_enqueue_style( 'multilingual-wp-css' );
 		}
 	}
@@ -1697,6 +2189,74 @@ class Multilingual_WP {
 		}
 	}
 
+	/**
+	* Creates any missing related posts
+	* 
+	* 
+	* 
+	* 
+	**/
+	public function create_rel_terms( $term = false, $taxonomy = false, $pop_rel_terms = true ) {
+		if ( $term && $taxonomy ) {
+			$_term = is_object( $term ) ? $term->term_id : $term;
+			$this->setup_term_vars( $_term, $taxonomy );
+		}
+		$to_create = array();
+
+		// Check the related languages
+		if ( ! $this->rel_t_langs || ! is_array( $this->rel_t_langs ) ) {
+			// If there are no language relantions currently set, add all enabled languages to the creation queue
+			$to_create = self::$options->enabled_langs;
+		} else {
+			// Otherwise loop throuh all enabled languages
+			foreach ( self::$options->enabled_langs as $lang ) {
+				$create = true;
+				// If there is no relation for this language, or the related post no longer exists, add it to the creation queue
+				if ( isset( $this->rel_t_langs[ $lang ] ) ) {
+					$term = $this->rel_terms[ $lang ] = get_term( intval( $this->rel_t_langs[ $lang ] ), $this->hash_tax_name( $this->taxonomy, $lang ) );
+					$create = $term && ! is_wp_error( $term ) ? false : true;
+				}
+				if ( $create ) {
+					$to_create[] = $lang;
+				}
+			}
+		}
+
+		// If the creation queue is not empty, loop through all languages and create corresponding posts
+		if ( ! empty( $to_create ) ) {
+			foreach ( $to_create as $lang ) {
+				$_taxonomy = $this->hash_tax_name( $this->taxonomy, $lang );
+				$parent = 0;
+				// Look-up for a parent post
+				if ( $this->parent_rel_t_langs && isset( $this->parent_rel_t_langs[ $lang ] ) ) {
+					$parent = $this->parent_rel_t_langs[ $lang ];
+				}
+				$data = array(
+					'description'    => '',
+					'slug'           => $this->term->slug,
+					'parent'         => $parent,
+				);
+				// If this is the default language, set the content and excerpt to the current post's content and excerpt
+				if ( $lang == self::$options->default_lang ) {
+					$data['description'] = $this->term->description;
+					$data['slug'] = $data['slug'] . $this->t_slug_sfx;
+				}
+
+				$id = $this->insert_term( $this->term->name . "||$lang", $_taxonomy, $data );
+				if ( $id && ! is_wp_error( $id ) ) {
+					$this->rel_t_langs[ $lang ] = $id['term_id'];
+					if ( $pop_rel_terms ) {
+						$this->rel_terms[ $lang ] = get_term( intval( $id['term_id'] ), $_taxonomy );
+					}
+					$this->set_term_lang( $id['term_id'], $this->term_ID );
+				}
+			}
+
+			// Update the related languages data
+			$this->set_term_langs( $this->term_ID, $this->rel_t_langs );
+		}
+	}
+
 	public function insert_editors() {
 		if ( $this->is_allowed_admin_page() ) { ?>
 			<div class="hide-if-js" id="mlwp-editors">
@@ -1732,6 +2292,56 @@ class Multilingual_WP {
 		}
 	}
 
+	public function edit_tax_fields( $tag, $taxonomy ) {
+		if ( $this->is_allowed_admin_page( false, 'tax' ) ) {
+			$is_hierarchic = is_taxonomy_hierarchical( $taxonomy );
+			$global_terms_enabled = global_terms_enabled(); ?>
+			<?php foreach ( self::$options->enabled_langs as $i => $lang ) :
+				$default = $lang == self::$options->default_lang ? ' mlwp-deflang' : '';
+				$this->rel_terms[ $lang ] = $lang == self::$options->default_lang ? $this->term : $this->rel_terms[ $lang ]; ?>
+				<tr class="mlwp-lang-row mlwp-term-lang hide-if-js<?php echo $default; ?>" mlwp-lang="<?php echo $lang; ?>">
+					<th colspan="2" scope="row" valign="top">
+						<h3><?php echo self::$options->languages[ $lang ]['label']; ?></h3>
+						<?php echo $lang == self::$options->default_lang ? '<span id="mlwp-languages-title">' . __( 'Language', 'multilingual-wp' ) . '<span>' : ''; ?>
+					</th>
+				</tr>
+				<tr class="form-field mlwp-term-lang hide-if-js form-required<?php echo $default; ?>" mlwp-lang="<?php echo $lang; ?>">
+					<th scope="row" valign="top"><label for="name_<?php echo $lang; ?>"><?php _ex('Name', 'Taxonomy Name'); ?></label></th>
+					<td><input name="name_<?php echo $lang; ?>" id="name_<?php echo $lang; ?>" type="text" value="<?php if ( isset( $this->rel_terms[ $lang ]->name ) ) echo esc_attr( $this->rel_terms[ $lang ]->name ); ?>" size="40" aria-required="true" />
+					<p class="description"><?php _e('The name is how it appears on your site.'); ?></p></td>
+				</tr>
+			<?php if ( ! $global_terms_enabled ) { ?>
+				<tr class="form-field mlwp-term-lang hide-if-js<?php echo $default; ?>" mlwp-lang="<?php echo $lang; ?>">
+					<th scope="row" valign="top"><label for="slug_<?php echo $lang; ?>"><?php _ex('Slug', 'Taxonomy Slug'); ?></label></th>
+					<td><input name="slug_<?php echo $lang; ?>" id="slug_<?php echo $lang; ?>" type="text" value="<?php if ( isset( $this->rel_terms[ $lang ]->slug ) ) echo esc_attr( apply_filters( 'editable_slug', $this->rel_terms[ $lang ]->slug ) ); ?>" size="40" />
+					<p class="description"><?php _e('The &#8220;slug&#8221; is the URL-friendly version of the name. It is usually all lowercase and contains only letters, numbers, and hyphens.'); ?></p></td>
+				</tr>
+			<?php } ?>
+			<?php if ( $is_hierarchic && $lang == self::$options->default_lang ) : ?>
+				<tr class="form-field mlwp-term-lang hide-if-js<?php echo $default; ?>" mlwp-lang="<?php echo $lang; ?>">
+					<th scope="row" valign="top"><label for="parent"><?php _ex('Parent', 'Taxonomy Parent'); ?></label></th>
+					<td>
+						<?php wp_dropdown_categories( array( 'hide_empty' => 0, 'hide_if_empty' => false, 'name' => 'parent', 'orderby' => 'name', 'taxonomy' => $taxonomy, 'selected' => $tag->parent, 'exclude_tree' => $tag->term_id, 'hierarchical' => true, 'show_option_none' => __('None') ) ); ?>
+						<?php if ( 'category' == $taxonomy ) : ?>
+						<p class="description"><?php _e( 'Categories, unlike tags, can have a hierarchy. You might have a Jazz category, and under that have children categories for Bebop and Big Band. Totally optional.' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+			<?php endif; // is_taxonomy_hierarchical() ?>
+				<tr class="form-field mlwp-term-lang hide-if-js<?php echo $default; ?>" mlwp-lang="<?php echo $lang; ?>">
+					<th scope="row" valign="top"><label for="description_<?php echo $lang; ?>"><?php _ex('Description', 'Taxonomy Description'); ?></label></th>
+					<td><textarea name="description_<?php echo $lang; ?>" id="description_<?php echo $lang; ?>" rows="5" cols="50" class="large-text"><?php echo $this->rel_terms[ $lang ]->description; // textarea_escaped ?></textarea><br />
+					<span class="description"><?php _e('The description is not prominent by default; however, some themes may show it.'); ?></span></td>
+				</tr>
+				<?php /*<div class="js-tab mlwp-lang-editor lang-<?php echo $lang . ( $lang == self::$options->default_lang ? ' mlwp-deflang' : '' ); ?>" id="mlwp_tab_lang_<?php echo $lang; ?>" title="<?php echo self::$options->languages[ $lang ]['label']; ?>" mlwp-lang="<?php echo $lang; ?>">
+					<input type="text" class="mlwp-title" name="title_<?php echo $lang; ?>" size="30" value="<?php echo esc_attr( htmlspecialchars( $this->rel_posts[ $lang ]->post_title ) ); ?>" id="title_<?php echo $lang; ?>" autocomplete="off" />
+					<p><?php _e( 'Slug:', 'multilingual-wp' ); ?> <input type="text" class="mlwp-slug" name="post_name_<?php echo $lang; ?>" size="30" value="<?php echo esc_attr( $this->rel_posts[ $lang ]->post_name ); ?>" id="post_name_<?php echo $lang; ?>" autocomplete="off" /></p>
+				</div> */?>
+			<?php 
+			endforeach;
+		}
+	}
+
 	public function get_options( $key = false ) {
 		if ( $key ) {
 			return self::$options->$key;
@@ -1739,7 +2349,7 @@ class Multilingual_WP {
 		return self::$options;
 	}
 
-	public function convert_URL( $url = '', $lang = '' ) {
+	public function convert_URL( $url = '', $lang = '', $force = false ) {
 		// If we need to conver the current URL to a different language - try to figure-out a proper URL first
 		if ( $url == '' && $lang && $lang != $this->current_lang ) {
 			// If we're on a singular page(post/page/custom post type) simply use get_permalink() to get the proper URL
@@ -1750,8 +2360,31 @@ class Multilingual_WP {
 				$this->current_lang = $_lang;
 
 				return $url;
+			} elseif ( is_tax() ) {
+				$obj = get_queried_object();
+				if ( $this->is_enabled_tax( $obj->taxonomy ) ) {
+					$link = false;
+					$_lang = $this->current_lang;
+					$this->current_lang = $lang;
+					if ( $lang == self::$options->default_lang ) {
+						$link = get_term_link( $obj, $obj->taxonomy );
+					} else {
+						$rel_langs = $this->get_term_langs( $obj->term_id );
+						$tax = $this->hash_tax_name( $obj->taxonomy, $lang );
+						if ( isset( $rel_langs[ $lang ] ) && ( $term = get_term( $rel_langs[ $lang ], $tax ) ) ) {
+							if ( ! is_wp_error( $term ) ) {
+								$link = get_term_link( $term, $tax );
+							}
+						}
+					}
+					$this->current_lang = $_lang;
+
+					if ( $link ) {
+						return $link;
+					}
+				}
 			}
-		} elseif ( $url == '' && ( $lang == '' || $lang == $this->current_lang ) ) {
+		} elseif ( $url == '' && ( $lang == '' || $lang == $this->current_lang ) && ! $force ) {
 			return $this->curPageURL();
 		}
 
@@ -1827,11 +2460,52 @@ class Multilingual_WP {
 					$url = str_replace( $search, $replace, $url );
 				}
 			}
-			$this->add_slug_cache( $post->ID, $post->name, 'post' );
+			$this->add_slug_cache( $post->ID, $post->post_name, 'post' );
 
 			$rel_langs = get_post_meta( $post->ID, $this->languages_meta_key, true );
 			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
 				$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
+			}
+		}
+
+		return $url;
+	}
+
+	public function convert_term_URL( $url, $term = false, $taxonomy = false ) {
+		if ( ! $term || ! $taxonomy ) {
+			return $this->convert_URL( $url );
+		}
+		$id = is_object( $term ) ? $term->term_id : intval( $term );
+
+		if ( $this->is_enabled_tax( $taxonomy ) && $this->current_lang != self::$options->default_lang ) {
+			$rel_langs = $this->get_term_langs( $id );
+			$slug = false;
+			if ( is_taxonomy_hierarchical( $taxonomy ) ) {
+				$term = get_term( $id, $taxonomy );
+				if ( $term && ! is_wp_error( $term ) && $term->parent ) {
+					$slugs = array();
+					$slug = $term->slug;
+					foreach ( get_ancestors( $id, $taxonomy ) as $a_id ) {
+						$_rel_langs = $this->get_term_langs( $a_id );
+						if ( ! isset( $_rel_langs[ $this->current_lang ] ) ) {
+							continue;
+						}
+
+						$slugs[ $this->get_obj_slug( $a_id, 'term', $taxonomy ) ] = $this->get_obj_slug( $_rel_langs[ $this->current_lang ], 'mlwp_term', $this->hash_tax_name( $taxonomy ) );
+					}
+					foreach ( $slugs as $search => $replace ) {
+						if ( $replace == '' ) {
+							continue;
+						}
+						$url = str_replace( $search, $replace, $url );
+					}
+				}
+			}
+			$slug = $slug ? $slug : $this->get_term_slug_c( $id, $taxonomy );
+			$this->add_slug_cache( $id, $slug, 'term' );
+
+			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
+				$url = str_replace( $slug, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_term', $this->hash_tax_name( $taxonomy ) ), $url );
 			}
 		}
 
@@ -1849,7 +2523,7 @@ class Multilingual_WP {
 	* @return string
 	**/
 	public function remove_single_post_trailingslash( $url, $type = '' ) {
-		if ( $type == 'single' || $type == 'page' ) {
+		if ( ( $type == 'single' || $type == 'page' ) && self::$options->def_lang_in_url ) {
 			$url = untrailingslashit( $url );
 		}
 		return $url;
@@ -2045,18 +2719,18 @@ class Multilingual_WP {
 				return false;
 			}
 		}
+		return $redirect_url;
 	}
 
 	public function curPageURL() {
 		$pageURL = 'http';
-		if ( isset( $_SERVER["HTTPS"] ) && $_SERVER["HTTPS"] == "on" ) {
-			$pageURL .= "s";
-		}
-		$pageURL .= "://";
-		if ( $_SERVER["SERVER_PORT"] != "80" ) {
-			$pageURL .= $_SERVER["HTTP_HOST"] . ":" . $_SERVER["SERVER_PORT"] . $_SERVER["REQUEST_URI"];
+		$https = isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] == "on" ? true : false;
+		$pageURL .= $https ? 's' : '';
+		$pageURL .= '://';
+		if ( $_SERVER['SERVER_PORT'] != '80' && ! ( $https && $_SERVER['SERVER_PORT'] == '443' ) ) {
+			$pageURL .= $_SERVER['HTTP_HOST'] . ':' . $_SERVER['SERVER_PORT'] . $_SERVER['REQUEST_URI'];
 		} else {
-			$pageURL .= $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
+			$pageURL .= $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 		}
 		return $pageURL;
 	}
@@ -2196,17 +2870,21 @@ class Multilingual_WP {
 	* @param integer $id The ID of the object that the slug is requested
 	* @param string $type The type of the object in question. "post"(any general post type), "category"(any terms) or mlwp_post(plugin-created post types)
 	**/
-	public function get_obj_slug( $id, $type ) {
+	public function get_obj_slug( $id, $type, $taxonomy = false ) {
 		$_id = "_{$id}";
 		if ( $type == 'post' ) {
 			if ( isset( $this->slugs_cache['posts'][ $_id ] ) ) {
 				return $this->slugs_cache['posts'][ $_id ];
 			} else {
-				$post = get_post( $id );
-				if ( ! $post ) {
+				$slug = get_post_meta( $id, '_mlwp_post_slug', true );
+				if ( ! $slug ) {
+					$post = get_post( $id );
+					$slug = $post ? $post->post_name : false;
+				}
+				if ( ! $slug ) {
 					return false;
 				}
-				$this->slugs_cache['posts'][ $_id ] = $post->post_name;
+				$this->slugs_cache['posts'][ $_id ] = $slug;
 				return $post->post_name;
 			}
 		} elseif ( $type == 'mlwp_post' ) {
@@ -2217,6 +2895,28 @@ class Multilingual_WP {
 
 				$this->slugs_cache['posts'][ $_id ] = $slug;
 
+				return $slug;
+			}
+		} elseif ( $type == 'term' ) { // this and "mlwp_term" are the same for now - might change in the future
+			if ( isset( $this->slugs_cache['terms'][ $_id ] ) ) {
+				return $this->slugs_cache['terms'][ $_id ];
+			} else {
+				$slug = $this->get_term_slug_c( $id, $taxonomy );
+				if ( ! $slug ) {
+					return false;
+				}
+				$this->slugs_cache['terms'][ $_id ] = $slug;
+				return $slug;
+			}
+		} elseif ( $type == 'mlwp_term' ) {
+			if ( isset( $this->slugs_cache['terms'][ $_id ] ) ) {
+				return $this->slugs_cache['terms'][ $_id ];
+			} else {
+				$slug = $this->get_term_slug_c( $id, $taxonomy );
+				if ( ! $slug ) {
+					return false;
+				}
+				$this->slugs_cache['terms'][ $_id ] = $slug;
 				return $slug;
 			}
 		}

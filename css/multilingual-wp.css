@@ -19,3 +19,12 @@ input.mlwp-title { padding: 3px 8px; font-size: 1.7em; line-height: 100%; width:
 #mlwp-editors .post-status-info td { font-size: 12px; }
 #mlwp-editors .post-status-info .wp-word-count { display: block; padding: 2px 10px; }
 #mlwp-editors.colors-classic .post-status-info { border-color: #d0dfe9 #d1e5ee #d1e5ee; background-color: none; }
+
+
+/*
+	Term edit styling
+*/
+#mlwp-lang-tabs { padding-top: 10px; }
+#mlwp-lang-tabs #mlwp-languages-title { float: left; padding: 0 15px 10px 0; font-size: 20px; line-height: 25px; }
+#mlwp-lang-tabs a.button { margin: 0 0 5px 4px; height: 27px; line-height: 25px; }
+tr.mlwp-lang-row th h3 { margin: 0; padding: 0 0 5px; border-bottom: 1px solid #ccc; }

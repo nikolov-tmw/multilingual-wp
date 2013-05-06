@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Multilingual WP v0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-03-17 14:03:01+0000\n"
+"PO-Revision-Date: 2013-04-26 08:46:50+0000\n"
 "Last-Translator: admin <nobody@example.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -20,125 +20,126 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Textdomain-Support: yes"
 
-#: add-language-page.php:26
-#: settings-page.php:109
+#: add-language-page.php:54
+#: settings-page.php:150
 #, php-format
 #@ multilingual-wp
 msgid "Yay! We successfully downloaded the following .mo files: <br /> - %s"
 msgstr ""
 
-#: add-language-page.php:28
+#: add-language-page.php:56
 #, php-format
 #@ multilingual-wp
 msgid "Oh snap! We were unable to get the .mo files for the %1$s language :( Please try <a target=\"_blank\" href=\"%2$s\">downloading them manually</a>."
 msgstr ""
 
-#: add-language-page.php:80
+#: add-language-page.php:108
 #, php-format
 #@ multilingual-wp
 msgid "The language \"%s\" has been added.<br />Hold on, while we're grabbing the .mo files for you."
 msgstr ""
 
-#: add-language-page.php:90
+#: add-language-page.php:10
+#: add-language-page.php:185
 #@ multilingual-wp
 msgid "Add New Language"
 msgstr ""
 
-#: add-language-page.php:128
+#: add-language-page.php:120
 #@ multilingual-wp
 msgid "Here you can add a new language."
 msgstr ""
 
-#: add-language-page.php:132
-#: settings-page.php:266
+#: add-language-page.php:124
+#: settings-page.php:353
 #@ multilingual-wp
 msgid "Language Label <span class=\"required\">*</span>"
 msgstr ""
 
-#: add-language-page.php:135
-#: settings-page.php:269
+#: add-language-page.php:127
+#: settings-page.php:356
 #@ multilingual-wp
 msgid "Enter the label that will be used to represent this language. This will be used in the admin interface, language selector widget, etc."
 msgstr ""
 
-#: add-language-page.php:139
-#: settings-page.php:273
+#: add-language-page.php:131
+#: settings-page.php:360
 #@ multilingual-wp
 msgid "Language Locale <span class=\"required\">*</span>"
 msgstr ""
 
-#: add-language-page.php:142
+#: add-language-page.php:134
 #@ multilingual-wp
 msgid "Enter the PHP/WordPress locale for this language. Example: <code>en_US</code>."
 msgstr ""
 
-#: add-language-page.php:147
+#: add-language-page.php:139
 #@ multilingual-wp
 msgid "Language ID <span class=\"required\">*</span>"
 msgstr ""
 
-#: add-language-page.php:150
+#: add-language-page.php:142
 #@ multilingual-wp
 msgid "Enter the two-letter ID for this language. Example: <code>en</code>."
 msgstr ""
 
-#: add-language-page.php:155
-#: settings-page.php:288
+#: add-language-page.php:147
+#: settings-page.php:375
 #@ multilingual-wp
 msgid "Not Available Message <span class=\"required\">*</span>"
 msgstr ""
 
-#: add-language-page.php:158
-#: settings-page.php:291
+#: add-language-page.php:150
+#: settings-page.php:378
 #@ multilingual-wp
 msgid "Enter the message that will be displayed when the requested post/page is not available in this language."
 msgstr ""
 
-#: add-language-page.php:162
-#: settings-page.php:295
+#: add-language-page.php:154
+#: settings-page.php:382
 #@ multilingual-wp
 msgid "Date Format"
 msgstr ""
 
-#: add-language-page.php:165
-#: settings-page.php:298
+#: add-language-page.php:157
+#: settings-page.php:385
 #@ multilingual-wp
 msgid "Enter a custom date format for this language."
 msgstr ""
 
-#: add-language-page.php:169
-#: settings-page.php:302
+#: add-language-page.php:161
+#: settings-page.php:389
 #@ multilingual-wp
 msgid "Time Format"
 msgstr ""
 
-#: add-language-page.php:172
+#: add-language-page.php:164
 #@ multilingual-wp
 msgid "Enter a custo time format for this language."
 msgstr ""
 
-#: add-language-page.php:176
-#: settings-page.php:280
+#: add-language-page.php:168
+#: settings-page.php:367
 #@ multilingual-wp
 msgid "Language Flag <span class=\"required\">*</span>"
 msgstr ""
 
-#: add-language-page.php:185
-#: settings-page.php:309
+#: add-language-page.php:177
+#: settings-page.php:396
 #@ multilingual-wp
 msgid "Language Order"
 msgstr ""
 
-#: add-language-page.php:188
-#: settings-page.php:312
+#: add-language-page.php:180
+#: settings-page.php:399
 #@ multilingual-wp
 msgid "Enter the position in which this language should appear( smallest to largest )."
 msgstr ""
 
-#: add-language-page.php:229
-#: add-language-page.php:231
-#: settings-page.php:331
-#: settings-page.php:333
+#: add-language-page.php:219
+#: add-language-page.php:221
+#: settings-page.php:418
+#: settings-page.php:420
 #@ multilingual-wp
 msgid "Custom Flag"
 msgstr ""
@@ -1443,308 +1444,310 @@ msgstr ""
 msgid "zimbabwe"
 msgstr ""
 
-#: plugin.php:376
+#: plugin.php:422
 #@ multilingual-wp
 msgid "Comment Language"
 msgstr "Език на коментара"
 
-#: plugin.php:490
-#: plugin.php:493
+#: plugin.php:536
+#: plugin.php:539
 #@ multilingual-wp
 msgid "Languages"
 msgstr "Езици"
 
-#: plugin.php:1203
-#: plugin.php:1747
+#: plugin.php:1754
+#: plugin.php:2333
 #@ multilingual-wp
 msgid "Language"
 msgstr "Език"
 
-#: plugin.php:1208
+#: plugin.php:1759
 #@ multilingual-wp
 msgid "Slug:"
 msgstr ""
 
-#: plugin.php:1707
+#: plugin.php:2293
 #@ multilingual-wp
 msgid "Select the Comment's Language:"
 msgstr "Изберете езика за този коментар:"
 
-#: plugin.php:1764
+#: plugin.php:2350
 #, php-format
 #@ multilingual-wp
 msgid "Language not set, or inactive(language ID is \"%s\")"
 msgstr "Няма избран език, или езика е деактивиран(кода на езика е \"%s\")"
 
-#: plugin.php:1783
+#: plugin.php:2369
 #, php-format
 #@ multilingual-wp
 msgid "The language with id \"%s\" is currently not enabled."
 msgstr "Езика с код \"%s\" не е активен в момента."
 
-#: plugin.php:1789
+#: plugin.php:2375
 #, php-format
 #@ multilingual-wp
 msgid "The language of comments with ids \"%s\" has been successfully changed to \"%s\"."
 msgstr "Езика на коментари с ID-та \"%s\" беше променен успешно на \"%s\"."
 
-#: plugin.php:1819
+#: plugin.php:2405
 #@ multilingual-wp
 msgid "Please Select comment/s first!"
 msgstr "Моля изберете един или повече коментари първо!"
 
-#: plugin.php:1876
+#: plugin.php:2462
 #@ multilingual-wp
 msgid "Bulk Set Language"
 msgstr "Масово променяне на език"
 
-#: scb/AdminPage.php:172
-#: settings-page.php:47
+#: scb/AdminPage.php:176
+#: settings-page.php:126
 #@ multilingual-wp
 msgid "Settings <strong>saved</strong>."
 msgstr ""
 
-#: scb/AdminPage.php:185
-#: scb/AdminPage.php:196
+#: scb/AdminPage.php:198
+#: scb/AdminPage.php:209
 #@ multilingual-wp
 msgid "Save Changes"
 msgstr ""
 
-#: scb/AdminPage.php:349
-#: settings-page.php:62
+#: scb/AdminPage.php:363
+#: settings-page.php:10
+#: settings-page.php:13
 #@ multilingual-wp
 msgid "Settings"
 msgstr ""
 
-#: settings-page.php:11
+#: settings-page.php:45
 #, php-format
 #@ multilingual-wp
 msgid "Please visit the <a href=\"%1$s\">Fix Posts</a> page and click on the \"Update all of my posts\" button in order to make sure that all of your posts are available in all languages."
 msgstr ""
 
-#: settings-page.php:51
+#: settings-page.php:130
 #, php-format
 #@ multilingual-wp
 msgid "Could not write to \"%s\", Gettext Databases could not be downloaded!"
 msgstr ""
 
-#: settings-page.php:61
+#: settings-page.php:9
 #@ multilingual-wp
 msgid "Multilingual WP"
 msgstr ""
 
-#: settings-page.php:101
+#: settings-page.php:142
 #@ multilingual-wp
 msgid "Hold on, while we're updating the .mo files for you."
 msgstr ""
 
-#: settings-page.php:111
+#: settings-page.php:152
 #, php-format
 #@ multilingual-wp
 msgid "Oh snap! We were unable to get any .mo files :( Please try <a target=\"_blank\" href=\"%s\">downloading them manually</a>."
 msgstr ""
 
-#: settings-page.php:155
+#: settings-page.php:196
 #@ multilingual-wp
 msgid "General Settings"
 msgstr ""
 
-#: settings-page.php:158
+#: settings-page.php:200
 #@ multilingual-wp
 msgid "Update .mo files now"
 msgstr ""
 
-#: settings-page.php:173
+#: settings-page.php:219
 #@ multilingual-wp
 msgid "Default Language"
 msgstr ""
 
-#: settings-page.php:176
+#: settings-page.php:222
 #@ multilingual-wp
 msgid "Please select your blog's default language."
 msgstr ""
 
-#: settings-page.php:183
+#: settings-page.php:229
 #@ multilingual-wp
 msgid "Please select the languages that you want your website to support."
 msgstr ""
 
-#: settings-page.php:193
+#: settings-page.php:239
 #@ multilingual-wp
 msgid "Default Flag Size"
 msgstr ""
 
-#: settings-page.php:196
+#: settings-page.php:242
 #, php-format
 #@ multilingual-wp
 msgid "Set the default size of the flags used to represent each language(usually in language-select widgets). You can override this on a per-widget bassis. Here is an example of the selected size: <br />%s"
 msgstr ""
 
-#: settings-page.php:196
+#: settings-page.php:242
 #@ multilingual-wp
 msgid "Antarctica"
 msgstr ""
 
-#: settings-page.php:203
+#: settings-page.php:250
 #@ multilingual-wp
 msgid "Post"
 msgstr ""
 
-#: settings-page.php:204
+#: settings-page.php:253
 #@ multilingual-wp
 msgid "Page"
 msgstr ""
 
-#: settings-page.php:218
+#: settings-page.php:267
 #@ multilingual-wp
 msgid "Please select which post types you want to be multilingual."
 msgstr ""
 
-#: settings-page.php:226
+#: settings-page.php:310
 #@ multilingual-wp
 msgid "Show UI?"
 msgstr ""
 
-#: settings-page.php:230
-#: settings-page.php:248
+#: settings-page.php:314
+#: settings-page.php:332
 #: widgets.php:106
 #@ multilingual-wp
 msgid "No"
 msgstr ""
 
-#: settings-page.php:230
-#: settings-page.php:248
+#: settings-page.php:314
+#: settings-page.php:332
 #: widgets.php:107
 #@ multilingual-wp
 msgid "Yes"
 msgstr ""
 
-#: settings-page.php:231
+#: settings-page.php:315
 #@ multilingual-wp
 msgid "Whether to display the User Interface for the post types added by Multilingual WP."
 msgstr ""
 
-#: settings-page.php:235
+#: settings-page.php:319
 #@ multilingual-wp
 msgid "Language Rewrite Mode"
 msgstr ""
 
-#: settings-page.php:239
+#: settings-page.php:323
 #@ multilingual-wp
 msgid "Pre-Path mode"
 msgstr ""
 
-#: settings-page.php:239
+#: settings-page.php:323
 #@ multilingual-wp
 msgid "Query Variable mode"
 msgstr ""
 
-#: settings-page.php:239
+#: settings-page.php:323
 #@ multilingual-wp
 msgid "Sub-Domain mode"
 msgstr ""
 
-#: settings-page.php:240
+#: settings-page.php:324
 #@ multilingual-wp
 msgid "Select the type of link rewriting.<br /><code>Pre-Path mode</code> will add {xx}/ to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Sub-Domain mode</code> will prepend {xx}. to your site's domain to all non-default language links. This requires additional server configuration."
 msgstr ""
 
-#: settings-page.php:244
+#: settings-page.php:328
 #@ multilingual-wp
 msgid "Default Language in URL's?"
 msgstr ""
 
-#: settings-page.php:249
+#: settings-page.php:333
 #@ multilingual-wp
 msgid "Whether to modify URL's to include language information for the default language. For instance if the default language is English and you have selected \"Yes\", the home page URL will be <code>http://example.com/en/</code> otherwise it will be <code>http://example.com/</code>."
 msgstr ""
 
-#: settings-page.php:258
+#: settings-page.php:342
 #@ multilingual-wp
 msgid "Language Settings"
 msgstr ""
 
-#: settings-page.php:259
+#: settings-page.php:346
 #@ multilingual-wp
 msgid "Here you can change the settings for each supported language."
 msgstr ""
 
-#: settings-page.php:276
+#: settings-page.php:363
 #@ multilingual-wp
 msgid "Enter the PHP/WordPress locale for this language. For instance: <code>en_US</code>."
 msgstr ""
 
-#: settings-page.php:305
+#: settings-page.php:392
 #@ multilingual-wp
 msgid "Enter a custom time format for this language."
 msgstr ""
 
-#: update-posts-page.php:32
+#: update-posts-page.php:55
 #@ multilingual-wp
 msgid "Cheatin&#8217; uh?"
 msgstr ""
 
-#: update-posts-page.php:45
+#: update-posts-page.php:71
 #, php-format
 #@ multilingual-wp
 msgid "The post \"%s\" was ignored, because it's parent post has not been updated yet."
 msgstr ""
 
-#: update-posts-page.php:80
+#: update-posts-page.php:110
 #, php-format
 #@ multilingual-wp
 msgid "The post \"%s\" has been successfully updated."
 msgstr ""
 
-#: update-posts-page.php:86
+#: update-posts-page.php:116
 #@ multilingual-wp
 msgid "All posts have been successfully updated!"
 msgstr ""
 
-#: update-posts-page.php:97
+#: update-posts-page.php:9
+#: update-posts-page.php:11
 #@ multilingual-wp
 msgid "Fix Posts"
 msgstr ""
 
-#: update-posts-page.php:149
+#: update-posts-page.php:160
 #@ multilingual-wp
 msgid "This tool will run all of your enabled post types and make sure that all enabled languages are present."
 msgstr ""
 
-#: update-posts-page.php:151
+#: update-posts-page.php:162
 #, php-format
 #@ multilingual-wp
 msgid "We found %s posts in your site."
 msgstr ""
 
-#: update-posts-page.php:152
+#: update-posts-page.php:163
 #, php-format
 #@ multilingual-wp
 msgid "Wait for %s seconds, before doing another batch."
 msgstr ""
 
-#: update-posts-page.php:157
+#: update-posts-page.php:168
 #@ multilingual-wp
 msgid "Posts Per Batch:"
 msgstr ""
 
-#: update-posts-page.php:158
+#: update-posts-page.php:169
 #@ multilingual-wp
 msgid "Loading..."
 msgstr ""
 
-#: update-posts-page.php:159
+#: update-posts-page.php:170
 #, php-format
 #@ multilingual-wp
 msgid "Waiting for %s seconds, until next batch..."
 msgstr ""
 
-#: update-posts-page.php:160
+#: update-posts-page.php:171
 #@ multilingual-wp
 msgid "Update all of my posts"
 msgstr ""
 
-#: update-posts-page.php:160
+#: update-posts-page.php:171
 #@ multilingual-wp
 msgid "Stop!"
 msgstr ""
@@ -2032,5 +2035,168 @@ msgstr ""
 #: win_locales.php:44
 #@ multilingual-wp
 msgid "Turkish"
+msgstr ""
+
+#: plugin.php:1231
+#@ multilingual-wp
+msgid "This is not a multilingual post."
+msgstr ""
+
+#. translators: draft saved date format, see http://php.net/date 
+#: plugin.php:1243
+#@ default
+msgid "g:i:s a"
+msgstr ""
+
+#. translators: %s: date and time 
+#: plugin.php:1245
+#, php-format
+#@ default
+msgid "Draft saved at %s."
+msgstr ""
+
+#: plugin.php:1249
+#, php-format
+#@ default
+msgid "Your login has expired. Please open a new browser window and <a href=\"%s\" target=\"_blank\">log in again</a>. "
+msgstr ""
+
+#: plugin.php:1263
+#@ default
+msgid "Someone"
+msgstr ""
+
+#: plugin.php:1264
+#@ default
+msgid "Autosave disabled."
+msgstr ""
+
+#: plugin.php:1267
+#, php-format
+#@ default
+msgid "%s is currently editing this article. If you update it, you will overwrite the changes."
+msgstr ""
+
+#: plugin.php:1272
+#@ default
+msgid "You are not allowed to edit this page."
+msgstr ""
+
+#: plugin.php:1275
+#@ default
+msgid "You are not allowed to edit this post."
+msgstr ""
+
+#: plugin.php:1740
+#: plugin.php:1756
+#@ default
+msgid "Auto Draft"
+msgstr ""
+
+#: plugin.php:1763
+#, php-format
+#@ default
+msgid "Word count: %s"
+msgstr ""
+
+#: plugin.php:1771
+#, php-format
+#@ default
+msgid "Last edited by %1$s on %2$s at %3$s"
+msgstr ""
+
+#: plugin.php:1773
+#, php-format
+#@ default
+msgid "Last edited on %1$s at %2$s"
+msgstr ""
+
+#: remove-language-page.php:10
+#@ multilingual-wp
+msgid "Remove a Language"
+msgstr ""
+
+#. translators: %s - the label of the language 
+#: remove-language-page.php:58
+#, php-format
+#@ multilingual-wp
+msgid "Sorry, but the \"%s\" language is currently enabled. Please consider deactivating it first."
+msgstr ""
+
+#: remove-language-page.php:60
+#@ multilingual-wp
+msgid "You're trying to delete a non-existing language."
+msgstr ""
+
+#: remove-language-page.php:68
+#, php-format
+#@ multilingual-wp
+msgid "You just deleted the following language/s: %s. <br /> Please consider visiting the \"Fix Posts\" page in order to completely remove any trace of the removed language/s."
+msgstr ""
+
+#: remove-language-page.php:78
+#@ multilingual-wp
+msgid "WARNING: If you select to delete one of the languages bellow and then procede to the \"Fix Posts\" page, all of your posts for this language will be permanently deleted. There is no way to reverse that!"
+msgstr ""
+
+#: remove-language-page.php:91
+#, php-format
+#@ multilingual-wp
+msgid "In order to remove a language, you have to disable it first from the <a href=\"%1s\">Settings Page</a>"
+msgstr ""
+
+#: remove-language-page.php:95
+#@ multilingual-wp
+msgid "Please select the languages you want to remove."
+msgstr ""
+
+#: remove-language-page.php:107
+#@ multilingual-wp
+msgid "Remove These Languages"
+msgstr ""
+
+#: settings-page.php:77
+#@ multilingual-wp
+msgid "You can't disable all languages. You need to have at least one enabled language."
+msgstr ""
+
+#: settings-page.php:85
+#@ multilingual-wp
+msgid "You can't disable your default language. Please try changing the default language first."
+msgstr ""
+
+#: settings-page.php:276
+#@ multilingual-wp
+msgid "Categories"
+msgstr ""
+
+#: settings-page.php:279
+#@ multilingual-wp
+msgid "Tags"
+msgstr ""
+
+#: settings-page.php:293
+#@ multilingual-wp
+msgid "Please select which taxonomies you want to be multilingual."
+msgstr ""
+
+#: settings-page.php:301
+#@ multilingual-wp
+msgid "Empty translation "
+msgstr ""
+
+#: settings-page.php:305
+#@ multilingual-wp
+msgid "Display the \"Not Available Message\" for that language"
+msgstr ""
+
+#: settings-page.php:305
+#@ multilingual-wp
+msgid "Display the original content"
+msgstr ""
+
+#: settings-page.php:306
+#@ multilingual-wp
+msgid "What to display if a translation post is empty.<br /><small>Tip: if you want to display empty content on a specific translation on purpose, but also want to display the default language content, just set the translation's content to an empty space(like \"<code>&amp;nbsp;</code>\")</small>"
 msgstr ""
 
