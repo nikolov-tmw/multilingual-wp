@@ -339,6 +339,9 @@ class Multilingual_WP {
 
 		global $wp_rewrite;
 		$this->use_trailing_slashes = $wp_rewrite->use_trailing_slashes;
+		$page_rwr = self::$options->rewrites['page'];
+		$lang = $this->current_lang;
+		$wp_rewrite->pagination_base = urlencode( isset( $page_rwr[ $lang ] ) ? $page_rwr[ $lang ] : ( ! is_array( $page_rwr ) && $page_rwr ? $page_rwr : 'page' ) );
 	}
 
 	/**
@@ -2449,6 +2452,12 @@ class Multilingual_WP {
 						return $link;
 					}
 				}
+			} elseif ( is_paged() ) {
+				global $wp_rewrite;
+				$search = $wp_rewrite->pagination_base;
+				$page_rwr = self::$options->rewrites['page'];
+				$replace = isset( $page_rwr[ $lang ] ) ? $page_rwr[ $lang ] : ( ! is_array( $page_rwr ) && $page_rwr ? $page_rwr : 'page' );
+				return $this->convert_URL( str_replace( $search, $replace , $this->curPageURL() ), $lang );
 			}
 		} elseif ( $url == '' && ( $lang == '' || $lang == $this->current_lang ) && ! $force ) {
 			return $this->curPageURL();
