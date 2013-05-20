@@ -555,14 +555,17 @@ class Multilingual_WP {
 				$files = array( "{$locale}.mo", "admin-network-{$locale}.mo", "continents-cities-{$locale}.mo", "ms-{$locale}.mo", "admin-{$locale}.mo" );
 
 				foreach ( $files as $file ) {
-					$lcr = false;
+					$remote_file = false;
 					// try to find a .mo file
 					foreach ( $links as $link ) {
-						if ( ( $lcr = @fopen( $link . $file, 'r' ) ) !== false ) {
-							break(1);
+						$remote_file = wp_remote_get( $link . $file, array( 'timeout' => 20 ) );
+						if ( ! is_wp_error( $remote_file ) && intval( $remote_file['response']['code'] ) == 200 ) {
+							break( 1 );
+						} else {
+							$remote_file = false;
 						}
 					}
-					if ( $lcr === false ) {
+					if ( $remote_file === false ) {
 						// try to get some more time
 						@set_time_limit( 60 );
 						// couldn't find a .mo file
@@ -572,13 +575,9 @@ class Multilingual_WP {
 					} else {
 						// found a .mo file, update local .mo
 						$ll = fopen( trailingslashit( WP_LANG_DIR ) . $file . '.filepart','w' );
-						while ( ! feof( $lcr ) ) {
-							// try to get some more time
-							@set_time_limit( 60 );
-							$lc = fread( $lcr, 8192 );
-							fwrite( $ll, $lc );
-						}
-						fclose( $lcr );
+						@set_time_limit( 60 );
+						fwrite( $ll, $remote_file['body'] );
+
 						fclose( $ll );
 						// only use completely download .mo files
 						rename( trailingslashit( WP_LANG_DIR ) . $file . '.filepart', trailingslashit( WP_LANG_DIR ) . $file );
