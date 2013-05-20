@@ -233,8 +233,18 @@ class Multilingual_WP {
 					'order' => 10,
 				)
 			),
-			'pt_rewrites' => array( 'post' => false, 'page' => false ),
-			'tax_rewrites' => array( 'category' => 'category', 'post_tag' => 'tag' ),
+			'rewrites' => array(
+				'pt' => array(
+					'post' => false,
+					'page' => false
+				),
+				'tax' => array(
+					'category' => 'category',
+					'post_tag' => 'tag'
+				),
+				'search' => 'search',
+				'page' => 'page'
+			),
 			'default_lang' => 'en',
 			'enabled_langs' => array( 'en' ),
 			'dfs' => '24',
@@ -781,15 +791,18 @@ class Multilingual_WP {
 		}
 		if ( ! $did_rules ) {
 			$search = array();
+			$langs = self::$options->enabled_langs;
+			$rewrites = self::$options->rewrites;
+
 			foreach ( self::$options->enabled_pt as $pt ) {
-				foreach ( self::$options->enabled_langs as $lang ) {
+				foreach ( $langs as $lang ) {
 					if ( $lang != self::$options->default_lang ) {
 						$search[] = $this->hash_pt_name( $pt, $lang );
 					}
 				}
 			}
 			foreach ( self::$options->enabled_tax as $tax ) {
-				foreach ( self::$options->enabled_langs as $lang ) {
+				foreach ( $langs as $lang ) {
 					if ( $lang != self::$options->default_lang ) {
 						$search[] = $this->hash_tax_name( $tax, $lang );
 					}
@@ -811,13 +824,25 @@ class Multilingual_WP {
 			$_regex2 = '/' . implode( '|', array_map( 'preg_quote', $search ) ) . '/';
 
 			$additional_rules = array();
+
+			foreach ( $langs as $lang ) {
+				$_search = isset( $rewrites['search'][ $lang ] ) ? $rewrites['search'][ $lang ] : ( ! is_array( $rewrites['search'] ) && $rewrites['search'] ? $rewrites['search'] : 'search' );
+				$page = isset( $rewrites['page'][ $lang ] ) ? $rewrites['page'][ $lang ] : ( ! is_array( $rewrites['page'] ) && $rewrites['page'] ? $rewrites['page'] : 'page' );
+				$additional_rules["{$lang}/{$_search}/(.+)/feed/(feed|rdf|rss|rss2|atom)/?$"] = 'index.php?s=$matches[1]&feed=$matches[2]';
+				$additional_rules["{$lang}/{$_search}/(.+)/(feed|rdf|rss|rss2|atom)/?$"] = 'index.php?s=$matches[1]&feed=$matches[2]';
+				$additional_rules["{$lang}/{$_search}/(.+)/{$page}/([0-9]{1,})/?$"] = 'index.php?s=$matches[1]&paged=$matches[2]';
+				$additional_rules["{$lang}/{$_search}/(.+)/wc-api(/(.*))?/?$"] = 'index.php?s=$matches[1]&wc-api=$matches[3]';
+				$additional_rules["{$lang}/{$_search}/(.+)/?$"] = 'index.php?s=$matches[1]';
+				$additional_rules["{$lang}/.*?[\?|&]s=([^&]+)?"] = 'index.php?s=$matches[1]';
+				$additional_rules["{$lang}/{$page}/?([0-9]{1,})/?$"] = 'index.php?&paged=$matches[1]';
+			}
 			foreach ( $wp_rewrite->rules as $regex => $match ) {
 				if ( preg_match( $_regex, $match ) === 1 ) {
 					// Move rules for translation taxonomies/pts to the top of the stack as well :)
 					$additional_rules[ $regex ] = $match;
 					unset( $wp_rewrite->rules[ $regex ] );
 				} elseif ( preg_match( $_regex2, $match ) === 1 ) {
-					foreach ( self::$options->enabled_langs as $lang ) {
+					foreach ( $langs as $lang ) {
 						// Don't create rewrite rules for the default language if the user doesn't want it
 						if ( $lang == self::$options->default_lang && ! self::$options->def_lang_in_url ) {
 							continue;
@@ -831,6 +856,7 @@ class Multilingual_WP {
 					}
 				}
 			}
+
 			// Add our rewrite rules at the beginning of all rewrite rules - they are with a higher priority
 			$wp_rewrite->rules = array_merge( $additional_rules, $wp_rewrite->rules );
 			// var_dump( $wp_rewrite->rules );
@@ -1115,8 +1141,10 @@ class Multilingual_WP {
 	}
 
 	public function fix_home_page( $wp ) {
-		# If the request is in the form of "xx" - we assume that this is language information
-		if ( in_array( $wp->request, self::$options->enabled_langs ) ) {
+		global $wp_rewrite;
+		if ( isset( $wp->query_vars['s'] ) ) {
+			unset( $wp->query_vars['pagename'], $wp->query_vars['page'] );
+		} elseif ( in_array( $wp->request, self::$options->enabled_langs ) ) {
 			// So we set the query_vars array to an empty array, thus forcing the display of the home page :)
 			$wp->query_vars = array();
 		}
@@ -1953,7 +1981,6 @@ class Multilingual_WP {
 						)
 					);
 					$rewrite = false;
-					// var_dump( $pt->rewrite, $pt_name );
 					if ( $pt->rewrite ) {
 						$slug = ( $lang != $def_lang || self::$options->def_lang_in_url ) ? $lang : '';
 						$rewrite = array();

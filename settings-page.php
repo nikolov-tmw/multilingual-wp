@@ -167,10 +167,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$this->languages_tab( $languages );
 
 		// Render the Post Types tab
-		$this->post_types_tab( $languages );
-
-		// Render the Taxonomies tab
-		$this->taxonomies_tab( $languages );
+		$this->rewrite_settings_tab( $languages );
 
 		echo $this->form_wrap( ob_get_clean() );
 	}
@@ -430,16 +427,18 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		echo '</div> <!-- Tab end -->';
 	}
 
-	private function post_types_tab( $languages ) {
-		echo '<div class="js-tab" id="tab_post_types" title="' . __( 'Post Types', 'multilingual-wp' ) . '">';
+	private function rewrite_settings_tab( $languages ) {
+		echo '<div class="js-tab" id="tab_rewrite_settings" title="' . __( 'Rewrite Settings', 'multilingual-wp' ) . '">';
 
 		echo '<p>' . $this->submit_button( '', 'action', 'button-primary', '' ) . '</p>';
 
-		echo apply_filters( 'the_content', __( 'Here you can change the unique slug(for each post type), that is used in Permalinks.', 'multilingual-wp' ) );
+		echo apply_filters( 'the_content', __( 'Here you can change the unique slug(for post types,taxonomies,search,etc.), that is used in Permalinks.', 'multilingual-wp' ) );
 
+		// Start Post Types Box
+		$this->start_box( __( 'Post Types Slugs', 'multilingual-wp' ) );
 		$pts_opts = $this->get_post_types();
+		$pt_rewrites = $this->options->rewrites['pt'];
 
-		$pt_rewrites = $this->options->pt_rewrites;
 		foreach ( (array) $this->options->enabled_pt as $pt ) {
 			$this->start_box( strip_tags( $pts_opts[ $pt ] ) );
 
@@ -449,7 +448,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 				$options[] = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
 					'type' => 'text',
-					'name' => "pt_rewrites[{$pt}][{$lang}]",
+					'name' => "rewrites[pt][{$pt}][{$lang}]",
 					'desc' => __( 'Enter the slug that will be used in URL\'s for this language.', 'multilingual-wp' ),
 					'value' => $val
 				);
@@ -459,20 +458,14 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 			$this->end_box();
 		}
+		$this->end_box();
+		// End Post Types Box
 
-		echo '</div> <!-- Tab end -->';
-	}
-
-	private function taxonomies_tab( $languages ) {
-		echo '<div class="js-tab" id="tab_taxonomies" title="' . __( 'Taxonomies', 'multilingual-wp' ) . '">&nbsp;';
-
-		echo '<p>' . $this->submit_button( '', 'action', 'button-primary', '' ) . '</p>';
-
-		echo apply_filters( 'the_content', __( 'Here you can change the unique slug(for each taxonomy), that is used in Permalinks.', 'multilingual-wp' ) );
-
+		// Start Taxonomies Box
+		$this->start_box( __( 'Taxonomies Slugs', 'multilingual-wp' ) );
 		$tax_opts = $this->get_taxonomies();
+		$tax_rewrites = $this->options->rewrites['tax'];
 
-		$tax_rewrites = $this->options->tax_rewrites;
 		foreach ( (array) $this->options->enabled_tax as $tax ) {
 			$this->start_box( strip_tags( $tax_opts[ $tax ] ) );
 
@@ -482,7 +475,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 				$options[] = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
 					'type' => 'text',
-					'name' => "tax_rewrites[{$tax}][{$lang}]",
+					'name' => "rewrites[tax][{$tax}][{$lang}]",
 					'desc' => __( 'Enter the slug that will be used in URL\'s for this language.', 'multilingual-wp' ),
 					'value' => $val
 				);
@@ -492,6 +485,47 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 			$this->end_box();
 		}
+		$this->end_box();
+		// End Taxonomies Box
+
+		// Start Search Box
+		$this->start_box( __( 'Search Slugs', 'multilingual-wp' ) );
+		$search_rewrites = $this->options->rewrites['search'];
+
+		$options = array();
+		foreach ( $this->options->enabled_langs as $lang ) {
+			$val = isset( $search_rewrites[ $lang ] ) ? $search_rewrites[ $lang ] : ( ! is_array( $search_rewrites ) && $search_rewrites ? $search_rewrites : 'search' );
+			$options[] = array(
+				'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
+				'type' => 'text',
+				'name' => "rewrites[search][{$lang}]",
+				'desc' => __( 'Enter the slug that will be used in URL\'s for this language.', 'multilingual-wp' ),
+				'value' => $val
+			);
+		}
+		echo $this->table( $options );
+		$this->end_box();
+		// End Search Box
+
+		// Start Page Box
+		$this->start_box( __( 'Page Slugs', 'multilingual-wp' ) );
+		echo apply_filters( 'the_content', __( 'These are the slugs that will be used for paginated links, like <code>/page/2</code>.', 'multilingual' ) );
+		$page_rewrites = $this->options->rewrites['page'];
+
+		$options = array();
+		foreach ( $this->options->enabled_langs as $lang ) {
+			$val = isset( $page_rewrites[ $lang ] ) ? $page_rewrites[ $lang ] : ( ! is_array( $page_rewrites ) && $page_rewrites ? $page_rewrites : 'page' );
+			$options[] = array(
+				'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
+				'type' => 'text',
+				'name' => "rewrites[page][{$lang}]",
+				'desc' => __( 'Enter the slug that will be used in URL\'s for this language.', 'multilingual-wp' ),
+				'value' => $val
+			);
+		}
+		echo $this->table( $options );
+		$this->end_box();
+		// End Search Box
 
 		echo '</div> <!-- Tab end -->';
 	}
