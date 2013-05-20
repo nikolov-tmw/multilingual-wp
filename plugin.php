@@ -1040,6 +1040,11 @@ class Multilingual_WP {
 						$term->slug = $wp_query->queried_object->slug;
 						$term->description = $wp_query->queried_object->description;
 						$wp_query->queried_object = $term;
+						if ( $taxonomy == 'category' ) {
+							$wp_query->is_category = true;
+						} elseif ( $taxonomy == 'post_tag' ) {
+							$wp_query->is_tag = true;
+						}
 					}
 				}
 			}
