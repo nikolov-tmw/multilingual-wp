@@ -86,9 +86,6 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		if ( ! $data['icon'] ) {
 			$errors[] = 'Please select the <code>Language Flag</code> for this language.';
 		}
-		if ( ! $data['na_message'] ) {
-			$errors[] = 'Please enter the <code>Not Available Message</code> for this language.';
-		}
 
 		if ( empty( $errors ) ) {
 			global $Multilingual_WP;
@@ -144,7 +141,7 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 				'extra' => array( 'maxlength' => '2', 'class' => 'regular-text' )
 			),
 			array(
-				'title' => __( 'Not Available Message <span class="required">*</span>', 'multilingual-wp' ),
+				'title' => __( 'Not Available Message', 'multilingual-wp' ),
 				'type' => 'textarea',
 				'name' => "language[na_message]",
 				'desc' => __( 'Enter the message that will be displayed when the requested post/page is not available in this language.', 'multilingual-wp' ),
