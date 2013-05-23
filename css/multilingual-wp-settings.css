@@ -14,6 +14,8 @@ div#wpbody-content #mlwp_flag_select div.col { padding-bottom: 15px; }
 div#wpbody-content #mlwp_flag_select label { display: block; background: #CCCCCC; padding: 3px 5px 6px 5px; border-radius: 5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; }
 div#wpbody-content #mlwp_flag_select label.selected { background: #c3eaf7; }
 
+textarea.regular-text { width: 25em; }
+
 .cl { display: block; float: none; clear: both; height: 0; }
 
 div.mlwp-box { border-width: 2px; }

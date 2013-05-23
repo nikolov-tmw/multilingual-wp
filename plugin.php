@@ -109,6 +109,15 @@ class Multilingual_WP {
 	public $rel_langs;
 
 	/**
+	 * Holds a reference to all (enabled)taxonomies for the current post. 
+	 *
+	 * Each key is a taxonomy name with all terms that the post is associated wih in that taxonomy.
+	 *
+	 * @var array
+	 **/
+	public $post_taxonomies;
+
+	/**
 	 * Holds a reference to the ID of the term we're currently interacting with
 	 *
 	 * @var string|Integer
@@ -142,6 +151,13 @@ class Multilingual_WP {
 	 * @var array
 	 **/
 	public $parent_rel_t_langs;
+
+	/**
+	 * Holds a reference to the original taxonomy names - each key is a hashed taxonomy name
+	 *
+	 * @var array
+	 **/
+	public $hashed_taxonomies;
 
 	/**
 	 * Whether we're running on Windows or not 
@@ -208,7 +224,7 @@ class Multilingual_WP {
 	private $tax_prefix = 'mlwp_t_';
 	private $reg_shortcodes = array();
 
-	public function plugin_init() {
+	public static function plugin_init() {
 		load_plugin_textdomain( 'multilingual-wp', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 
 		// Creating an options object
@@ -261,6 +277,7 @@ class Multilingual_WP {
 			'dl_gettext' => true,
 			'next_mo_update' => time(),
 			'flush_rewrite_rules' => false,
+			'updated_terms' => array(),
 		) );
 
 		// Creating settings page objects
@@ -285,9 +302,9 @@ class Multilingual_WP {
 		// Include required files
 		self::include_additional_files();
 
-		$Multilingual_WP->is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
+		self::$is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
 
-		if ( $Multilingual_WP->is_win ) {
+		if ( self::$is_win ) {
 			include_once( dirname( __FILE__ ) . '/win_locales.php' );
 		}
 	}
@@ -304,7 +321,7 @@ class Multilingual_WP {
 
 		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
 
-		$this->is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
+		self::$is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
 	}
 
 	public static function include_additional_files() {
@@ -400,6 +417,8 @@ class Multilingual_WP {
 			add_filter( 'query_vars', array( $this, 'add_lang_query_var' ) );
 
 			add_filter( 'the_posts', array( $this, 'filter_posts' ), $this->late_fp, 2 );
+
+			add_filter( 'wp_get_object_terms', array( $this, 'filter_terms' ), 10, 3 );
 		}
 
 		if ( $this->lang_mode == self::LT_QUERY && ( $this->current_lang != self::$options->default_lang || self::$options->def_lang_in_url ) ) {
@@ -785,6 +804,14 @@ class Multilingual_WP {
 		return $hashed_names[ $id ];
 	}
 
+	public function unhash_tax_name( $taxonomy ) {
+		if ( isset( $this->hashed_taxonomies[ $taxonomy ] ) ) {
+			return $this->hashed_taxonomies[ $taxonomy ];
+		} else {
+			return false;
+		}
+	}
+
 	public function add_rewrite_rules( $wp_rewrite ) {
 		static $did_rules = false;
 		// Don't know what to do with sub-domains yet, let's skip that for now :)
@@ -1070,7 +1097,7 @@ class Multilingual_WP {
 			$orig_id = $this->is_gen_pt( $post->post_type ) ? get_post_meta( $post->ID, $this->rel_p_meta_key, true ) : $post->ID;
 
 			// If this is a generated post type, we need to get the original post object
-			if ( $orig_id != $post->ID && $orig_id ) {
+			if ( $orig_id && $orig_id != $post->ID ) {
 				$post = get_post( $orig_id );
 			}
 
@@ -1088,6 +1115,48 @@ class Multilingual_WP {
 			}
 		}
 		return $post;
+	}
+
+	public function filter_terms( $terms, $object_ids, $taxonomies ) {
+		$orig_term_ID = $this->term_ID ? $this->term_ID : false;
+		$orig_taxonomy = $this->taxonomy ? $this->taxonomy : false;
+		foreach ( $terms as $i => $term ) {
+			if ( is_object( $term ) && $this->is_enabled_tax( $term->taxonomy ) ) {
+				// $this->setup_term_vars( $term->term_id, $term->taxonomy );
+			}
+		}
+
+		return $terms;
+	}
+
+	public function filter_term( $term, $language = false, $preserve_t_vars = true ) {
+		$language = $language ? $language : $this->current_lang;
+		if ( $language && ( ! isset( $term->{self::QUERY_VAR} ) || $term->{self::QUERY_VAR} != $lang ) && ( $this->is_enabled_tax( $term->taxonomy ) || $this->is_gen_tax( $term->taxonomy ) ) ) {
+			if ( $preserve_t_vars ) {
+				$old_id = $this->term_ID ? $this->term_ID : false;
+			}
+
+			$orig_id = $this->is_gen_tax( $term->taxonomy ) ? get_post_meta( $post->ID, $this->rel_p_meta_key, true ) : $term->term_id;
+
+			// If this is a generated post type, we need to get the original post object
+			if ( $orig_id && $orig_id != $term->term_id ) {
+				$post = get_term( $orig_id, $term->taxonomy );
+			}
+
+			$this->setup_term_vars( $orig_id, $term->taxonomy );
+			if ( isset( $this->rel_t_langs[ $language ] ) && ( $_term = get_term( $this->rel_langs[ $language ] ) ) ) {
+				$post->mlwp_lang = $language;
+				$post->post_content = $_post->post_content == '' ? $this->na_message( $language, $post->post_content ) : $_post->post_content;
+				$post->post_title = $_post->post_title == '' ? ( self::$options->na_message ? '(' . self::$options->default_lang . ') ' : '' ) . $post->post_title : $_post->post_title;
+				$post->post_name = $_post->post_name;
+				$post->post_excerpt = $_post->post_excerpt;
+			}
+
+			if ( $preserve_post_vars && $old_id ) {
+				$this->setup_post_vars( $old_id );
+			}
+		}
+		return $term;
 	}
 
 	public function add_query_arg( $key, $value, $target ) {
@@ -1512,8 +1581,8 @@ class Multilingual_WP {
 					$_post['post_parent'] = $this->parent_rel_langs[ $lang ];
 				}
 
-				$_id = $this->save_post( $_post );
-				if ( ! is_wp_error( $_id ) ) {
+				$_id = $this->save_post( $_post, true );
+				if ( $_id && ! is_wp_error( $_id ) ) {
 					$_post = get_post( $_id, ARRAY_A );
 					$new_slugs .= "|||{$lang}_slug={$_post['post_name']}";
 					update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
@@ -1576,7 +1645,11 @@ class Multilingual_WP {
 	public function delete_post( $pid, $force_delelte = false ) {
 		$this->_doing_delete = true;
 
-		$result = wp_delete_post( $pid, $force_delelte );
+		if ( ! $force_delelte && get_post_status( $pid ) != 'trash' ) {
+			$result = wp_trash_post( $pid );
+		} else {
+			$result = wp_delete_post( $pid, $force_delelte );
+		}
 
 		$this->_doing_delete = false;
 
@@ -1665,6 +1738,14 @@ class Multilingual_WP {
 		$this->rel_langs = $this->rel_langs && is_array( $this->rel_langs ) ? $this->rel_langs : array();
 		$this->parent_rel_langs = $this->post->post_parent ? get_post_meta( $this->post->post_parent, $this->languages_meta_key, true ) : false;
 		$this->post_type = get_post_type( $this->ID );
+		$this->post_taxonomies = array();
+		$post_taxonomies = get_object_taxonomies( $this->post );
+		foreach ( $post_taxonomies as $tax ) {
+			if ( $this->is_enabled_tax( $tax ) ) {
+				$this->post_taxonomies[ $tax ] = (array) wp_get_object_terms( $this->ID, $tax, array( 'fields' => 'ids' ) );
+				$this->post_taxonomies[ $tax ] = array_map( 'intval', $this->post_taxonomies[ $tax ] );
+			}
+		}
 
 		// Related posts to the current post
 		$this->rel_posts = array();
@@ -1702,13 +1783,14 @@ class Multilingual_WP {
 
 		$langs = get_option( "_mlwp_term_relations_{$term_ID}", false );
 		// Option not added yet
-		if ( $langs === false ) {
+		if ( $langs === false || ! is_array( $langs ) ) {
 			// No auto-loading - try to prevent big amounts of data being loaded into memory for sites with a lot of terms
 			add_option( "_mlwp_term_relations_{$term_ID}", array(), '', 'no' );
 			$langs = array();
 		} else {
 			$langs = is_array( $langs ) ? $langs : array();
 		}
+		$langs = array_map( 'intval', $langs );
 		$term_langs[ $term_ID ] = $langs;
 
 		return $langs;
@@ -1818,10 +1900,21 @@ class Multilingual_WP {
 	public function update_rel_langs( $post = false ) {
 		if ( $post ) {
 			$old_id = $this->ID;
-			$this->setup_post_vars( $post->ID );
+			$this->setup_post_vars( ( is_object( $post ) ? $post->ID : $post ) );
 		}
 
 		if ( $this->rel_langs ) {
+			$tax_terms = array();
+			$langs_arr = array_flip( self::$options->enabled_langs );
+			$old_tid = $this->term_ID ? $this->term_ID : false;
+			// Loop through all taxonomies
+			foreach ( $this->post_taxonomies as $tax => $terms ) {
+				$tax_terms[ $tax ] = array();
+				foreach ( $terms as $tid ) {
+					$this->setup_term_vars( $tid, $tax );
+					$tax_terms[ $tax ][] = $this->rel_t_langs;
+				}
+			}
 			foreach ( $this->rel_langs as $lang => $rel_pid ) {
 				if ( ! $this->is_enabled( $lang ) ) {
 					// This language doesn't exist, which most-likely means that the user has removed it, so let's clean it up
@@ -1833,8 +1926,11 @@ class Multilingual_WP {
 				if ( ! ( $_post = get_post( $rel_pid, ARRAY_A ) ) ) {
 					continue;
 				}
+
 				if ( isset( $_POST[ "content_{$lang}" ] ) ) {
 					$_post['post_content'] = $_POST[ "content_{$lang}" ];
+				} else {
+					$_post['post_content'] = '';
 				}
 				if ( isset( $_POST[ "title_{$lang}" ] ) ) {
 					$_post['post_title'] = $_POST[ "title_{$lang}" ];
@@ -1847,6 +1943,7 @@ class Multilingual_WP {
 				}
 				$_post['post_author'] = $this->post->post_author;
 				$_post['post_date'] = $this->post->post_date;
+				$_post['post_excerpt'] = $this->post->post_excerpt;
 				$_post['post_date_gmt'] = $this->post->post_date_gmt;
 				$_post['post_status'] = $this->post->post_status;
 				$_post['comment_status'] = $this->post->comment_status;
@@ -1858,11 +1955,33 @@ class Multilingual_WP {
 				$_post['post_modified_gmt'] = $this->post->post_modified_gmt;
 				$_post['menu_order'] = $this->post->menu_order;
 
-				$_id = $this->save_post( $_post );
-				if ( ! is_wp_error( $_id ) ) {
+				// Get all related post terms
+				$post_terms = array();
+				foreach ( $tax_terms as $tax => $terms ) {
+					if ( ! $terms ) {
+						continue;
+					}
+					$post_terms[ $tax ] = array();
+					foreach ( $terms as $_terms ) {
+						if ( isset( $_terms[ $lang ] ) ) {
+							$post_terms[ $tax ][] = $_terms[ $lang ];
+						}
+					}
+				}
+
+				$_id = $this->save_post( $_post, true );
+				if ( $_id && ! is_wp_error( $_id ) ) {
 					$_post = get_post( $_id, ARRAY_A );
 					update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
+
+					// Update the post terms
+					if ( ! empty( $post_terms ) ) {
+						foreach ( $post_terms as $tax => $terms ) {
+							wp_set_object_terms( $_id, $terms, $tax, false );
+						}
+					}
 				}
+
 
 				// If this is the default language - copy over the title/content/etc over
 				if ( $lang == self::$options->default_lang ) {
@@ -1872,8 +1991,8 @@ class Multilingual_WP {
 
 					$this->save_post( $this->post );
 				}
-				unset( $_post );
 			}
+			unset( $_post );
 		}
 
 		if ( $post && $old_id ) {
@@ -2130,6 +2249,7 @@ class Multilingual_WP {
 					$result = register_taxonomy( $name, $object_types, $args );
 					if ( ! is_wp_error( $result ) ) {
 						$generated_tax[] = $name;
+						$this->hashed_taxonomies[ $name ] = $tax_name;
 						if ( in_array( $name, $_generated_tax ) === false ) {
 							$_generated_tax[] = $name;
 						}
@@ -2431,18 +2551,28 @@ class Multilingual_WP {
 				return $url;
 			} elseif ( is_tax() || is_category() || is_tag() ) {
 				$obj = get_queried_object();
-				if ( $this->is_enabled_tax( $obj->taxonomy ) ) {
+				if ( $this->is_enabled_tax( $obj->taxonomy ) || $this->is_gen_tax( $obj->taxonomy ) ) {
 					$link = false;
 					$_lang = $this->current_lang;
 					$this->current_lang = $lang;
-					if ( $lang == self::$options->default_lang ) {
+					if ( $lang == $_lang ) {
 						$link = get_term_link( intval( $obj->term_id ), $obj->taxonomy );
 					} else {
-						$rel_langs = $this->get_term_langs( $obj->term_id );
-						$tax = $this->hash_tax_name( $obj->taxonomy, $lang );
-						if ( isset( $rel_langs[ $lang ] ) && ( $term = get_term( $rel_langs[ $lang ], $tax ) ) ) {
-							if ( ! is_wp_error( $term ) ) {
-								$link = get_term_link( $term, $tax );
+						if ( $this->is_gen_tax( $obj->taxonomy ) ) {
+							$rel_lang = $this->get_term_lang( $obj->term_id );
+							$tax = $this->unhash_tax_name( $obj->taxonomy );
+							if ( ( $term = get_term( $rel_lang, $tax ) ) ) {
+								if ( ! is_wp_error( $term ) ) {
+									$link = get_term_link( $term, $tax );
+								}
+							}
+						} else {
+							$rel_langs = $this->get_term_langs( $obj->term_id );
+							$tax = $this->hash_tax_name( $obj->taxonomy, $lang );
+							if ( isset( $rel_langs[ $lang ] ) && ( $term = get_term( $rel_langs[ $lang ], $tax ) ) ) {
+								if ( ! is_wp_error( $term ) ) {
+									$link = get_term_link( $term, $tax );
+								}
 							}
 						}
 					}
@@ -2552,9 +2682,16 @@ class Multilingual_WP {
 		}
 		$id = is_object( $term ) ? $term->term_id : intval( $term );
 
-		if ( $this->is_enabled_tax( $taxonomy ) && $this->current_lang != self::$options->default_lang ) {
+		if ( ( $this->is_enabled_tax( $taxonomy ) || $this->is_gen_tax( $taxonomy ) ) && $this->current_lang != self::$options->default_lang ) {
 			$rel_langs = $this->get_term_langs( $id );
 			$slug = false;
+			if ( $this->is_gen_tax( $taxonomy ) ) {
+				$type1 = 'mlwp_term';
+				$type2 = 'term';
+			} else {
+				$type1 = 'term';
+				$type2 = 'mlwp_term';
+			}
 			if ( is_taxonomy_hierarchical( $taxonomy ) ) {
 				$term = get_term( $id, $taxonomy );
 				if ( $term && ! is_wp_error( $term ) && $term->parent ) {
@@ -2566,7 +2703,7 @@ class Multilingual_WP {
 							continue;
 						}
 
-						$slugs[ $this->get_obj_slug( $a_id, 'term', $taxonomy ) ] = $this->get_obj_slug( $_rel_langs[ $this->current_lang ], 'mlwp_term', $this->hash_tax_name( $taxonomy ) );
+						$slugs[ $this->get_obj_slug( $a_id, $type1, $taxonomy ) ] = $this->get_obj_slug( $_rel_langs[ $this->current_lang ], $type2, $this->hash_tax_name( $taxonomy ) );
 					}
 					foreach ( $slugs as $search => $replace ) {
 						if ( $replace == '' ) {
@@ -2577,10 +2714,10 @@ class Multilingual_WP {
 				}
 			}
 			$slug = $slug ? $slug : $this->get_term_slug_c( $id, $taxonomy );
-			$this->add_slug_cache( $id, $slug, 'term' );
+			$this->add_slug_cache( $id, $slug, $type1 );
 
 			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
-				$url = str_replace( $slug, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_term', $this->hash_tax_name( $taxonomy ) ), $url );
+				$url = str_replace( $slug, $this->get_obj_slug( $rel_langs[ $this->current_lang ], $type2, $this->hash_tax_name( $taxonomy ) ), $url );
 			}
 		} else {
 			$url = $this->convert_URL( $url );

@@ -24,7 +24,12 @@ abstract class scb_MLWP_Widget extends WP_Widget {
 
 	// A pre-filled method, for convenience
 	function widget( $args, $instance ) {
-		$instance = $instance ? $instance[ array_shift( array_keys( $instance ) ) ] : $this->defaults;
+		if ( $instance ) {
+			$keys = array_keys( $instance );
+			$instance = $instance[ array_shift( $keys ) ];
+		} else {
+			$instance = $this->defaults;
+		}
 		$instance = wp_parse_args( $instance, $this->defaults );
 
 		extract( $args );

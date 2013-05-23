@@ -33,16 +33,16 @@
 				}
 
 				wp.media.editor.open(button);
-				return false;
+				e.preventDefault();
 			});
 		};
 
 		init_js_tabs();
 
-		$('.wrap .postbox .handlediv,.wrap .postbox .hndle').on('click', function(){
+		$('.wrap .postbox .handlediv,.wrap .postbox .hndle').on('click', function(e){
 			$(this).siblings(".inside").toggle();
 
-			return false;
+			e.preventDefault();
 		});
 
 		var forms = document.getElementsByTagName('form');
