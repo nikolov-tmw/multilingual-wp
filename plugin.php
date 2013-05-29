@@ -2429,6 +2429,9 @@ class Multilingual_WP {
 				if ( ! $tax ) {
 					continue;
 				}
+				if ( in_array( $tax->name, array( 'category', 'post_tag' ) ) ) {
+					$wp_taxonomies[ $tax->name ]->rewrite['with_front'] = $tax->rewrite['with_front'] = false;
+				}
 				foreach ( $enabled_langs as $lang ) {
 					$name = $this->hash_tax_name( $tax_name, $lang );
 					$labels = array_merge(
@@ -2442,8 +2445,8 @@ class Multilingual_WP {
 					if ( $tax->rewrite ) {
 						$slug = ( $lang != $def_lang || self::$options->def_lang_in_url ) ? "{$lang}" : '';
 						$rewrite = array();
-						$slug .= $tax->rewrite['with_front'] ? "{$wp_rewrite->front}" : '/';
-						$slug .= is_array( $rewrites ) && isset( $rewrites[ $tax_name ][ $lang ] ) && $rewrites[ $tax_name ][ $lang ] ? $rewrites[ $tax_name ][ $lang ] : ( isset( $tax->rewrite['slug'] ) ? $tax->rewrite['slug'] : $tax_name );
+						$slug .= $tax->rewrite['with_front'] || in_array( $tax->name, array( 'category', 'post_tag' ) ) ? "{$wp_rewrite->front}" : '/';
+						$slug .= is_array( $rewrites ) && isset( $rewrites[ $tax_name ][ $lang ] ) && $rewrites[ $tax_name ][ $lang ] ? $rewrites[ $tax_name ][ $lang ] : ( isset( $tax->rewrite['slug'] ) ? str_replace( $wp_rewrite->front, '', $tax->rewrite['slug'] ) : $tax_name );
 						
 						$rewrite['with_front'] = false;
 						$rewrite['slug'] = preg_replace( '~/{2,}~', '/', $slug );
@@ -2452,7 +2455,6 @@ class Multilingual_WP {
 						if ( $lang == $def_lang ) {
 							if ( isset( $wp_taxonomies[ $tax_name ] ) ) {
 								$wp_taxonomies[ $tax_name ]->rewrite['slug'] = $rewrite['slug'];
-								$wp_taxonomies[ $tax_name ]->rewrite['with_front'] = $rewrite['with_front'];
 							}
 							$rewrite = false;
 						}
@@ -2793,27 +2795,9 @@ class Multilingual_WP {
 					$link = false;
 					$_lang = $this->current_lang;
 					$this->current_lang = $lang;
+
 					$link = get_term_link( intval( $obj->term_id ), $obj->taxonomy );
-					// if ( $lang == $_lang ) {
-					// } else {
-					// 	if ( $this->is_gen_tax( $obj->taxonomy ) ) {
-					// 		$rel_lang = $this->get_term_lang( $obj->term_id );
-					// 		$tax = $this->unhash_tax_name( $obj->taxonomy );
-					// 		if ( ( $term = $this->get_term( $rel_lang, $tax ) ) ) {
-					// 			if ( ! is_wp_error( $term ) ) {
-					// 				$link = get_term_link( $term, $tax );
-					// 			}
-					// 		}
-					// 	} else {
-					// 		$rel_langs = $this->get_term_langs( $obj->term_id );
-					// 		$tax = $this->hash_tax_name( $obj->taxonomy, $lang );
-					// 		if ( isset( $rel_langs[ $lang ] ) && ( $term = $this->get_term( $rel_langs[ $lang ], $tax ) ) ) {
-					// 			if ( ! is_wp_error( $term ) ) {
-					// 				$link = get_term_link( $term, $tax );
-					// 			}
-					// 		}
-					// 	}
-					// }
+
 					$this->current_lang = $_lang;
 
 					if ( $link ) {
@@ -2920,11 +2904,13 @@ class Multilingual_WP {
 		}
 		$id = is_object( $term ) ? $term->term_id : intval( $term );
 
-
 		if ( ( $this->is_enabled_tax( $taxonomy ) || $this->is_gen_tax( $taxonomy ) ) && $this->current_lang != $this->default_lang ) {
+			$rewrites = $this->get_taxonomy_slug( $taxonomy );
+			if ( ! $this->is_gen_tax( $taxonomy ) ) {
+				$taxonomy = $this->hash_tax_name( $taxonomy );
+			}
 			$rel_langs = $this->get_term_langs( $id );
 			$slug = false;
-			$rewrites = $this->get_taxonomy_slug( $taxonomy );
 			if ( $this->is_gen_tax( $taxonomy ) ) {
 				$type1 = 'mlwp_term';
 				$type2 = 'term';
@@ -2956,9 +2942,10 @@ class Multilingual_WP {
 			$slug = $slug ? $slug : $this->get_term_slug_c( $id, $taxonomy );
 			$this->add_slug_cache( $id, $slug, $type1 );
 
-			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
-				$url = str_replace( $slug, $this->get_obj_slug( $rel_langs[ $this->current_lang ], $type2, $this->hash_tax_name( $taxonomy ) ), $url );
-			}
+			// We seem to no longer need this :) 
+			// if ( isset( $rel_langs[ $this->current_lang ] ) ) {
+			// 	$url = str_replace( $slug, $this->get_obj_slug( $rel_langs[ $this->current_lang ], $type2, $this->hash_tax_name( $taxonomy ) ), $url );
+			// }
 			$url = str_replace( $rewrites[0], $rewrites[1], $url );
 		} else {
 			$url = $this->convert_URL( $url );
