@@ -353,7 +353,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			'desc' => __( 'Whether to modify URL\'s to include language information for the default language. For instance if the default language is English and you have selected "Yes", the home page URL will be <code>http://example.com/en/</code> otherwise it will be <code>http://example.com/</code>.', 'multilingual-wp' )
 		);
 
-		echo $this->table( $default_settings );
+		echo $this->table( apply_filters( 'mlwp_settings_general', $default_settings ) );
 
 		echo '</div> <!-- Tab end -->';
 	}
@@ -363,12 +363,12 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 		echo '<p>' . $this->submit_button( '', 'action', 'button-primary', '' ) . '</p>';
 
-		echo apply_filters( 'the_content', __( 'Here you can change the settings for each supported language.', 'multilingual-wp' ) );
+		$this->admin_msg( __( 'Here you can change the settings for each supported language.', 'multilingual-wp' ), 'mlwp-notice nofade', '', true );
 
 		foreach ($languages as $lang => $data) {
 			$this->start_box( $data['label'] );
 
-			echo $this->table( array(
+			$fields = array(
 				array(
 					'title' => __( 'Language Label <span class="required">*</span>', 'multilingual-wp' ),
 					'type' => 'text',
@@ -419,8 +419,11 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 					'desc' => __( 'Enter the position in which this language should appear( smallest to largest ).', 'multilingual-wp' ),
 					'value' => $data['order']
 				),
-			) );
+			);
 
+			$fields = apply_filters( "mlwp_settings_language_{$lang}", $fields );
+	
+			echo $this->table( $fields );
 			$this->end_box();
 		}
 
@@ -432,7 +435,8 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 		echo '<p>' . $this->submit_button( '', 'action', 'button-primary', '' ) . '</p>';
 
-		echo apply_filters( 'the_content', __( 'Here you can change the unique slug(for post types,taxonomies,search,etc.), that is used in Permalinks.', 'multilingual-wp' ) );
+		/* translators: %s - link to the Settings > Permalinks page */
+		$this->admin_msg( __( 'Here you can change the unique slug(for post types,taxonomies,search,etc.), that is used in Permalinks.', 'multilingual-wp' ) . "\n\n" . sprintf( __( 'After making changes here, please visit the %s page. This will rebuild the permalink rules and will avoid any broken links.', 'multilingual-wp' ), sprintf( __( '<a href="%s">"Settings &raquo; Permalinks"</a>', 'multilingual-wp' ), admin_url( 'options-permalink.php' ) ) ), 'mlwp-notice nofade', '', true );
 
 		$rewrites = $this->options->rewrites;
 		$enabled_langs = $this->options->enabled_langs;
@@ -457,7 +461,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 				);
 			}
 
-			echo $this->table( $options );
+			echo $this->table( apply_filters( "mlwp_settings_pt_rewrites_{$pt}", $options ) );
 
 			$this->end_box();
 		}
@@ -484,7 +488,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 				);
 			}
 
-			echo $this->table( $options );
+			echo $this->table( apply_filters( "mlwp_settings_tax_rewrites_{$tax}", $options ) );
 
 			$this->end_box();
 		}
@@ -537,7 +541,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 			$options = array();
 			foreach ( $enabled_langs as $lang ) {
-				$val = isset( $_rewrites[ $lang ] ) ? $_rewrites[ $lang ] : ( ! is_array( $_rewrites ) && $_rewrites ? $_rewrites : $data['default'] );
+				$val = is_array( $_rewrites[ $lang ] ) && isset( $_rewrites[ $lang ] ) ? $_rewrites[ $lang ] : ( ! is_array( $_rewrites ) && $_rewrites ? $_rewrites : $data['default'] );
 				$options[] = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
 					'type' => 'text',
@@ -546,7 +550,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 					'value' => $val
 				);
 			}
-			echo $this->table( $options );
+			echo $this->table( apply_filters( "mlwp_settings_extra_rewrites", $options ) );
 			$this->end_box();
 			// End Box
 		}

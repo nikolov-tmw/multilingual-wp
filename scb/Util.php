@@ -118,8 +118,8 @@ class scb_MLWP_Util {
 }
 
 // Return a standard admin notice
-function scb_MLWP_admin_notice( $msg, $class = '', $fade_time = '' ) {
-	return html( "div class='$class fade mlwp-box updated'" . ( $fade_time ? " data-fade='{$fade_time}'" : '' ), html( "p", $msg ) );
+function scb_MLWP_admin_notice( $msg, $class = '', $fade_time = '', $not_updated = false ) {
+	return html( "div class='$class fade mlwp-box" . ( $not_updated ? "" : " updated" ) . "'" . ( $fade_time ? " data-fade='{$fade_time}'" : '' ), wpautop( $msg ) );
 }
 
 // Transform a list of objects into an associative array

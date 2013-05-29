@@ -171,11 +171,11 @@ abstract class scb_MLWP_AdminPage {
 	}
 
 	// Manually generate a standard admin notice ( use Settings API instead )
-	function admin_msg( $msg = '', $class = "updated", $fade_time = '' ) {
+	function admin_msg( $msg = '', $class = "updated", $fade_time = '', $not_updated = false ) {
 		if ( empty( $msg ) )
 			$msg = __( 'Settings <strong>saved</strong>.', 'multilingual-wp' );
 
-		echo scb_MLWP_admin_notice( $msg, $class, $fade_time );
+		echo scb_MLWP_admin_notice( $msg, $class, $fade_time, $not_updated );
 	}
 
 	public function admin_errors( $errors = false ) {
