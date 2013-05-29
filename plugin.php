@@ -1390,15 +1390,13 @@ class Multilingual_WP {
 		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) && $wp->query_vars[ self::QUERY_VAR ] != $this->default_lang ) {
 			$post_type = $taxonomy = false;
 			if ( isset( $wp->query_vars['post_type'] ) && ! $this->is_gen_pt( $wp->query_vars['post_type'] ) ) {
-				if ( isset( $wp->query_vars['post_type'] ) && ! $this->is_gen_pt( $wp->query_vars['post_type'] ) ) {
-					$pt_holder = $post_type = $wp->query_vars['post_type'];
-				} elseif ( isset( $wp->query_vars['pagename'] ) && ! empty( $wp->query_vars['pagename'] ) ) {
-					$post_type = 'page';
-					$pt_holder = 'pagename';
-				} elseif ( isset( $wp->query_vars['name'] ) && ! empty( $wp->query_vars['name'] ) ) {
-					$post_type = 'post';
-					$pt_holder = 'name';
-				}
+				$pt_holder = $post_type = $wp->query_vars['post_type'];
+			} elseif ( isset( $wp->query_vars['pagename'] ) && ! empty( $wp->query_vars['pagename'] ) ) {
+				$post_type = 'page';
+				$pt_holder = 'pagename';
+			} elseif ( isset( $wp->query_vars['name'] ) && ! empty( $wp->query_vars['name'] ) ) {
+				$post_type = 'post';
+				$pt_holder = 'name';
 			}
 			if ( $post_type ) {
 				$pt_name = $this->hash_pt_name( $post_type, $wp->query_vars[self::QUERY_VAR] );
@@ -1416,12 +1414,6 @@ class Multilingual_WP {
 			if ( isset( $wp->query_vars['category_name'] ) && $wp->query_vars['category_name'] ) {
 				$taxonomy = 'category';
 				$term_holder = 'category_name';
-			} elseif ( isset( $wp->query_vars['pagename'] ) && ! empty( $wp->query_vars['pagename'] ) ) {
-				// $taxonomy = 'page';
-				// $term_holder = 'category_name';
-			} elseif ( isset( $wp->query_vars['name'] ) && ! empty( $wp->query_vars['name'] ) ) {
-				// $post_type = 'post';
-				// $pt_holder = 'name';
 			}
 			if ( $taxonomy ) {
 				$tax_name = $this->hash_tax_name( $taxonomy, $wp->query_vars[ self::QUERY_VAR ] );
