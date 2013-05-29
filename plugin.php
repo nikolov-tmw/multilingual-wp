@@ -1272,6 +1272,7 @@ class Multilingual_WP {
 		if ( $language && ( ! isset( $term->{self::QUERY_VAR} ) || $term->{self::QUERY_VAR} != $lang ) && ( $this->is_enabled_tax( $term->taxonomy ) || $this->is_gen_tax( $term->taxonomy ) ) ) {
 			if ( $preserve_t_vars ) {
 				$old_id = $this->term_ID ? $this->term_ID : false;
+				$old_tax = $this->taxonomy ? $this->taxonomy : false;
 			}
 
 			$orig_id = $this->is_gen_tax( $term->taxonomy ) ? $this->get_term_lang( $term->term_id ) : $term->term_id;
@@ -1299,17 +1300,17 @@ class Multilingual_WP {
 				}
 			}
 
-			if ( $preserve_post_vars && $old_id ) {
-				$this->setup_post_vars( $old_id );
+			if ( $preserve_t_vars && $old_id && $old_tax ) {
+				$this->setup_term_vars( $old_id, $old_tax );
 			}
 		}
 		return $term;
 	}
 
-	public function get_term( $term, $taxonomy ) {
+	public function get_term( $term, $taxonomy, $output = null ) {
 		$this->_getting_term = true;
 
-		$_term = get_term( $term, $taxonomy );
+		$_term = get_term( $term, $taxonomy, $output );
 
 		$this->_getting_term = false;
 
@@ -1956,7 +1957,7 @@ class Multilingual_WP {
 		$this->taxonomy = $tax ? $tax : $taxonomy;
 
 		// Store the current term data for quick access
-		$this->term = isset( $tag ) && $this->term_ID == $tag->term_id ? $tag : $this->get_term( $this->term_ID, $this->taxonomy );
+		$this->term = isset( $tag ) && is_object( $tag ) && $this->term_ID == $tag->term_id ? $tag : $this->get_term( $this->term_ID, $this->taxonomy );
 
 		// Store the current post's related languages data
 		$this->rel_t_langs = $this->get_term_langs( $this->term_ID );
@@ -2245,17 +2246,9 @@ class Multilingual_WP {
 
 				$_id = $this->insert_term( $_term['name'], $_tax, $_term );
 				if ( ! is_wp_error( $_id ) ) {
-					$_term = $this->get_term( $_id['term_id'], $_tax, ARRAY_A );
-					// If this is the default language - copy over the title/content/etc over
-					if ( $lang == $this->default_lang ) {
-						$this->term->name = $_term['name'];
-						$this->term->description = $_term['description'];
-						$this->term->slug = str_ireplace( $this->t_slug_sfx, '', $_term['slug'] );
-
-						$this->insert_term( $this->term );
-					}
+					$_term = $this->get_term( $_id['term_id'], $_tax );
 					
-					update_post_meta( $_post['ID'], '_mlwp_post_slug', $_post['post_name'] );
+					$this->update_term_slug_c( $_term );
 				}
 
 				unset( $_term );
@@ -2418,7 +2411,7 @@ class Multilingual_WP {
 						
 						$rewrite['with_front'] = false;
 						$rewrite['slug'] = preg_replace( '~/{2,}~', '/', $slug );
-						$rewrite['hierarchical'] = $tax->rewrite['hierarchical'];
+						$rewrite['hierarchical'] = isset( $tax->rewrite['hierarchical'] ) && $tax->rewrite['hierarchical'] ? true : false;
 
 						if ( $lang == $def_lang ) {
 							if ( isset( $wp_taxonomies[ $tax_name ] ) ) {
@@ -2543,7 +2536,6 @@ class Multilingual_WP {
 		// If the creation queue is not empty, loop through all languages and create corresponding posts
 		if ( ! empty( $to_create ) ) {
 			foreach ( $to_create as $lang ) {
-				// $pt = "{$this->pt_prefix}{$this->post_type}_{$lang}";
 				$pt = $this->hash_pt_name( $this->post_type, $lang );
 				$parent = 0;
 				// Look-up for a parent post

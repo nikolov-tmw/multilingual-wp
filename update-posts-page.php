@@ -107,7 +107,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 				}
 
 				// Update the default language post
-				$Multilingual_WP->insert_term( $term );
+				$Multilingual_WP->insert_term( $term->name, $term->taxonomy, (array) $term );
 
 				$Multilingual_WP->update_rel_t_langs();
 
@@ -175,6 +175,11 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 					}
 				} elseif ( false ) {
 					// TODO: Add support for other multilanguage plugins
+				} else {
+					// Set default language details, otherwise post content gets set to empty string
+					$_POST[ "content_{$default_lang}" ] = $post->post_content;
+					$_POST[ "title_{$default_lang}" ] = $post->post_title;
+					$_POST[ "post_name_{$default_lang}" ] = $post->post_name;
 				}
 
 				// Update the default language post
