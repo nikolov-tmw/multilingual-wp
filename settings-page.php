@@ -290,7 +290,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			'title' => __( 'Default Flag Size', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "dfs",
-			'desc' => sprintf( __( 'Set the default size of the flags used to represent each language(usually in language-select widgets). You can override this on a per-widget bassis. Here is an example of the selected size: <br />%s', 'multilingual-wp' ), '<img style="margin-bottom:-8px;padding:0 5px;" src="' . $this->plugin_url . 'flags/' . intval( $dfs ) . '/antarctica.png" alt="' . __( 'Antarctica', 'multilingual-wp' ) . '" />' ),
+			'desc' => sprintf( __( '<br />Set the default size of the flags used to represent each language(usually in language-select widgets). You can override this on a per-widget bassis.<br />Here is an example of the selected size: <br />%s', 'multilingual-wp' ), '<img style="margin-bottom:-8px;padding:0 5px;" src="' . $this->plugin_url . 'flags/' . intval( $dfs ) . '/antarctica.png" alt="' . __( 'Antarctica', 'multilingual-wp' ) . '" />' ),
 			'value' => $dfs,
 			'choices' => array( '16' => '16 x 16', '24' => '24 x 24', '32' => '32 x 32', '48' => '48 x 48', '64' => '64 x 64' ),
 			'extra' => array( 'id' => 'flag_size_select' )

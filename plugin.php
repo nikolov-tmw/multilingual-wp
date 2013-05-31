@@ -2676,7 +2676,8 @@ class Multilingual_WP {
 	}
 
 	public function insert_editors() {
-		if ( $this->is_allowed_admin_page() ) { ?>
+		if ( $this->is_allowed_admin_page() ) {
+			$has_editor = post_type_supports( $this->post->post_type, 'editor' ); ?>
 			<div class="hide-if-js" id="mlwp-editors">
 				<h2><?php _e( 'Language', 'multilingual-wp' ); ?></h2>
 				<?php foreach ( self::$options->enabled_langs as $i => $lang ) :
@@ -2685,24 +2686,26 @@ class Multilingual_WP {
 						<input type="text" class="mlwp-title" name="title_<?php echo $lang; ?>" size="30" value="<?php echo esc_attr( htmlspecialchars( $this->rel_posts[ $lang ]->post_title ) ); ?>" id="title_<?php echo $lang; ?>" autocomplete="off" />
 						<p><?php _e( 'Slug:', 'multilingual-wp' ); ?> <input type="text" class="mlwp-slug" name="post_name_<?php echo $lang; ?>" size="30" value="<?php echo esc_attr( $this->rel_posts[ $lang ]->post_name ); ?>" id="post_name_<?php echo $lang; ?>" autocomplete="off" /></p>
 
-						<?php wp_editor( $this->rel_posts[ $lang ]->post_content, "content_{$lang}" ); ?>
-						<table class="post-status-info" cellspacing="0"><tbody><tr>
-							<td class="wp-word-count"><?php printf( __( 'Word count: %s' ), '<span class="word-count">0</span>' ); ?></td>
-							<td class="autosave-info">
-								<span class="autosave-message">&nbsp;</span>
-							<?php
-							if ( 'auto-draft' != get_post_status( $this->rel_posts[ $lang ] ) ) {
-								echo '<span id="last-edit">';
-								if ( $last_id = get_post_meta( $this->rel_posts[ $lang ]->ID, '_edit_last', true ) ) {
-									$last_user = get_userdata( $last_id );
-									printf( __('Last edited by %1$s on %2$s at %3$s'), esc_html( $last_user->display_name ), mysql2date( get_option( 'date_format' ), $this->rel_posts[ $lang ]->post_modified ), mysql2date( get_option( 'time_format' ), $post->post_modified ) );
-								} else {
-									printf( __( 'Last edited on %1$s at %2$s'), mysql2date( get_option( 'date_format' ), $this->rel_posts[ $lang ]->post_modified ), mysql2date( get_option( 'time_format' ), $this->rel_posts[ $lang ]->post_modified ) );
-								}
-								echo '</span>';
-							} ?>
-							</td>
-						</tr></tbody></table>
+						<?php if ( $has_editor ) : ?>
+							<?php wp_editor( $this->rel_posts[ $lang ]->post_content, "content_{$lang}" ); ?>
+							<table class="post-status-info" cellspacing="0"><tbody><tr>
+								<td class="wp-word-count"><?php printf( __( 'Word count: %s' ), '<span class="word-count">0</span>' ); ?></td>
+								<td class="autosave-info">
+									<span class="autosave-message">&nbsp;</span>
+								<?php
+								if ( 'auto-draft' != get_post_status( $this->rel_posts[ $lang ] ) ) {
+									echo '<span id="last-edit">';
+									if ( $last_id = get_post_meta( $this->rel_posts[ $lang ]->ID, '_edit_last', true ) ) {
+										$last_user = get_userdata( $last_id );
+										printf( __('Last edited by %1$s on %2$s at %3$s'), esc_html( $last_user->display_name ), mysql2date( get_option( 'date_format' ), $this->rel_posts[ $lang ]->post_modified ), mysql2date( get_option( 'time_format' ), $post->post_modified ) );
+									} else {
+										printf( __( 'Last edited on %1$s at %2$s'), mysql2date( get_option( 'date_format' ), $this->rel_posts[ $lang ]->post_modified ), mysql2date( get_option( 'time_format' ), $this->rel_posts[ $lang ]->post_modified ) );
+									}
+									echo '</span>';
+								} ?>
+								</td>
+							</tr></tbody></table>
+						<?php endif; ?>
 					</div>
 				<?php 
 				endforeach; ?>

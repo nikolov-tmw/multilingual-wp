@@ -97,7 +97,7 @@
 		$('#flag_size_select').on('change', function(){
 			var th = $(this),
 				val = th.val();
-			th.parent('label').find('img').animate( { 'width': val, 'height': val } ).attr( 'src', ( th.parent('label').find('img').attr('src').replace( /flags\/\d\d/, 'flags/' + val ) ) );
+			th.parent('label').find('img').animate( { 'width': val } ).attr( 'src', ( th.parent('label').find('img').attr('src').replace( /flags\/\d\d/, 'flags/' + val ) ) );
 		})
 	})
 

@@ -49,16 +49,20 @@
 				$.each(th.languages, function( i, lang ){
 					post_data[ 'title_' + lang ] = $('#title_' + lang, $editors_cont).val();
 					post_data[ 'post_name_' + lang ] = $('#post_name_' + lang, $editors_cont).val();
-					ed = get_tmce( 'content_' + lang );
-					if ( ed && doAutoSave ) {
-						// Don't run while the tinymce spellcheck is on. It resets all found words.
-						if ( ed.plugins.spellchecker && ed.plugins.spellchecker.active ) {
-							doAutoSave = false;
-						} else {
-							tinymce.triggerSave();
+					if ( $('#content_' + lang, $editors_cont).length ) {
+						ed = get_tmce( 'content_' + lang );
+						if ( ed && doAutoSave ) {
+							// Don't run while the tinymce spellcheck is on. It resets all found words.
+							if ( ed.plugins.spellchecker && ed.plugins.spellchecker.active ) {
+								doAutoSave = false;
+							} else {
+								tinymce.triggerSave();
+							}
 						}
-					}
-					post_data[ 'content_' + lang ] = $('#content_' + lang, $editors_cont).val();
+						post_data[ 'content_' + lang ] = $('#content_' + lang, $editors_cont).val();
+					} else {
+						post_data[ 'content_' + lang ] = '';
+					};
 
 					curr_cont += post_data[ 'title_' + lang ] + post_data[ 'post_name_' + lang ] + post_data[ 'content_' + lang ];
 				});
@@ -117,7 +121,7 @@
 	$(document).ready(function(){
 		$editors_cont = $('#mlwp-editors').remove().appendTo( $('#post-body-content') ).css( { 'visibility': 'hidden' } ).show();
 		$default_lang_title = $('.js-tab.mlwp-deflang .mlwp-title');
-		$default_lang_content = $('.js-tab.mlwp-deflang .wp-editor-area');
+		$default_lang_content = $('.js-tab.mlwp-deflang .wp-editor-area').length ? $('.js-tab.mlwp-deflang .wp-editor-area') : false;
 
 		if ( $editors_cont.length ) {
 			// Kidnap WP's autosave function >:]
@@ -135,7 +139,7 @@
 	})
 
 	function update_default_lang() {
-		var tmce_ed = get_tmce( $default_lang_content.attr('id') );
+		var tmce_ed = $default_lang_content ? get_tmce( $default_lang_content.attr('id') ) : false;
 		var content = '';
 		if ( tmce_ed ) {
 			$default_lang_content.val( tmce_ed.getContent({format : 'raw'}) );
@@ -146,7 +150,7 @@
 		if ( tmce_ed ) {
 			tmce_ed.setContent( $default_lang_content.val(), {format : 'raw'} );
 		} else {
-			$('#postdivrich #wp-content-wrap .wp-editor-area').val( $default_lang_content.val() );
+			$('#postdivrich #wp-content-wrap .wp-editor-area').length && $('#postdivrich #wp-content-wrap .wp-editor-area').val( $default_lang_content.val() );
 		};
 
 		// Update the default post title
