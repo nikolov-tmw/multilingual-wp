@@ -320,6 +320,9 @@ class Multilingual_WP {
 
 			require_once( dirname( __FILE__ ) . '/update-posts-page.php' );
 			new Multilingual_WP_Update_Posts_Page( __FILE__, self::$options );
+
+			require_once( dirname( __FILE__ ) . '/credits-page.php' );
+			new Multilingual_WP_Credits_Page( __FILE__, self::$options );
 		}
 
 		global $Multilingual_WP;
@@ -541,6 +544,9 @@ class Multilingual_WP {
 		add_action( 'admin_init',                      array( $this, 'admin_init' ), 10 );
 
 		add_action( 'admin_bar_menu',                  array( $this, 'add_toolbar_langs' ), 100 );
+
+		// Adds support for the google sitemaps plugin
+		add_action( 'sm_init',                         array( $this, 'add_gsmg_support' ), 0 );
 	}
 
 	/**
@@ -549,6 +555,14 @@ class Multilingual_WP {
 	**/
 	public function admin_init() {
 		add_meta_box( 'MLWP_Comments', __( 'Comment Language', 'multilingual-wp' ), array( $this, 'comment_language_metabox' ), 'comment', 'normal' );
+	}
+
+	public function add_gsmg_support() {
+		if ( ! isset( $this->gsmg_helper ) ) {
+			include_once( dirname( __FILE__ ) . '/class-mlwp-gsmg.php' );
+
+			$this->gsmg_helper = new MLWP_GSMG();
+		}
 	}
 
 	/**
@@ -2770,6 +2784,10 @@ class Multilingual_WP {
 		return self::$options;
 	}
 
+	public function get_enabled_languages() {
+		return $this->get_options( 'enabled_langs' );
+	}
+
 	public function convert_URL( $url = '', $lang = '', $force = false ) {
 		// If we need to conver the current URL to a different language - try to figure-out a proper URL first
 		if ( $url == '' && $lang && $lang != $this->current_lang ) {
@@ -2888,6 +2906,8 @@ class Multilingual_WP {
 			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
 				$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
 			}
+		} elseif ( $this->is_gen_pt( $post->post_type ) /*&& ! $this->getting_gen_pt_permalink*/ ) {
+
 		}
 
 		return $url;
@@ -3309,7 +3329,7 @@ class Multilingual_WP {
 				$comments_query = new WP_Comment_Query();
 			} else {
 				if ( ! class_exists( 'MLWP_Comment_Query' ) ) {
-					include_once( dirname( __FILE__ . '/class-mlwp-comment-query.php' ) );
+					include_once( dirname( __FILE__ ) . '/class-mlwp-comment-query.php' );
 				}
 				$comments_query = new MLWP_Comment_Query();
 			}
