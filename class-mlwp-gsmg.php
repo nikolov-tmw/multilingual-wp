@@ -1,6 +1,5 @@
 <?php 
 
-require_once( dirname( dirname( __FILE__ ) ) . '/google-sitemap-generator/sitemap-builder.php' );
 /**
 * 
 */

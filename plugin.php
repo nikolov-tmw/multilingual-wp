@@ -546,7 +546,8 @@ class Multilingual_WP {
 		add_action( 'admin_bar_menu',                  array( $this, 'add_toolbar_langs' ), 100 );
 
 		// Adds support for the google sitemaps plugin
-		add_action( 'sm_init',                         array( $this, 'add_gsmg_support' ), 0 );
+		add_action( 'sm_build_index',                  array( $this, 'add_gsmg_support' ), 0 );
+		add_action( 'sm_build_content',                array( $this, 'add_gsmg_support' ), 0 );
 	}
 
 	/**
@@ -558,7 +559,7 @@ class Multilingual_WP {
 	}
 
 	public function add_gsmg_support() {
-		if ( ! isset( $this->gsmg_helper ) ) {
+		if ( ! isset( $this->gsmg_helper ) && class_exists( 'GoogleSitemapGeneratorStandardBuilder' ) ) {
 			include_once( dirname( __FILE__ ) . '/class-mlwp-gsmg.php' );
 
 			$this->gsmg_helper = new MLWP_GSMG();
