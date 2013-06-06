@@ -12,6 +12,8 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	function __construct() {
 		add_action( "sm_build_index", array( $this, "language_index" ), 1, 1 );
 		add_action( "sm_build_content", array( $this, "language_content" ), 1, 3 );
+
+		$this->remove_def_actions();
 	}
 
 	/**
@@ -46,8 +48,6 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	 * @param $gsg GoogleSitemapGenerator
 	 */
 	public function language_index( $gsg, $language = false ) {
-		$this->remove_def_actions();
-
 		global $Multilingual_WP, $wpdb;
 
 		$blogUpdate = strtotime( get_lastpostdate( 'blog' ) );
@@ -153,27 +153,6 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 			
 		} else {
 			$this->Content( $gsg, $type, $params );
-		}
-
-		switch( $type ) {
-			case "pt":
-				$this->BuildPosts( $gsg, $type, $params );
-				break;
-			case "archives":
-				$this->BuildArchives( $gsg );
-				break;
-			case "authors":
-				$this->BuildAuthors( $gsg );
-				break;
-			case "tax":
-				$this->BuildTaxonomies( $gsg, $params );
-				break;
-			case "externals":
-				$this->BuildExternals( $gsg );
-				break;
-			case "misc":
-				$this->BuildMisc( $gsg );
-				break;
 		}
 	}
 
