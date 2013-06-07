@@ -472,6 +472,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$this->start_box( __( 'Taxonomies Slugs', 'multilingual-wp' ) );
 		$tax_opts = $this->get_taxonomies();
 		$_rewrites = $rewrites['tax'];
+		$default_lang = $this->options->default_lang;
 
 		foreach ( (array) $this->options->enabled_tax as $tax ) {
 			$this->start_box( strip_tags( $tax_opts[ $tax ] ) );
@@ -479,13 +480,18 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			$options = array();
 			foreach ( $enabled_langs as $lang ) {
 				$val = isset( $_rewrites[ $tax ][ $lang ] ) ? $_rewrites[ $tax ][ $lang ] : ( isset( $_rewrites[ $tax ] ) ? $_rewrites[ $tax ] : '' );
-				$options[] = array(
+				$_options = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
 					'type' => 'text',
 					'name' => "rewrites[tax][{$tax}][{$lang}]",
 					'desc' => __( 'Enter the slug that will be used in URL\'s for this language.', 'multilingual-wp' ),
 					'value' => $val
 				);
+				if ( in_array( $tax, array( 'category', 'post_tag' ) ) && $lang == $default_lang ) {
+					$_options['extra'] = array( 'readonly' => 'readonly', 'class' => 'regular-text' );
+					$_options['desc'] = __( 'Please set this slug in the "<code>Settings > Permalinks</code>" section.', 'multilingual-wp' );
+				}
+				$options[] = $_options;
 			}
 
 			echo $this->table( apply_filters( "mlwp_settings_tax_rewrites_{$tax}", $options ) );
@@ -541,7 +547,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 			$options = array();
 			foreach ( $enabled_langs as $lang ) {
-				$val = is_array( $_rewrites[ $lang ] ) && isset( $_rewrites[ $lang ] ) ? $_rewrites[ $lang ] : ( ! is_array( $_rewrites ) && $_rewrites ? $_rewrites : $data['default'] );
+				$val = is_array( $_rewrites ) && isset( $_rewrites[ $lang ] ) ? $_rewrites[ $lang ] : ( ! is_array( $_rewrites ) && $_rewrites ? $_rewrites : $data['default'] );
 				$options[] = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
 					'type' => 'text',

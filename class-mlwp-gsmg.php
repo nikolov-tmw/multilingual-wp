@@ -47,35 +47,31 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	/**
 	 * @param $gsg GoogleSitemapGenerator
 	 */
-	public function language_index( $gsg, $language = false ) {
+	public function language_index( $gsg ) {
 		global $Multilingual_WP, $wpdb;
 
 		$blogUpdate = strtotime( get_lastpostdate( 'blog' ) );
 
-		if ( ! $language ) {
-			foreach ( $Multilingual_WP->get_enabled_languages() as $lang ) {
-				$gsg->AddSitemap( $Multilingual_WP::QUERY_VAR . "-{$lang}", null, $blogUpdate );
-			}
-		} else {
+		foreach ( $Multilingual_WP->get_enabled_languages() as $language ) {
 			$prefix = $Multilingual_WP::QUERY_VAR . "-{$language}-";
 
-			$gsg->AddUrl( $gsg->GetXmlUrl( "{$prefix}misc", null ), $blogUpdate );
+			$gsg->AddSitemap( "{$prefix}misc", null, $blogUpdate );
 
 			if ( $gsg->GetOption( "in_arch" ) ) {
-				$gsg->AddUrl( $gsg->GetXmlUrl( "{$prefix}archives", null ), $blogUpdate );
+				$gsg->AddSitemap( "{$prefix}archives", null, $blogUpdate );
 			}
 			if ( $gsg->GetOption( "in_auth" ) ) {
-				$gsg->AddUrl( $gsg->GetXmlUrl( "{$prefix}authors", null ), $blogUpdate );
+				$gsg->AddSitemap( "{$prefix}authors", null, $blogUpdate );
 			}
 
 			$taxonomies = $this->GetEnabledTaxonomies( $gsg );
 			foreach ( $taxonomies AS $tax ) {
-				$gsg->AddUrl( $gsg->GetXmlUrl( "{$prefix}tax", $tax ), $blogUpdate );
+				$gsg->AddSitemap( "{$prefix}tax", $tax, $blogUpdate );
 			}
 
 			$pages = $gsg->GetPages();
 			if ( count( $pages ) > 0 ) {
-				$gsg->AddUrl( $gsg->GetXmlUrl( "{$prefix}externals", null ), $blogUpdate );
+				$gsg->AddSitemap( "{$prefix}externals", null, $blogUpdate );
 			}
 
 			$enabledPostTypes = $gsg->GetActivePostTypes();
@@ -119,7 +115,7 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 
 					if ( $posts ) {
 						foreach( $posts as $post ) {
-							$gsg->AddUrl( $gsg->GetXmlUrl( "{$prefix}pt", $postType . "-" . sprintf("%04d-%02d", $post->year, $post->month ) ), $gsg->GetTimestampFromMySql( $post->last_mod ) );
+							$gsg->AddSitemap( "{$prefix}pt", $postType . "-" . sprintf( "%04d-%02d", $post->year, $post->month ), $gsg->GetTimestampFromMySql( $post->last_mod ) );
 						}
 					}
 				}
@@ -148,7 +144,8 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 					$this->Content( $gsg, $type, implode( '-', $_params ) );
 				}
 			} elseif ( $Multilingual_WP->is_enabled( $params ) ) {
-				$this->language_index( $gsg, $params );
+				// $this->language_index( $gsg, $params );
+				$this->Content( $gsg, $type, $params );
 			}
 			
 		} else {
