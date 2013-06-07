@@ -54,6 +54,7 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 
 		foreach ( $Multilingual_WP->get_enabled_languages() as $language ) {
 			$prefix = $Multilingual_WP::QUERY_VAR . "-{$language}-";
+			$Multilingual_WP->current_lang = $language;
 
 			$gsg->AddSitemap( "{$prefix}misc", null, $blogUpdate );
 
