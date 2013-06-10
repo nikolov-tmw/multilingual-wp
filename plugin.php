@@ -235,6 +235,7 @@ class Multilingual_WP {
 	private $_getting_term = false;
 	private $_doing_delete = false;
 	private $_doing_t_save = false;
+	private $getting_gen_pt_permalink = false;
 	private $pt_prefix = 'mlwp_';
 	private $tax_prefix = 'mlwp_t_';
 	private $reg_shortcodes = array();
@@ -370,6 +371,11 @@ class Multilingual_WP {
 	public function init() {
 		$this->plugin_url = plugin_dir_url( __FILE__ );
 
+		// Fix links mode in case we're trying to have sub-directory links without pretty permalinks
+		if ( $this->lang_mode == self::LT_PRE && ! $this->using_permalinks() ) {
+			self::$options->lang_mode = $this->lang_mode = self::LT_QUERY;
+		}
+
 		wp_register_script( 'multilingual-wp-js', $this->plugin_url . 'js/multilingual-wp.js', array( 'jquery', 'schedule', 'word-count' ), false, true );
 		wp_register_script( 'multilingual-wp-autosave-js', $this->plugin_url . 'js/multilingual-wp-autosave.js', array( 'multilingual-wp-js', 'autosave' ), false, true );
 		wp_register_script( 'multilingual-wp-tax-js', $this->plugin_url . 'js/multilingual-wp-tax.js', array( 'jquery' ), false, true );
@@ -396,17 +402,22 @@ class Multilingual_WP {
 		$lang = $this->current_lang;
 
 		$rewrites = self::$options->rewrites;
+		$def_lang_in_url = self::$options->def_lang_in_url;
 
 		$category_base = get_option( 'category_base' );
 		$category_base = $category_base ? $category_base : 'category';
-		if ( strpos( $category_base, "{$this->default_lang}/") === false ) {
+		if ( strpos( $category_base, "{$this->default_lang}/" ) === false && $def_lang_in_url ) {
 			$wp_rewrite->set_category_base( preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$category_base}" ) );
+		} elseif ( strpos( $category_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
+			$wp_rewrite->set_category_base( str_replace( "{$this->default_lang}/", '', $category_base ) );
 		}
 
 		$tag_base = get_option( 'tag_base' );
 		$tag_base = $tag_base ? $tag_base : 'tag';
-		if ( strpos( $tag_base, "{$this->default_lang}/") === false ) {
+		if ( strpos( $tag_base, "{$this->default_lang}/") === false && $def_lang_in_url  ) {
 			$wp_rewrite->set_tag_base( preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$tag_base}" ) );
+		} elseif ( strpos( $tag_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
+			$wp_rewrite->set_tag_base( str_replace( "{$this->default_lang}/", '', $tag_base ) );
 		}
 
 		$rwr = $rewrites['page'];
@@ -433,7 +444,7 @@ class Multilingual_WP {
 	private function add_filters() {
 		add_filter( 'wp_unique_post_slug',             array( $this, 'fix_post_slug' ), $this->late_fp, 6 ); 
 
-		// Links fixing filters
+		// Links rewriting filters
 		add_filter( 'author_feed_link',                array( $this, 'convert_URL' ) );
 		add_filter( 'author_link',                     array( $this, 'convert_URL' ) );
 		add_filter( 'author_feed_link',                array( $this, 'convert_URL' ) );
@@ -449,24 +460,25 @@ class Multilingual_WP {
 		add_filter( 'get_pagenum_link',                array( $this, 'convert_URL' ) );
 		add_filter( 'home_url',                        array( $this, 'convert_URL' ) );
 
+		// Post URL's rewriting
 		add_filter( 'page_link',                       array( $this, 'convert_post_URL' ), $this->late_fp, 2 );
 		add_filter( 'post_link',                       array( $this, 'convert_post_URL' ),	$this->late_fp, 2 );
 
+		// Term URL's rewriting
 		add_filter( 'category_link',                   array( $this, 'convert_term_URL' ), $this->late_fp, 3 );
 		add_filter( 'tag_link',                        array( $this, 'convert_term_URL' ), $this->late_fp, 3 );
 		add_filter( 'term_link',                       array( $this, 'convert_term_URL' ), $this->late_fp, 3 );
 
 		add_filter( 'redirect_canonical',              array( $this, 'fix_redirect' ), 10, 2 );
 
+		// Translation functions
 		add_filter( 'gettext',                         array( $this, '__' ), 0 );
 		add_filter( 'the_content',                     array( $this, '__' ), 0 );
 		add_filter( 'the_title',                       array( $this, '__' ), 0 );
 		add_filter( 'widget_title',                    array( $this, '__' ), 0 );
 		add_filter( 'widget_content',                  array( $this, '__' ), 0 );
 		add_filter( 'wp_title',                        array( $this, '__' ), $this->late_fp );
-
-		add_filter( 'list_cats',                       array( $this, 'parse_quicktags' ), $this->late_fp );
-		add_filter( 'list_cats',                       array( $this, 'parse_transl_shortcodes' ), $this->late_fp );
+		add_filter( 'list_cats',                       array( $this, '__' ), $this->late_fp );
 
 		// Comment-separating-related filters
 		add_filter( 'comments_array',                  array( $this, 'filter_comments_by_lang' ), 10, 2 );
@@ -481,7 +493,6 @@ class Multilingual_WP {
 		add_filter( 'search_rewrite_rules',            array( $this, 'store_rewrite_rules' ), $this->late_fp );
 		add_filter( 'author_rewrite_rules',            array( $this, 'store_rewrite_rules' ), $this->late_fp );
 		add_filter( 'page_rewrite_rules',              array( $this, 'store_rewrite_rules' ), $this->late_fp );
-
 		add_filter( 'rewrite_rules_array',             array( $this, 'add_rewrite_rules' ), $this->late_fp );
 
 		add_filter( 'wp_redirect',                     array( $this, 'fix_redirect_non_latin_chars' ), $this->late_fp );
@@ -492,21 +503,16 @@ class Multilingual_WP {
 
 			add_filter( 'query_vars',                  array( $this, 'add_lang_query_var' ) );
 
-			add_filter( 'the_posts',                   array( $this, 'filter_posts' ), $this->late_fp, 2 );
-
+			// Term filtering
 			add_filter( 'wp_get_object_terms',         array( $this, 'filter_terms' ), 10, 3 );
-
 			add_filter( 'get_term',                    array( $this, 'get_term_filter' ), 10, 3 );
-
 			add_filter( 'get_terms',                   array( $this, 'get_terms_filter' ), 10, 3 );
 
+			// Query/posts filtering
 			add_filter( 'pre_get_posts',               array( $this, 'override_suppress_filters' ), $this->late_fp );
-
 			add_filter( 'pre_get_posts',               array( $this, 'fix_page_for_posts' ), 1 );
-
 			add_filter( 'pre_get_posts',               array( $this, 'maybe_unset_queried_obj' ), $this->late_fp );
-
-			add_filter( 'parse_request',               array( $this, 'fix_search_query' ), $this->late_fp );
+			add_filter( 'the_posts',                   array( $this, 'filter_posts' ), $this->late_fp, 2 );
 		}
 
 		if ( $this->lang_mode == self::LT_QUERY && ( $this->current_lang != $this->default_lang || self::$options->def_lang_in_url ) ) {
@@ -537,16 +543,13 @@ class Multilingual_WP {
 		add_action( 'set_object_terms',                array( $this, 'set_object_terms_action' ), 10, 6 );
 
 		if ( ! is_admin() ) {
+			// Query modifications
 			add_action( 'parse_request',               array( $this, 'set_locale_from_query' ), 0 );
-
-			add_action( 'parse_request',               array( $this, 'set_pt_from_query' ), $this->late_fp );
-
 			add_action( 'parse_request',               array( $this, 'fix_home_page' ), 0 );
-
 			add_action( 'parse_request',               array( $this, 'fix_hierarchical_requests' ), 0 );
-
 			add_action( 'parse_request',               array( $this, 'fix_no_pt_request' ), 0 );
-
+			add_action( 'parse_request',               array( $this, 'fix_search_query' ), $this->late_fp );
+			add_action( 'parse_request',               array( $this, 'set_pt_from_query' ), $this->late_fp );
 			add_action( 'wp',                          array( $this, 'fix_queried_object' ), 0 );
 
 			add_action( 'template_redirect',           array( $this, 'canonical_redirect' ), 0 );
@@ -942,7 +945,7 @@ class Multilingual_WP {
 		global $wp_rewrite;
 		// Don't know what to do with sub-domains yet, let's skip that for now :)
 		if ( $this->lang_mode != self::LT_PRE ) {
-			return;
+			return $rules;
 		}
 		if ( ! $did_rules ) {
 			$search = array();
@@ -1408,7 +1411,7 @@ class Multilingual_WP {
 		}
 
 		if ( ! isset( $wp->query_vars[ self::QUERY_VAR ] ) ) {
-			$wp->query_vars[ self::QUERY_VAR ] = $this->current_lang;
+			// $wp->query_vars[ self::QUERY_VAR ] = $this->current_lang;
 		}
 	}
 
@@ -1448,6 +1451,7 @@ class Multilingual_WP {
 				$taxonomy = 'category';
 				$term_holder = 'category_name';
 			}
+
 			if ( $taxonomy ) {
 				$tax_name = $this->hash_tax_name( $taxonomy, $wp->query_vars[ self::QUERY_VAR ] );
 				// $wp->query_vars['post_type'] = $pt_name;
@@ -1456,12 +1460,22 @@ class Multilingual_WP {
 					$wp->query_vars[ $tax_name ] = $wp->query_vars[ $term_holder ];
 					unset( $wp->query_vars[ $term_holder ] );
 				}
+			} else {
+				// This is in case of not-unique taxonomy slugs across different languages
+				foreach ( self::$options->generated_tax as $tax ) {
+					if ( isset( $wp->query_vars[ $tax ] ) ) {
+						$_tax = $this->hash_tax_name( $this->unhash_tax_name( $tax ), $wp->query_vars[ self::QUERY_VAR ] );
+						if ( $_tax != $tax ) {
+							$wp->query_vars[ $_tax ] = $wp->query_vars[ $tax ];
+							unset( $wp->query_vars[ $tax ] );
+						}
+					}
+				}
 			}
 		}
 	}
 
 	public function fix_home_page( $wp ) {
-		global $wp_rewrite;
 		if ( isset( $wp->query_vars['s'] ) ) {
 			unset( $wp->query_vars['pagename'], $wp->query_vars['page'] );
 		} elseif ( in_array( $wp->request, self::$options->enabled_langs ) ) {
@@ -1478,7 +1492,7 @@ class Multilingual_WP {
 	 * @return Null
 	 **/
 	public function fix_queried_object() {
-		global $wp_query;
+		global $wp_query, $wp;
 
 		if ( $wp_query && is_a( $wp_query, 'WP_Query' ) ) {
 			// Force WP_Query to set-up the queried object
@@ -1729,6 +1743,18 @@ class Multilingual_WP {
 
 	public function is_enabled_tax( $tax ) {
 		return in_array( $tax, self::$options->enabled_tax );
+	}
+
+	public function is_sitemap() {
+		global $wp_query;
+
+		return ! ( isset( $this->is_custom_sitemap ) && $this->is_custom_sitemap ) && isset( $wp_query->query['xml_sitemap'] );
+	}
+
+	public function using_permalinks() {
+		global $wp_rewrite;
+
+		return $wp_rewrite->using_permalinks();
 	}
 
 	public function clear_lang_info( $subject, $lang = false ) {
@@ -2474,7 +2500,7 @@ class Multilingual_WP {
 					);
 					$rewrite = false;
 					if ( $pt->rewrite ) {
-						$slug = ( $lang != $def_lang || self::$options->def_lang_in_url ) ? $lang : '';
+						$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || self::$options->def_lang_in_url ) ? $lang : '' ) : '';
 						$rewrite = array();
 						$slug .= $pt->rewrite['with_front'] ? "{$wp_rewrite->front}" : '/';
 						$slug .= is_array( $rewrites ) && isset( $rewrites[ $pt_name ][ $lang ] ) && $rewrites[ $pt_name ][ $lang ] ? $rewrites[ $pt_name ][ $lang ] : ( isset( $pt->rewrite['slug'] ) ? $pt->rewrite['slug'] : $pt_name );
@@ -2493,12 +2519,12 @@ class Multilingual_WP {
 						}
 					}
 					if ( $pt_name == 'page' && ( $lang != $def_lang || self::$options->def_lang_in_url ) ) {
-						$rewrite = array( 'slug' => $lang, 'with_front' => false );
+						$rewrite = $this->lang_mode == self::LT_PRE ? array( 'slug' => $lang, 'with_front' => false ) : array( 'slug' => '', 'with_front' => false );
 					} elseif ( $pt_name == 'post' && ( $lang != $def_lang || self::$options->def_lang_in_url ) ) {
 						$rewrite = array();
 						$rewrite['with_front'] = false;
-						$slug = "{$lang}/{$wp_rewrite->front}";
-						$rewrite['slug'] = untrailingslashit( preg_replace( '~/{1,}~', '/', $slug ) );
+						$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/{$wp_rewrite->front}" : "{$wp_rewrite->front}";
+						$rewrite['slug'] = untrailingslashit( preg_replace( '~/{2,}~', '/', $slug ) );
 					}
 					$args = array(
 						'label' => $pt->label . ' [' . $lang . ']',
@@ -2582,7 +2608,7 @@ class Multilingual_WP {
 					);
 					$rewrite = false;
 					if ( $tax->rewrite ) {
-						$slug = ( $lang != $def_lang || self::$options->def_lang_in_url ) ? "{$lang}" : '';
+						$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || self::$options->def_lang_in_url ) ? "{$lang}" : '' ) : '';
 						$rewrite = array();
 						$slug .= $tax->rewrite['with_front'] || in_array( $tax->name, array( 'category', 'post_tag' ) ) ? "{$wp_rewrite->front}" : '/';
 						$slug .= is_array( $rewrites ) && isset( $rewrites[ $tax_name ][ $lang ] ) && $rewrites[ $tax_name ][ $lang ] ? $rewrites[ $tax_name ][ $lang ] : ( isset( $tax->rewrite['slug'] ) ? str_replace( $wp_rewrite->front, '', $tax->rewrite['slug'] ) : $tax_name );
@@ -2928,7 +2954,7 @@ class Multilingual_WP {
 
 		// Work-around for not confusing the WP::parse_request() method with thinking that the root 
 		// URL doesn't actually contain the language information
-		if ( ( current_filter() == 'home_url' && ! did_action( 'parse_request' ) ) || is_robots() ) {
+		if ( ( current_filter() == 'home_url' && ! did_action( 'parse_request' ) ) || is_robots() || $this->is_sitemap() ) {
 			return $url;
 		}
 
@@ -2943,7 +2969,23 @@ class Multilingual_WP {
 				$langs = $lang != $this->default_lang ? $this->get_rel_langs( $this->ID ) : array();
 
 				// If this is a "post", we want to get the permalink with the proper structure(as set in Settings > Permalinks)
-				$url = $this->post->post_type == 'post' || ! isset( $langs[ $lang ] ) ? get_permalink( $this->ID ) : get_permalink( $langs[ $lang ] );
+				if ( $this->using_permalinks() ) {
+					if ( $this->lang_mode == self::LT_PRE ) {
+						$url = $this->post->post_type == 'post' || ! isset( $langs[ $lang ] ) ? get_permalink( $this->ID ) : get_permalink( $langs[ $lang ] );
+					} elseif ( $this->lang_mode == self::LT_QUERY ) {
+						if ( $this->post->post_type == 'post' || ! isset( $langs[ $lang ] ) ) {
+							$url = get_permalink( $this->ID );
+						} else {
+							// We need to remove the post type info from the URL - the query argument in the URL will define the language
+							$url = untrailingslashit( str_replace( get_post_type( $langs[ $lang ] ) . '/', '', get_permalink( $langs[ $lang ] ) ) );
+						}
+						$url = strpos( $url, self::QUERY_VAR . "={$lang}" ) !== false ? untrailingslashit( $url ) : $url;
+					}
+				} else {
+					if ( $this->lang_mode == self::LT_QUERY ) {
+						$url = untrailingslashit( add_query_arg( self::QUERY_VAR, $lang, get_permalink( $this->ID ) ) );
+					}
+				}
 				$this->current_lang = $_lang;
 
 				return $url;
@@ -3039,33 +3081,38 @@ class Multilingual_WP {
 			return $this->convert_URL( '', '', true );
 		}
 
-		if ( $this->is_enabled_pt( $post->post_type ) ) {
-			if ( $post->post_parent ) {
-				$slugs = array();
-				foreach ( get_post_ancestors( $post ) as $a_id ) {
-					$rel_langs = get_post_meta( $a_id, $this->languages_meta_key, true );
-					if ( ! isset( $rel_langs[ $this->current_lang ] ) ) {
-						continue;
-					}
+		if ( $this->lang_mode == self::LT_PRE ) {
+			if ( $this->is_enabled_pt( $post->post_type ) ) {
+				if ( $post->post_parent ) {
+					$slugs = array();
+					foreach ( get_post_ancestors( $post ) as $a_id ) {
+						$rel_langs = get_post_meta( $a_id, $this->languages_meta_key, true );
+						if ( ! isset( $rel_langs[ $this->current_lang ] ) ) {
+							continue;
+						}
 
-					$slugs[ $this->get_obj_slug( $a_id, 'post' ) ] = $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' );
-				}
-				foreach ( $slugs as $search => $replace ) {
-					if ( $replace == '' ) {
-						continue;
+						$slugs[ $this->get_obj_slug( $a_id, 'post' ) ] = $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' );
 					}
-					$url = str_replace( $search, $replace, $url );
+					foreach ( $slugs as $search => $replace ) {
+						if ( $replace == '' ) {
+							continue;
+						}
+						$url = str_replace( $search, $replace, $url );
+					}
+				}
+				$this->add_slug_cache( $post->ID, $post->post_name, 'post' );
+
+				$rel_langs = get_post_meta( $post->ID, $this->languages_meta_key, true );
+				if ( isset( $rel_langs[ $this->current_lang ] ) ) {
+					$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
 				}
 			}
-			$this->add_slug_cache( $post->ID, $post->post_name, 'post' );
-
-			$rel_langs = get_post_meta( $post->ID, $this->languages_meta_key, true );
-			if ( isset( $rel_langs[ $this->current_lang ] ) ) {
-				$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
+		} elseif ( $this->lang_mode == self::LT_QUERY ) {
+			if ( $this->is_gen_pt( $post->post_type ) && ! $this->getting_gen_pt_permalink ) {
+				
 			}
-		} elseif ( $this->is_gen_pt( $post->post_type ) /*&& ! $this->getting_gen_pt_permalink*/ ) {
-
 		}
+
 
 		return $url;
 	}
@@ -3488,15 +3535,21 @@ class Multilingual_WP {
 			if ( version_compare( $wp_version, '3.5', '>=' ) ) {
 				$comments_query = new WP_Comment_Query();
 			} else {
-				if ( ! class_exists( 'MLWP_Comment_Query' ) ) {
-					include_once( dirname( __FILE__ ) . '/class-mlwp-comment-query.php' );
-				}
+				$this->get_mlwp_comment_query();
 				$comments_query = new MLWP_Comment_Query();
 			}
 
 			$comments = $comments_query->query( array( 'post_id' => $post_id, 'status' => 'approve', 'order' => 'ASC', 'meta_query' => array( array( 'key' => '_comment_language', 'value' => $this->current_lang ) ) ) );
 
 			return count( $comments );
+		}
+	}
+
+	public function get_mlwp_comment_query() {
+		if ( ! class_exists( 'MLWP_Comment_Query' ) ) {
+			return include_once( dirname( __FILE__ ) . '/class-mlwp-comment-query.php' );
+		} else {
+			return true;
 		}
 	}
 
@@ -3729,7 +3782,12 @@ class Multilingual_WP {
 
 			$comments = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->comments {$mq_sql['join']} WHERE comment_post_ID = %d AND (comment_approved = '1' OR ( user_id = %d AND comment_approved = '0' ) ) {$mq_sql['where']} ORDER BY comment_date_gmt", $post->ID, $user_ID ) );
 		} else if ( empty( $comment_author ) ) {
-			$comments_query = new MLWP_Comment_Query();
+			if ( version_compare( $wp_version, '3.5', '>=' ) ) {
+				$comments_query = new WP_Comment_Query();
+			} else {
+				$this->get_mlwp_comment_query();
+				$comments_query = new MLWP_Comment_Query();
+			}
 			$comments = $comments_query->query( array('post_id' => $post_id, 'status' => 'approve', 'order' => 'ASC', 'meta_query' => $meta_query ) );
 		} else {
 			// Build the Meta Query SQL

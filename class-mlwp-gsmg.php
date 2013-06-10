@@ -132,6 +132,7 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	public function language_content( $gsg, $type, $params ) {
 		global $Multilingual_WP;
 		if ( $type == $Multilingual_WP::QUERY_VAR && $params ) {
+			$Multilingual_WP->is_custom_sitemap = true;
 			$_params = explode( '-', $params );
 			if ( count( $_params ) > 1 ) {
 				$lang = array_shift( $_params );
@@ -148,7 +149,7 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 				// $this->language_index( $gsg, $params );
 				$this->Content( $gsg, $type, $params );
 			}
-			
+			$Multilingual_WP->is_custom_sitemap = false;
 		} else {
 			$this->Content( $gsg, $type, $params );
 		}

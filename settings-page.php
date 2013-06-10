@@ -335,13 +335,26 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			'desc' => __( 'Whether to display the User Interface for the post types added by Multilingual WP.', 'multilingual-wp' )
 		);
 
+		$permalink_choices = array();
+		$permalink_desc = 'Select the type of link rewriting.<br />';
+		if ( _mlwp()->using_permalinks() ) {
+			$permalink_choices[ Multilingual_WP::LT_PRE ] = __( 'Pre-Path mode', 'multilingual-wp' );
+			$permalink_desc .= __( '<code>Pre-Path mode</code> will add {xx}/ to all non-default language links(unless "Default Language in URL\'s?" is set to "Yes"), where {xx} is the two-letter code for this language. <br />', 'multilingual-wp' );
+		} else {
+			$permalink_desc .= __( 'In order to enable the <code>Pre-Path mode</code>, go to <code>Settings > Permalinks</code> and enable <a href="http://codex.wordpress.org/Using_Permalinks#Choosing_your_permalink_structure" target="_blank">Pretty permalinks</a>.<br />', 'multilingual-wp' );
+		};
+		$permalink_choices[ Multilingual_WP::LT_QUERY ] = __( 'Query Variable mode', 'multilingual-wp' );
+		$permalink_desc .= __( '<code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br />', 'multilingual-wp' );
+		$permalink_choices[ Multilingual_WP::LT_SD ] = __( 'Sub-Domain mode', 'multilingual-wp' );
+		$permalink_desc .= __( '<code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional server configuration.', 'multilingual-wp' );
+
 		$default_settings[] = array(
 			'title' => __( 'Language Rewrite Mode', 'multilingual-wp' ),
 			'type' => 'select',
 			'name' => "lang_mode",
 			'value' => $lang_mode,
-			'choices' => array( Multilingual_WP::LT_PRE => __( 'Pre-Path mode', 'multilingual-wp' ), Multilingual_WP::LT_QUERY => __( 'Query Variable mode', 'multilingual-wp' ), Multilingual_WP::LT_SD => __( 'Sub-Domain mode', 'multilingual-wp' ) ),
-			'desc' => __( 'Select the type of link rewriting.<br /><code>Pre-Path mode</code> will add {xx}/ to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br /><code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional server configuration.', 'multilingual-wp' )
+			'choices' => $permalink_choices,
+			'desc' => $permalink_desc
 		);
 
 		$default_settings[] = array(
