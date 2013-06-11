@@ -474,6 +474,7 @@ class Multilingual_WP {
 		// Translation functions
 		add_filter( 'gettext',                         array( $this, '__' ), 0 );
 		add_filter( 'the_content',                     array( $this, '__' ), 0 );
+		add_filter( 'the_title',                       array( $this, 'get_orig_title' ), 0, 2 );
 		add_filter( 'the_title',                       array( $this, '__' ), 0 );
 		add_filter( 'widget_title',                    array( $this, '__' ), 0 );
 		add_filter( 'widget_content',                  array( $this, '__' ), 0 );
@@ -794,6 +795,17 @@ class Multilingual_WP {
 			}
 		}
 		return '';
+	}
+
+	public function get_orig_title( $title, $id = false ) {
+		$pt = $id ? get_post_type( $id ) : false;
+		if ( $id && $this->is_enabled_pt( $pt ) && ! $this->is_gen_pt( $pt ) && $this->current_lang != $this->default_lang ) {
+			$rel_langs = get_post_meta( $id, $this->languages_meta_key, true );
+			if ( $rel_langs && isset( $rel_langs[ $this->current_lang ] ) ) {
+				$title = get_the_title( $rel_langs[ $this->current_lang ] );
+			}
+		}
+		return $title;
 	}
 
 	/**
