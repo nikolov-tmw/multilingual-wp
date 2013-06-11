@@ -1520,7 +1520,7 @@ class Multilingual_WP {
 	}
 
 	public function override_suppress_filters( $query ) {
-		$query->query['suppress_filters'] = false;
+		$query->query_vars['suppress_filters'] = false;
 	}
 
 	/**
