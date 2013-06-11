@@ -3097,14 +3097,14 @@ class Multilingual_WP {
 						if ( $replace == '' ) {
 							continue;
 						}
-						$url = str_replace( $search, $replace, $url );
+						$url = str_replace( '/' . $search . '/', '/' . $replace . '/', $url );
 					}
 				}
 				$this->add_slug_cache( $post->ID, $post->post_name, 'post' );
 
 				$rel_langs = get_post_meta( $post->ID, $this->languages_meta_key, true );
 				if ( isset( $rel_langs[ $this->current_lang ] ) ) {
-					$url = str_replace( $post->post_name, $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
+					$url = str_replace( '/' . $post->post_name, '/' . $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
 				}
 			}
 		} elseif ( $this->lang_mode == self::LT_QUERY ) {
