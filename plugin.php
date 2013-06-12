@@ -404,7 +404,13 @@ class Multilingual_WP {
 		$rewrites = self::$options->rewrites;
 		$def_lang_in_url = self::$options->def_lang_in_url;
 
+		$langs_regex = '~^(' . implode( '|', array_map( 'trailingslashit',  array_keys( self::$options->languages ) ) ) . ')~';
+
 		$category_base = get_option( 'category_base' );
+		// Get rid of the language info, in case we've switched the default language
+		while ( preg_match( $langs_regex, $category_base ) === 1 ) {
+			$category_base = preg_replace( $langs_regex, '', $category_base );
+		}
 		$category_base = $category_base ? $category_base : 'category';
 		if ( strpos( $category_base, "{$this->default_lang}/" ) === false && $def_lang_in_url ) {
 			$wp_rewrite->set_category_base( preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$category_base}" ) );
@@ -413,6 +419,10 @@ class Multilingual_WP {
 		}
 
 		$tag_base = get_option( 'tag_base' );
+		// Get rid of the language info, in case we've switched the default language
+		while ( preg_match( $langs_regex, $tag_base ) === 1 ) {
+			$tag_base = preg_replace( $langs_regex, '', $tag_base );
+		}
 		$tag_base = $tag_base ? $tag_base : 'tag';
 		if ( strpos( $tag_base, "{$this->default_lang}/") === false && $def_lang_in_url  ) {
 			$wp_rewrite->set_tag_base( preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$tag_base}" ) );
@@ -434,6 +444,28 @@ class Multilingual_WP {
 
 		$rwr = $rewrites['feed'];
 		$wp_rewrite->feed_base = urlencode( isset( $rwr[ $lang ] ) ? $rwr[ $lang ] : ( ! is_array( $rwr ) && $rwr ? $rwr : 'feed' ) );
+	}
+
+	public function fix_htaccess_rewrite_rules( $rules ) {
+		$correct_root = parse_url( $this->home_url );
+		if ( isset( $correct_root['path'] ) ) {
+			$correct_root = trailingslashit( $correct_root['path'] );
+		} else {
+			$correct_root = '/';
+		}
+
+		$false_root = parse_url( home_url() );
+		if ( isset( $false_root['path'] ) ){
+			$false_root = trailingslashit( $false_root['path'] );
+		} else {
+			$false_root = '/';
+		}
+
+		if ( $false_root != $correct_root ) {
+			$rules = str_replace( $false_root, $correct_root, $rules );
+		}
+
+		return $rules;
 	}
 
 	/**
@@ -515,6 +547,8 @@ class Multilingual_WP {
 			add_filter( 'pre_get_posts',               array( $this, 'maybe_unset_queried_obj' ), $this->late_fp );
 			add_filter( 'the_posts',                   array( $this, 'filter_posts' ), $this->late_fp, 2 );
 		}
+
+		add_filter( 'mod_rewrite_rules',               array( $this, 'fix_htaccess_rewrite_rules' ), 0 );
 
 		if ( $this->lang_mode == self::LT_QUERY && ( $this->current_lang != $this->default_lang || self::$options->def_lang_in_url ) ) {
 			add_filter( 'user_trailingslashit',        array( $this, 'remove_single_post_trailingslash' ), $this->late_fp, 2 );
