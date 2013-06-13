@@ -1,6 +1,6 @@
 (function($){
 	var $editors_cont, $default_lang_title, $default_lang_content;
-	MLWP_autosaveLast = ''
+	MLWP_autosaveLast = '';
 
 	MLWP_autosave = {
 		languages: [],
@@ -142,13 +142,13 @@
 		var tmce_ed = $default_lang_content ? get_tmce( $default_lang_content.attr('id') ) : false;
 		var content = '';
 		if ( tmce_ed ) {
-			$default_lang_content.val( tmce_ed.getContent({format : 'raw'}) );
+			$default_lang_content.val( tmce_ed.getContent() );
 		};
 
 		// Update the default rich text editor
 		tmce_ed = get_tmce( 'content' );
 		if ( tmce_ed ) {
-			tmce_ed.setContent( $default_lang_content.val(), {format : 'raw'} );
+			tmce_ed.setContent( $default_lang_content.val() );
 		} else {
 			$('#postdivrich #wp-content-wrap .wp-editor-area').length && $('#postdivrich #wp-content-wrap .wp-editor-area').val( $default_lang_content.val() );
 		};
