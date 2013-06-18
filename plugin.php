@@ -912,6 +912,11 @@ class Multilingual_WP {
 		$blocks = preg_split( $regex, $content, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE );
 		$return = '';
 
+		// This text doesn't contain any quicktags
+		if ( count( $blocks ) == 1 && ! preg_match( "#^\[:([a-z]{2})\]#ism", $blocks[0] ) ) {
+			return $content;
+		}
+
 		foreach ( $blocks as $block ) {
 			if ( preg_match( "#^\[:([a-z]{2})\]#ism", $block, $matches ) ) {
 				if ( $this->record_translations && isset( self::$options->languages[ $matches[1] ] ) ) {
@@ -923,7 +928,7 @@ class Multilingual_WP {
 			}
 		}
 
-		return $return ? $return : $content;
+		return $return;
 	}
 
 	public function parse_transl_shortcodes( $content ) {
