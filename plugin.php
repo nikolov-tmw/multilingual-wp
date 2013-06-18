@@ -1402,7 +1402,7 @@ class Multilingual_WP {
 			$this->setup_post_vars( $orig_id );
 			if ( isset( $this->rel_langs[ $language ] ) && ( $_post = get_post( $this->rel_langs[ $language ] ) ) ) {
 				$post->mlwp_lang = $language;
-				$post->post_content = $_post->post_content == '' ? $this->na_message( $language, $post->post_content ) : $_post->post_content;
+				$post->post_content = $_post->post_content == '' && $post->post_content != '' ? $this->na_message( $language, $post->post_content ) : $_post->post_content;
 				$post->post_title = $_post->post_title == '' ? ( self::$options->na_message ? '(' . $this->default_lang . ') ' : '' ) . $post->post_title : $_post->post_title;
 				$post->post_name = $_post->post_name;
 				$post->post_excerpt = $_post->post_excerpt;
