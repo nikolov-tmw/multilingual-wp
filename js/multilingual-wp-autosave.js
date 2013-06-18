@@ -142,15 +142,19 @@
 		var tmce_ed = $default_lang_content ? get_tmce( $default_lang_content.attr('id') ) : false;
 		var content = '';
 		if ( tmce_ed ) {
-			$default_lang_content.val( tmce_ed.getContent() );
+			tmce_ed.save();
 		};
 
 		// Update the default rich text editor
 		tmce_ed = get_tmce( 'content' );
 		if ( tmce_ed ) {
+			// Set the content and save to textarea
 			tmce_ed.setContent( $default_lang_content.val() );
+			tmce_ed.save();
 		} else {
-			$('#postdivrich #wp-content-wrap .wp-editor-area').length && $('#postdivrich #wp-content-wrap .wp-editor-area').val( $default_lang_content.val() );
+			if ( $('#postdivrich #wp-content-wrap .wp-editor-area').length ) {
+				$('#postdivrich #wp-content-wrap .wp-editor-area').val( $default_lang_content.val() );
+			};
 		};
 
 		// Update the default post title
