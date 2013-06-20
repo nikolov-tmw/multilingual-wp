@@ -56,7 +56,7 @@
 							if ( ed.plugins.spellchecker && ed.plugins.spellchecker.active ) {
 								doAutoSave = false;
 							} else {
-								tinymce.triggerSave();
+								ed.save();
 							}
 						}
 						post_data[ 'content_' + lang ] = $('#content_' + lang, $editors_cont).val();
