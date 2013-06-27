@@ -1,11 +1,20 @@
 <?php 
+/**
+ * Contains all widgets that the plugin registers
+ *
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
 /**
-* Language Switcher Widget
-*
-* @access public
-* @uses mlwp_lang_switcher()
-*/
+ * Language Switcher Widget
+ *
+ * @access public
+ * @uses mlwp_lang_switcher()
+ */
 class MLWP_Lang_Switcher_Widget extends scb_MLWP_Widget {
 	protected $defaults = array(
 		'title' => '',

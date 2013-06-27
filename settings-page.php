@@ -1,4 +1,13 @@
 <?php
+/**
+ * Creates GUI for managing the plugin's settings
+ *
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
 class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 	protected $admin_notice = false;

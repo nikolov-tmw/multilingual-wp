@@ -1,4 +1,13 @@
 <?php
+/**
+ * Creates GUI for removing languages
+ *
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
 class Multilingual_WP_Remove_Language_Page extends scb_MLWP_AdminPage {
 	protected $admin_notice = false;
@@ -10,6 +19,7 @@ class Multilingual_WP_Remove_Language_Page extends scb_MLWP_AdminPage {
 			'page_title' => __( 'Remove a Language', 'multilingual-wp' ),
 			'parent' => 'multilingual-wp',
 			'action_link' => false,
+			'screen_icon' => 'mlwp_remove_language'
 		);
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );

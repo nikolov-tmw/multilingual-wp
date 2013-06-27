@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: multilingual, translations, content
 Requires at least: 3.5
 Tested up to: 3.5.1
-Stable tag: trunk
+Stable tag: 0.1
 
 This plugins allows you to easily integrate multiple language support in your WordPress site.
 
@@ -14,9 +14,8 @@ This plugins allows you to easily integrate multiple language support in your Wo
 From the 25.04.2013 commit, custom post type names have changed drastically. If you've used an older version and you still want to keep all of your translation posts, follow this guide here - https://github.com/nikolov-tmw/multilingual-wp/wiki/Migrating-from-non-hashed-to-hashed-CPT-names 
 
 === WARNING: ===
-This plugin is still in development! It's only tested in a development environment and with every release things could get fixed or break. Use it in production environments on your own risk! 
+This plugin is still in development! It's been tested in production environments for relatively small websites and it's been working good so far. 
 This plugin adds translations by creating a new post for every language that you have enabled. So if you have 10 posts and 3 enabled languages, you'll end-up(in your database) with 30 posts. While this seems fine for smaller websites/blogs, I can't guarantee that it will behave properly in larger scale installs. If you have thousands of posts that you want to translate, then this might NOT be the plugin you're looking for.
-I haven't tested the plugin in an environment with a lot of posts so far, but if someone wants to do that for me - that'd be great :) I'll eventually test that when I'm closer to releasing the plugin. 
 
 == Installation ==
 
@@ -24,4 +23,5 @@ Click on the ZIP button above and then extract it to your plugins directory(or e
 
 == Changelog ==
 
-Changelog will come later...
+= 0.1 =
+ * Initial stable release - almost all of the main features are in place with only a couple of them still missing 

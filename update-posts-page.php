@@ -1,4 +1,22 @@
 <?php
+/**
+ * Creates a "Fix Posts" page in the admin Dashboard for automatic posts processing
+ * 
+ * This page allows the user to automatically go through all of 
+ * their posts and terms and create translation posts/terms
+ * It can also be used to migrate content from different Multilingual plugins
+ * Currently supported plugins: 
+ *     1. {@link http://wordpress.org/plugins/qtranslate/ qTranslate} and
+ *           {@link http://wordpress.org/plugins/qtranslate-slug/ Qtranslate Slug}
+ * 
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ *
+ * @todo Add support for migrating from other multilingual plugins
+ */
 
 class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 	protected $admin_notice = false;
@@ -57,7 +75,8 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 		}
 
 		global $Multilingual_WP, $qtranslate_slug;
-		$default_lang = $Multilingual_WP->get_options()->default_lang;
+		$default_lang = $Multilingual_WP->default_lang;
+		$languages = $Multilingual_WP->get_options( 'enabled_langs' );
 		if ( $_POST['update_type'] == 'terms' ) {
 			$tpp = isset( $_POST['terms_per_batch'] ) && intval( $_POST['terms_per_batch'] ) ? intval( $_POST['terms_per_batch'] ) : 20;
 
@@ -73,12 +92,14 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 			foreach ( $terms as $term ) {
 				if ( $term->parent && ! isset( $updated_terms[ $term->parent ] ) ) {
-					$_parent = get_term( intval( $term->parent ), $term->taxonomy );
+					$_parent = $Multilingual_WP->get_term( intval( $term->parent ), $term->taxonomy );
 					$message[] = '<p class="error">' . sprintf( __( 'The term "%1$s" was ignored, because it\'s parent term "%2$s" has not been updated yet.', 'multilingual-wp' ), $term->name, $_parent->name ) . '</p>';
 					continue;
 				}
 				@set_time_limit( 30 * $langs_count );
 				$Multilingual_WP->setup_term_vars( $term->term_id, $term->taxonomy );
+
+				$rel_langs = $Multilingual_WP->rel_t_langs;
 
 				$Multilingual_WP->create_rel_terms();
 
@@ -88,22 +109,41 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 					$title = isset( $qtrans_term_names[ $term->name ] ) ? $qtrans_term_names[ $term->name ] : array();
 					foreach ( $title as $lang => $tit ) {
 						if ( $Multilingual_WP->is_enabled( $lang ) ) {
-							if ( $lang == $default_lang ) {
-								$term->description = isset( $contents[ $lang ] ) ? $contents[ $lang ] : $term->description;
-								$term->name = $tit;
+							if ( isset( $rel_langs[ $lang ] ) && ( $_term = $Multilingual_WP->get_term( $rel_langs[ $lang ], $Multilingual_WP->hash_tax_name( $term->taxonomy, $lang ) ) ) ) {
+								$_POST[ "description_{$lang}" ] = $_term->description;
+								$_POST[ "name_{$lang}" ] = $_term->name;
+								$_POST[ "slug_{$lang}" ] = $_term->slug;
 							} else {
-								$_POST[ "description_{$lang}" ] = isset( $contents[ $lang ] ) ? $contents[ $lang ] : '';
-								$_POST[ "name_{$lang}" ] = $tit;
+								if ( $lang == $default_lang ) {
+									$term->description = isset( $contents[ $lang ] ) ? $contents[ $lang ] : $term->description;
+									$term->name = $tit;
+								} else {
+									$_POST[ "description_{$lang}" ] = isset( $contents[ $lang ] ) ? $contents[ $lang ] : '';
+									$_POST[ "name_{$lang}" ] = $tit;
 
-								// Import slug for this language from the qTranslate Slug plugin
-								if ( $qtslug ) {
-									$_POST[ "slug_{$lang}" ] = get_term_meta( $term->term_id, $qtranslate_slug->get_meta_key( $lang ), true );
+									// Import slug for this language from the qTranslate Slug plugin
+									if ( $qtslug ) {
+										$_POST[ "slug_{$lang}" ] = get_term_meta( $term->term_id, $qtranslate_slug->get_meta_key( $lang ), true );
+									}
 								}
 							}
 						}
 					}
 				} elseif ( false ) {
 					// TODO: Add support for other multilanguage plugins
+				} else {
+					// Set default language details
+					if ( isset( $rel_langs[ $default_lang ] ) && ( $_term = $Multilingual_WP->get_term( $rel_langs[ $default_lang ], $Multilingual_WP->hash_tax_name( $term->taxonomy, $lang ) ) ) ) {
+						// If translation already exists, assign that content
+						// This way we won't override default languages
+						$_POST[ "description_{$default_lang}" ] = $term->description = $_term->description;
+						$_POST[ "name_{$default_lang}" ] = $term->name = $_term->name;
+						$_POST[ "slug_{$default_lang}" ] = $term->slug = $_term->slug;
+					} else {
+						$_POST[ "description_{$default_lang}" ] = $term->description;
+						$_POST[ "name_{$default_lang}" ] = $term->name;
+						$_POST[ "slug_{$default_lang}" ] = $term->slug;
+					}
 				}
 
 				// Update the default language post
@@ -139,7 +179,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 			$message = array();
 
-			$qtslug = class_exists( 'QtranslateSlug' ) && $qtranslate_slug;
+			$qtslug = class_exists( 'QtranslateSlug' ) && $qtranslate_slug && method_exists( $qtranslate_slug, 'get_meta_key' );
 			$langs_count = count( $this->options->enabled_langs );
 
 			foreach ( $posts as $post ) {
@@ -150,6 +190,8 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 				@set_time_limit( 30 * $langs_count );
 				$Multilingual_WP->setup_post_vars( $post->ID );
 
+				$rel_langs = $Multilingual_WP->rel_langs;
+
 				$Multilingual_WP->create_rel_posts();
 
 				// Move over from qTranslate
@@ -158,17 +200,24 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 					$titles = qtrans_split( $post->post_title );
 					foreach ( $titles as $lang => $title ) {
 						if ( $Multilingual_WP->is_enabled( $lang ) ) {
-							if ( $lang == $default_lang ) {
-								$_POST[ "content_{$lang}" ] = $post->post_content = isset( $contents[ $lang ] ) ? $contents[ $lang ] : $post->post_content;
-								$_POST[ "title_{$lang}" ] = $post->post_title = $title;
-								$_POST[ "post_name_{$lang}" ] = $post->post_name;
+							// We've already imported this translation, so add the current data
+							if ( isset( $rel_langs[ $lang ] ) && ( $_post = get_post( $rel_langs[ $lang ] ) ) ) {
+								$_POST[ "content_{$lang}" ] = $_post->post_content;
+								$_POST[ "title_{$lang}" ] = $_post->post_title;
+								$_POST[ "post_name_{$lang}" ] = $_post->post_name;
 							} else {
-								$_POST[ "content_{$lang}" ] = isset( $contents[ $lang ] ) ? $contents[ $lang ] : $post->post_content;
-								$_POST[ "title_{$lang}" ] = $title;
+								if ( $lang == $default_lang ) {
+									$_POST[ "content_{$lang}" ] = $post->post_content = isset( $contents[ $lang ] ) ? $contents[ $lang ] : $post->post_content;
+									$_POST[ "title_{$lang}" ] = $post->post_title = $title;
+									$_POST[ "post_name_{$lang}" ] = $post->post_name;
+								} else {
+									$_POST[ "content_{$lang}" ] = isset( $contents[ $lang ] ) ? $contents[ $lang ] : $post->post_content;
+									$_POST[ "title_{$lang}" ] = $title;
 
-								// Import slug for this language from the qTranslate Slug plugin
-								if ( $qtslug ) {
-									$_POST[ "post_name_{$lang}" ] = get_post_meta( $post->ID, $qtranslate_slug->get_meta_key( $lang ), true );
+									// Import slug for this language from the qTranslate Slug plugin
+									if ( $qtslug ) {
+										$_POST[ "post_name_{$lang}" ] = get_post_meta( $post->ID, $qtranslate_slug->get_meta_key( $lang ), true );
+									}
 								}
 							}
 						}
@@ -177,9 +226,17 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 					// TODO: Add support for other multilanguage plugins
 				} else {
 					// Set default language details, otherwise post content gets set to empty string
-					$_POST[ "content_{$default_lang}" ] = $post->post_content;
-					$_POST[ "title_{$default_lang}" ] = $post->post_title;
-					$_POST[ "post_name_{$default_lang}" ] = $post->post_name;
+					if ( isset( $rel_langs[ $default_lang ] ) && ( $_post = get_post( $rel_langs[ $default_lang ] ) ) ) {
+						// If translation already exists, assign that content
+						// This way we won't override default languages
+						$_POST[ "content_{$default_lang}" ] = $post->post_content = $_post->post_content;
+						$_POST[ "title_{$default_lang}" ] = $post->post_title = $_post->post_title;
+						$_POST[ "post_name_{$default_lang}" ] = $post->post_name = $_post->post_name;
+					} else {
+						$_POST[ "content_{$default_lang}" ] = $post->post_content;
+						$_POST[ "title_{$default_lang}" ] = $post->post_title;
+						$_POST[ "post_name_{$default_lang}" ] = $post->post_name;
+					}
 				}
 
 				// Update the default language post

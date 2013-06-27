@@ -27,5 +27,7 @@ div.mlwp-box.mlwp-error { background-color: #FFCACA; border-color: #F33636; font
 /*
 	Screen Icons
 */
-.multilingual-wp_page_add-new-language .wrap h2 { line-height: 51px; }
+.multilingual-wp_page_add-new-language .wrap h2,
+.multilingual-wp_page_remove-a-language .wrap h2 { line-height: 51px; }
 #icon-mlwp_add_language { background-image: url(../images/add-language-icon.png); width: 64px; height: 50px; margin-right: 12px; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; }
+#icon-mlwp_remove_language { background-image: url(../images/remove-language-icon.png); width: 64px; height: 50px; margin-right: 12px; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; }

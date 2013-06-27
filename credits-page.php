@@ -1,4 +1,13 @@
 <?php
+/**
+ * Creates a "Credits" page in the admin Dashboard containing contributors/supportes information
+ *
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
 class Multilingual_WP_Credits_Page extends scb_MLWP_AdminPage {
 	protected $admin_notice = false;

@@ -1,6 +1,19 @@
 <?php
-
-// Data-aware form generator
+/**
+ * Data-aware form generator
+ * 
+ * This file is part of the "wp-scb-framework". It has been modified
+ * in order to better fit the plugin and avoid collisions because of
+ * those changes.
+ *
+ * @package Multilingual WP
+ * @author {@link https://github.com/scribu scribu[Cristi Burcă]}
+ * @author {@link https://github.com/Rarst Rarst}
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
 class scb_MLWP_Forms {
 

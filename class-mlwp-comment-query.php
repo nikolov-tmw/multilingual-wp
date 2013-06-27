@@ -1,18 +1,27 @@
 <?php
+/**
+ * Custom comments query class with support for meta queries
+ *
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
 /**
  * WordPress Comment Query class + WP_Meta_Query.
  *
  * The default Wordpress Comment Query class with added compatibility for meta queries :)
+ * It's deprecated since WordPress 3.5 - when a native meta_query support has been introduced
  *
- * @since 3.1.0
- * @deprecated 3.5 - uses WP's version since it has meta_query support since WP 3.5
+ * @package Multilingual WP
+ * @since 0.1
  */
 class MLWP_Comment_Query extends WP_Comment_Query {
 	/**
 	 * Metadata query container
 	 *
-	 * @since 3.2.0
 	 * @access public
 	 * @var object WP_Meta_Query
 	 */
@@ -20,8 +29,6 @@ class MLWP_Comment_Query extends WP_Comment_Query {
 
 	/**
 	 * Execute the query
-	 *
-	 * @since 3.1.0
 	 *
 	 * @param string|array $query_vars
 	 * @return int|array

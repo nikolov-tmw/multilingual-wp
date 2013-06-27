@@ -1,14 +1,29 @@
 <?php 
+/**
+ * Extension for the Google XML Sitemaps plugin
+ *
+ * Adds sitemaps for each language, thus making every translation available
+ * in the site's sitemap. 
+ * 
+ * You can see the original plugin here - {@link http://wordpress.org/plugins/google-sitemap-generator/ Google XML Sitemaps}
+ *
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (?) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
 /**
 * 
 */
 class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	/**
-	* Override the default construct method for GoogleSitemapGeneratorStandardBuilder
-	*
-	* This way we add our actions with higher(lower index) priority, so then we can remove the default actions in MLWP_GSMG::remove_def_actions()
-	**/
+	 * Override the default construct method for GoogleSitemapGeneratorStandardBuilder
+	 *
+	 * This way we add our actions with higher(lower index) priority,
+	 * so then we can remove the default actions in MLWP_GSMG::remove_def_actions()
+	 */
 	function __construct() {
 		add_action( "sm_build_index", array( $this, "language_index" ), 1, 1 );
 		add_action( "sm_build_content", array( $this, "language_content" ), 1, 3 );
@@ -19,9 +34,11 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	/**
 	 * Removes the default actions added by GoogleSitemapGeneratorStandardBuilder::__construct()
 	 * 
-	 * By removing the default actions, we make sure that there won't be duplication issues. Also we make sure to only remove
-	 * the GoogleSitemapGeneratorStandardBuilder::Index() and GoogleSitemapGeneratorStandardBuilder::Content() functions
-	 **/
+	 * By removing the default actions, we make sure that there
+	 * won't be duplication issues. Also we make sure to only remove
+	 * the GoogleSitemapGeneratorStandardBuilder::Index()
+	 * and GoogleSitemapGeneratorStandardBuilder::Content() functions
+	 */
 	private function remove_def_actions() {
 		global $wp_filter;
 

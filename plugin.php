@@ -6,10 +6,21 @@ Description: Add Multilingual functionality to your WordPress site.
 Author: nikolov.tmw
 Author URI: http://themoonwatch.com
 Plugin URI: http://themoonwatch.com/multilingual-wp
+*/
+/**
+ * This is the core file for the Multilingual WP plugin
+ *
+ * It contains the base Multilingual_WP class and calls all initialization
+ * functions. 
+ *
+ * @package Multilingual WP
+ * @author Nikola Nikolov <nikolov.tmw@gmail.com>
+ * @copyright Copyleft (ɔ) 2012-2013, Nikola Nikolov
+ * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
+ * @since 0.1
+ */
 
-
-Copyright (C) 2012-2013 Nikola Nikolov (nikolov.tmw@gmail.com)
-
+/*
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or
@@ -35,84 +46,84 @@ class Multilingual_WP {
 	 * Holds a reference to the scb_MLWP_Options object, containing all of the plugin's settings
 	 *
 	 * @var scb_MLWP_Options object
-	 **/
+	 */
 	public static $options;
 
 	/**
 	 * Holds the URL to the plugin's directory
 	 *
 	 * @var string
-	 **/
+	 */
 	public $plugin_url;
 
 	/**
 	 * Holds the meta key name for the language posts associated with each original post
 	 *
 	 * @var string
-	 **/
+	 */
 	public $languages_meta_key = '_mlwp_langs';
 
 	/**
 	 * Holds the meta key name that keeps the ID of the original post
 	 *
 	 * @var string
-	 **/
+	 */
 	public $rel_p_meta_key = '_mlwp_rel_post';
 
 	/**
 	 * Holds the current link type mode
 	 *
 	 * @var string
-	 **/
+	 */
 	public $lang_mode;
 
 	/**
 	 * Holds the default language ID
 	 *
 	 * @var string
-	 **/
+	 */
 	public $default_lang;
 
 	/**
 	 * Holds the currently active language
 	 *
 	 * @var string
-	 **/
+	 */
 	public $current_lang;
 
 	/**
 	 * Holds the currently selected locale
 	 *
 	 * @var string
-	 **/
+	 */
 	public $locale;
 
 	/**
 	 * Holds a reference to the ID of the post we're currently interacting with
 	 *
 	 * @var string|Integer
-	 **/
+	 */
 	public $ID;
 
 	/**
 	 * Holds a reference to the post object with which we're currently interacting
 	 *
 	 * @var stdClass|WP_Post object
-	 **/
+	 */
 	public $post;
 
 	/**
 	 * Holds a reference to the post type of the post we're currently interacting with
 	 *
 	 * @var string
-	 **/
+	 */
 	public $post_type;
 
 	/**
 	 * Holds a reference to the ID's of all related languages for the post we're currently interacting with
 	 *
 	 * @var array
-	 **/
+	 */
 	public $rel_langs;
 
 	/**
@@ -121,64 +132,57 @@ class Multilingual_WP {
 	 * Each key is a taxonomy name with all terms that the post is associated wih in that taxonomy.
 	 *
 	 * @var array
-	 **/
+	 */
 	public $post_taxonomies;
 
 	/**
 	 * Holds a reference to the ID of the term we're currently interacting with
 	 *
 	 * @var string|Integer
-	 **/
+	 */
 	public $term_ID;
 
 	/**
 	 * Holds a reference to the term object with which we're currently interacting
 	 *
 	 * @var stdClass|WP_Post object
-	 **/
+	 */
 	public $term;
 
 	/**
 	 * Holds a reference to the taxonomy of the term we're currently interacting with
 	 *
 	 * @var string
-	 **/
+	 */
 	public $taxonomy;
 
 	/**
 	 * Holds a reference to the ID's of all related languages for the term we're currently interacting with
 	 *
 	 * @var array
-	 **/
+	 */
 	public $rel_t_langs;
 
 	/**
 	 * Holds a reference to the ID's of all related languages for the parent of the term we're currently interacting with
 	 *
 	 * @var array
-	 **/
+	 */
 	public $parent_rel_t_langs;
 
 	/**
 	 * Holds a reference to the original post types names - each key is a hashed post type name
 	 *
 	 * @var array
-	 **/
+	 */
 	public $hashed_post_types;
 
 	/**
 	 * Holds a reference to the original taxonomy names - each key is a hashed taxonomy name
 	 *
 	 * @var array
-	 **/
+	 */
 	public $hashed_taxonomies;
-
-	/**
-	 * Whether we're running on Windows or not 
-	 *
-	 * @var boolean
-	 **/
-	public static $is_win = false;
 	
 	public $rel_posts;
 	public $parent_rel_langs;
@@ -188,10 +192,10 @@ class Multilingual_WP {
 	private $t_slug_sfx = 'mlwp-sfx';
 
 	/**
-	* Caches various object's slugs(posts/pages/categories/etc.)
-	*
-	* @access private
-	**/
+	 * Caches various object's slugs(posts/pages/categories/etc.)
+	 *
+	 * @access private
+	 */
 	private $slugs_cache = array( 'posts' => array(), 'categories' => array() );
 
 	/**
@@ -200,35 +204,35 @@ class Multilingual_WP {
 	 * Holds the priority for filters that need to be applied last - therefore it should be a really high number
 	 *
 	 * @var Integer
-	 **/
+	 */
 	public $late_fp = 10000;
 
 	/**
 	 * Holds the query var, registered in the query vars array in WP_Query
 	 *
 	 * @var string
-	 **/
+	 */
 	const QUERY_VAR = 'language';
 
 	/**
 	 * Referes to the pre-path mode for defining the language
 	 *
 	 * @var string
-	 **/
+	 */
 	const LT_PRE = 'pre';
 
 	/**
 	 * Referes to the query argument mode for defining the language
 	 *
 	 * @var string
-	 **/
+	 */
 	const LT_QUERY = 'qa';
 
 	/**
 	 * Referes to the subdomain mode for defining the language
 	 *
 	 * @var string
-	 **/
+	 */
 	const LT_SD = 'sd';
 
 	private $_doing_save = false;
@@ -247,7 +251,7 @@ class Multilingual_WP {
 	 *
 	 * @access private
 	 * @var array
-	 **/
+	 */
 	private $builtin_rules = array();
 
 	public static function plugin_init() {
@@ -329,17 +333,10 @@ class Multilingual_WP {
 		}
 
 		global $Multilingual_WP;
-		$class_name = apply_filters( 'mlwp_class_name', 'Multilingual_WP' );
-		$Multilingual_WP = new $class_name();
+		$Multilingual_WP = new Multilingual_WP();
 
 		// Include required files
 		self::include_additional_files();
-
-		self::$is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
-
-		if ( self::$is_win ) {
-			include_once( dirname( __FILE__ ) . '/win_locales.php' );
-		}
 	}
 
 	function __construct() {
@@ -355,8 +352,6 @@ class Multilingual_WP {
 		add_action( 'plugins_loaded', array( $this, 'setup_locale' ), $this->late_fp );
 
 		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
-
-		self::$is_win = strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN';
 	}
 
 	public static function include_additional_files() {
@@ -471,10 +466,10 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Registers any filter hooks that the plugin is using
-	* @access private
-	* @uses add_filter()
-	**/
+	 * Registers any filter hooks that the plugin is using
+	 * @access private
+	 * @uses add_filter()
+	 */
 	private function add_filters() {
 		add_filter( 'wp_unique_post_slug',             array( $this, 'fix_post_slug' ), $this->late_fp, 6 ); 
 
@@ -555,10 +550,10 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Registers any action hooks that the plugin is using
-	* @access private
-	* @uses add_action()
-	**/
+	 * Registers any action hooks that the plugin is using
+	 * @access private
+	 * @uses add_action()
+	 */
 	private function add_actions() {
 		add_action( 'admin_enqueue_scripts',           array( $this, 'admin_scripts' ) );
 
@@ -628,9 +623,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Registers a custom meta box for the Comment Language
-	* @access public
-	**/
+	 * Registers a custom meta box for the Comment Language
+	 * @access public
+	 */
 	public function admin_init() {
 		add_meta_box( 'MLWP_Comments', __( 'Comment Language', 'multilingual-wp' ), array( $this, 'comment_language_metabox' ), 'comment', 'normal' );
 	}
@@ -644,13 +639,13 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Attempts to automatically download .mo files for all enabled languages
-	*
-	* @access public
-	* 
-	* @param boolean $force Whether to force the update or wait until two weeks since the last update have passed
-	* @param boolean|string $for_lang Whether to only attempt a download for a specific language
-	**/
+	 * Attempts to automatically download .mo files for all enabled languages
+	 *
+	 * @access public
+	 * 
+	 * @param boolean $force Whether to force the update or wait until two weeks since the last update have passed
+	 * @param boolean|string $for_lang Whether to only attempt a download for a specific language
+	 */
 	public function update_gettext( $force = false, $for_lang = false ) {
 		if ( ! is_dir( WP_LANG_DIR ) ) {
 			if ( ! @mkdir( WP_LANG_DIR ) )
@@ -780,8 +775,8 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Registers all of the plugin's shortcodes
-	**/
+	 * Registers all of the plugin's shortcodes
+	 */
 	private function register_shortcodes() {
 		$this->add_shortcode( 'mlwp', array( $this, 'mlwp_translation_shortcode' ) );
 
@@ -865,7 +860,7 @@ class Multilingual_WP {
 	 * @uses apply_filters() calls "mlwp_gettext"
 	 * 
 	 * @return string - The [maybe]translated string
-	 **/
+	 */
 	public function __( $text ) {
 		$text = $this->parse_quicktags( $text );
 		$text = $this->parse_transl_shortcodes( $text );
@@ -881,7 +876,7 @@ class Multilingual_WP {
 	 * @uses Multilingual_WP::__()
 	 * 
 	 * @return Null
-	 **/
+	 */
 	public function _e( $text ) {
 		echo $this->__( $text );
 	}
@@ -955,7 +950,7 @@ class Multilingual_WP {
 	 *
 	 * @access public
 	 * @param string $text The text for which to retrieve translations
-	 **/
+	 */
 	public function get_translations( $text ) {
 		$this->record_translations = true;
 		$this->recorded_translations = array();
@@ -974,7 +969,7 @@ class Multilingual_WP {
 	 * and the value is the text for that language.
 	 * @param string $output (Optional) The desired output - defaults to "shortcode" - returning translations wrapped in
 	 * the corresponding shortcode. Can also be "quicktags" to return translations wrapped in quicktags( like "[:{$lang}]{$text}" )
-	 **/
+	 */
 	public function join_translations( $translations, $output = 'shortcode' ) {
 		if ( ! is_array( $translations ) ) {
 			return $translations;
@@ -1538,7 +1533,7 @@ class Multilingual_WP {
 	 *
 	 * @access public
 	 * @param WP $wp
-	 **/
+	 */
 	public function set_pt_from_query( $wp ) {
 		// Set the post type except when on search results page, since we've already set the correct post types
 		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) && $wp->query_vars[ self::QUERY_VAR ] != $this->default_lang && ( ! isset( $wp->query_vars['s'] ) || ! $wp->query_vars['s'] ) ) {
@@ -1608,7 +1603,7 @@ class Multilingual_WP {
 	 * @access public
 	 * 
 	 * @return Null
-	 **/
+	 */
 	public function fix_queried_object() {
 		global $wp_query, $wp;
 
@@ -1649,7 +1644,7 @@ class Multilingual_WP {
 	 *
 	 * @access public
 	 * @param WP_Query $query
-	 **/
+	 */
 	public function maybe_unset_queried_obj( $query ) {
 		if ( isset( $query->query['pagename'] ) && isset( $query->query['post_type'] ) && isset( $query->query['post_type'] ) && $this->is_gen_pt( $query->query['post_type'] ) && isset( $query->queried_object ) ) {
 			unset( $query->queried_object, $query->queried_object_id );
@@ -1661,7 +1656,7 @@ class Multilingual_WP {
 	 *
 	 * @access public
 	 * @param WP_Query $query
-	 **/
+	 */
 	public function fix_page_for_posts( $query ) {
 		if ( $query->is_posts_page && isset( $query->query['pagename'] ) && isset( $query->query['post_type'] ) && $this->is_gen_pt( $query->query['post_type'] ) && $this->unhash_pt_name( $query->query['post_type'] ) == 'page' ) {
 			$post_type = $query->query['post_type'];
@@ -1674,7 +1669,7 @@ class Multilingual_WP {
 	 *
 	 * @access public
 	 * @param WP $wp
-	 **/
+	 */
 	public function fix_search_query( $wp ) {
 		if ( isset( $wp->query_vars['s'] ) ) {
 			$_post_types = array();
@@ -1714,7 +1709,7 @@ class Multilingual_WP {
 	 *
 	 * @access public
 	 * @param WP $wp
-	 **/
+	 */
 	public function fix_hierarchical_requests( $wp ) {
 		if ( isset( $wp->query_vars['post_type'] ) && $this->is_gen_pt( $wp->query_vars['post_type'] ) ) {
 			$slug = preg_replace( '~.*?name=(.*?)&.*~', '$1', str_replace( '%2F', '/', $wp->matched_query ) );
@@ -1728,7 +1723,7 @@ class Multilingual_WP {
 	 *
 	 * @access public
 	 * @param WP $wp
-	 **/
+	 */
 	public function fix_no_pt_request( $wp ) {
 		if ( isset( $wp->query_vars[ self::QUERY_VAR ] ) && isset( $wp->query_vars['name'] ) && ! isset( $wp->query_vars['post_type'] ) && $this->is_enabled( $wp->query_vars[ self::QUERY_VAR ] ) ) {
 			$lang = $wp->query_vars[ self::QUERY_VAR ];
@@ -1765,9 +1760,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Redirects to the proper URL in case the requested URL is one that has "mlwp_..."
-	*
-	**/
+	 * Redirects to the proper URL in case the requested URL is one that has "mlwp_..."
+	 *
+	 */
 	public function canonical_redirect() {
 		global $wp;
 
@@ -2448,7 +2443,8 @@ class Multilingual_WP {
 				if ( isset( $_POST[ "content_{$lang}" ] ) ) {
 					$_post['post_content'] = $_POST[ "content_{$lang}" ];
 				} else {
-					$_post['post_content'] = '';
+					// The current content will be preserved
+					// $_post['post_content'] = '';
 				}
 				if ( isset( $_POST[ "title_{$lang}" ] ) ) {
 					$_post['post_title'] = $_POST[ "title_{$lang}" ];
@@ -2557,9 +2553,8 @@ class Multilingual_WP {
 				// Add a special suffix for default languages
 				if ( $lang == $this->default_lang && stripos( $_term['slug'], $this->t_slug_sfx ) === false ) {
 					$_term['slug'] = $_term['slug'] . $this->t_slug_sfx;
-				}
-				// Remove the suffix if this is no-longer the default language
-				if ( $lang != $this->default_lang && stripos( $_term['slug'], $this->t_slug_sfx ) !== false ) {
+				} elseif ( $lang != $this->default_lang && stripos( $_term['slug'], $this->t_slug_sfx ) !== false ) {
+					// Remove the suffix if this is no-longer the default language
 					$_term['slug'] = str_ireplace( $this->t_slug_sfx, '', $_term['slug'] );
 				}
 
@@ -2570,6 +2565,17 @@ class Multilingual_WP {
 					$this->update_term_slug_c( $_term );
 				}
 
+				// If this is the default language - copy over the title/content/etc over
+				if ( $lang == $this->default_lang ) {
+					$_term = (array) $_term;
+					$term = (array) $this->term;
+					$term['name'] = $_term['name'];
+					$term['description'] = $_term['description'];
+					$term['slug'] = str_ireplace( $this->t_slug_sfx, '', $_term['slug'] );
+
+					$this->insert_term( $term['name'], $this->taxonomy, $term );
+				}
+
 				unset( $_term );
 			}
 		}
@@ -2577,7 +2583,6 @@ class Multilingual_WP {
 		if ( $term && $old_id ) {
 			$this->setup_term_vars( $old_id );
 		}
-		// exit;
 	}
 
 	private function register_post_types() {
@@ -2592,7 +2597,7 @@ class Multilingual_WP {
 				return false;
 			}
 
-			$post_types = get_post_types( array(  ), 'objects' );
+			$post_types = get_post_types( array(), 'objects' );
 
 			$languages = self::$options->languages;
 			$show_ui = (bool) self::$options->show_ui;
@@ -2828,12 +2833,8 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Creates any missing related posts
-	* 
-	* 
-	* 
-	* 
-	**/
+	 * Creates any missing related posts
+	 */
 	public function create_rel_posts( $post = false ) {
 		if ( $post ) {
 			$this->setup_post_vars( $post->ID );
@@ -2899,12 +2900,8 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Creates any missing related posts
-	* 
-	* 
-	* 
-	* 
-	**/
+	 * Creates any missing related terms
+	 */
 	public function create_rel_terms( $term = false, $taxonomy = false, $pop_rel_terms = true ) {
 		if ( $term && $taxonomy ) {
 			$_term = is_object( $term ) ? $term->term_id : $term;
@@ -2931,12 +2928,12 @@ class Multilingual_WP {
 			}
 		}
 
-		// If the creation queue is not empty, loop through all languages and create corresponding posts
+		// If the creation queue is not empty, loop through all languages and create corresponding terms
 		if ( ! empty( $to_create ) ) {
 			foreach ( $to_create as $lang ) {
 				$_taxonomy = $this->hash_tax_name( $this->taxonomy, $lang );
 				$parent = 0;
-				// Look-up for a parent post
+				// Look-up for a parent term
 				if ( $this->parent_rel_t_langs && isset( $this->parent_rel_t_langs[ $lang ] ) ) {
 					$parent = $this->parent_rel_t_langs[ $lang ];
 				}
@@ -3291,19 +3288,19 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Gets the default and language-specific permalink slug for a taxonomy
-	*
-	* First checks for the built-in taxonomies and the options for changing their slug(from Permalinks section)
-	* If it's not a built-in taxonomy, we get the taxonomy object and check if a slug is set in it's rewrite settings
-	* The outcome of the above is the default slug for that taxonomy
-	* Then we check the plugin's settings to see if the user has entered a custom slug for that taxonomy
-	* Finally we return an array with two elements - first one is default and second one is the language-specific one
-	*
-	* @access public
-	* @param string $tax Name of taxonomy for which to obtain a language-specific slug.
-	* @param string $lang Optional. The language to obtain the slug for. Defaults to current language
-	* @return array First element is the default slug, second is the language-specific one.
-	**/
+	 * Gets the default and language-specific permalink slug for a taxonomy
+	 *
+	 * First checks for the built-in taxonomies and the options for changing their slug(from Permalinks section)
+	 * If it's not a built-in taxonomy, we get the taxonomy object and check if a slug is set in it's rewrite settings
+	 * The outcome of the above is the default slug for that taxonomy
+	 * Then we check the plugin's settings to see if the user has entered a custom slug for that taxonomy
+	 * Finally we return an array with two elements - first one is default and second one is the language-specific one
+	 *
+	 * @access public
+	 * @param string $tax Name of taxonomy for which to obtain a language-specific slug.
+	 * @param string $lang Optional. The language to obtain the slug for. Defaults to current language
+	 * @return array First element is the default slug, second is the language-specific one.
+	 */
 	public function get_taxonomy_slug( $tax, $lang = false ) {
 		// "{default_language}/" is prepended to the "category_base" and "tag_base" options - so we have to remove that for categories and tags
 		if ( $tax == 'category' ) {
@@ -3333,15 +3330,15 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Gets rid of the trailing slash for singular posts
-	*
-	* If we're using the query argument mode, we want to make sure that single posts don't have the trailing slash at the end.
-	*
-	* @access public
-	* @param string $url The url with or without a trailing slash.
-	* @param string $type The type of URL being considered (e.g. single, category, etc).
-	* @return string
-	**/
+	 * Gets rid of the trailing slash for singular posts
+	 *
+	 * If we're using the query argument mode, we want to make sure that single posts don't have the trailing slash at the end.
+	 *
+	 * @access public
+	 * @param string $url The url with or without a trailing slash.
+	 * @param string $type The type of URL being considered (e.g. single, category, etc).
+	 * @return string
+	 */
 	public function remove_single_post_trailingslash( $url, $type = '' ) {
 		if ( ( $type == 'single' || $type == 'page' ) && self::$options->def_lang_in_url ) {
 			$url = untrailingslashit( $url );
@@ -3350,41 +3347,50 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Generates a language switcher
-	*
-	* @access public
-	* 
-	* @param array|string $options - If array - one or more of the following options. If string the type
-	* of the swticher(see $type bellow for options)
-	* 
-	* Available options in the $options Array:
-	* @param string $type The type of the switcher. One of the following: 'text'(language labels only),
-	* 'image'(language flags only), 'both'(labels and flags), 'select'|'dropdown'(use labels to create a
-	* <select> drop-down with redirection on language select). Default: 'image'
-	* @param string $wrap The wrapping HTML element for each language. Examples: 'li', 'span', 'div', 'p'... Default: 'li'
-	* @param string $outer_wrap The wrapping HTML element for each language. Examples: 'ul', 'ol', 'div'... Default: 'ul'
-	* @param string $class The value for the HTML 'class' attribute for the $outer_wrap element. Default: 'mlwp-lang-switcher'
-	* @param string $id The value for the HTML 'id' attribute for the $outer_wrap element. Default: "mlwp_lang_switcher_X",
-	* where "X" is an incrementing number starting from 1(it increments any time this function is called without passing 'id' option)
-	* @param string $active_class The value for the HTML 'class' attribute for the currently active language's element. Default: 'active'
-	* @param boolean|string $return Whether to return or echo the output. Pass false for echo. Pass 'html' to get the ready html. Pass
-	* 'array' to retrieve a multidimensional array with the following structure:
-	* array(
-	* 	'xx' => array(
-	* 		'label' => 'Language label',
-	* 		'image' => 'URL to the flag image of this language',
-	* 		'active' => true|false, // Is this the active language
-	* 		'url' => 'Proper(fixed) URL for this language',
-	* 		'default' => true|false, // Is this the default language
-	* 	)
-	* )
-	* That's useful for when trying to build a highly customized switcher. Default: false
-	* @param boolean $hide_current Whether to display or not the currently active language
-	* @param string|integer $flag_size The size for the flag image. One of: 16, 24, 32, 48, 64. Default: gets user's preference(plugin option)
-	*
-	* @uses apply_filters() Calls "mlwp_lang_switcher_pre" passing the user options and the defaults. If output is provided, returns that 
-	*
-	**/
+	 * Generates a language switcher
+	 *
+	 * @access public
+	 * 
+	 * @param array|string $options - If array - one or more of the following options. If string the type
+	 * of the swticher(see $type bellow for options)
+	 * 
+	 * Available options in the $options Array:
+	 * @param string $type The type of the switcher. One of the following:
+	 * 'text'(language labels only), 'image'(language flags only),
+	 * 'both'(labels and flags), 'select'|'dropdown'(use labels to create a
+	 * <select> drop-down with redirection on language select). Default: 'image'
+	 * @param string $wrap The wrapping HTML element for each language.
+	 * Examples: 'li', 'span', 'div', 'p'... Default: 'li'
+	 * @param string $outer_wrap The wrapping HTML element for each language.
+	 * Examples: 'ul', 'ol', 'div'... Default: 'ul'
+	 * @param string $class The value for the HTML 'class' attribute for the
+	 * $outer_wrap element. Default: 'mlwp-lang-switcher'
+	 * @param string $id The value for the HTML 'id' attribute for the
+	 * $outer_wrap element. Default: "mlwp_lang_switcher_X",
+	 * where "X" is an incrementing number starting from
+	 * 1(it increments any time this function is called without passing 'id' option)
+	 * @param string $active_class The value for the HTML 'class' attribute
+	 * for the currently active language's element. Default: 'active'
+	 * @param boolean|string $return Whether to return or echo the output.
+	 * Pass false for echo. Pass 'html' to get the ready html. Pass
+	 * 'array' to retrieve a multidimensional array with the following structure:
+	 * array(
+	 * 	'xx' => array(
+	 * 		'label' => 'Language label',
+	 * 		'image' => 'URL to the flag image of this language',
+	 * 		'active' => true|false, // Is this the active language
+	 * 		'url' => 'Proper(fixed) URL for this language',
+	 * 		'default' => true|false, // Is this the default language
+	 * 	)
+	 * )
+	 * That's useful for when trying to build a highly customized switcher. Default: false
+	 * @param boolean $hide_current Whether to display or not the currently active language
+	 * @param string|integer $flag_size The size for the flag image.
+	 * One of: 16, 24, 32, 48, 64. Default: gets user's preference(plugin option)
+	 *
+	 * @uses apply_filters() Calls "mlwp_lang_switcher_pre" passing the user options and the defaults. If output is provided, returns that 
+	 *
+	 */
 	public function build_lang_switcher( $options = array() ) {
 		static $switcher_counter;
 		$options = is_array( $options ) ? $options : array( 'type' => $options );
@@ -3500,17 +3506,21 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Gets the flag image for a specified/default language
-	*
-	* @access public
-	*
-	* @uses apply_filters() calls "mlwp_get_flag", passing the found flag, language and size as additional parameters. Return something different than false to override this function
-	*
-	* @param string $language The language for which to retreive the flag. Optional, defaults to current
-	* @param integer $size The size at which to get the flag. Optional, defaults to plugin settings
-	*
-	* @return string - the URL for the flag, or a general "earth.png" flag if none was found
-	**/
+	 * Gets the flag image for a specified/default language
+	 *
+	 * @access public
+	 *
+	 * @param string $language The language for which to retreive
+	 * the flag. Optional, defaults to current
+	 * @param integer $size The size at which to get the flag.
+	 * Optional, defaults to plugin settings
+	 *
+	 * @uses apply_filters() calls "mlwp_get_flag", passing
+	 * the found flag, language and size as additional parameters.
+	 * Return something different than false to override this function
+	 *
+	 * @return string - the URL for the flag, or a general "earth.png" flag if none was found
+	 */
 	public function get_flag( $language = '', $size = '' ) {
 		$language = $language && isset( self::$options->languages[ $language ] ) ? $language : $this->current_lang;
 		$size = $size && in_array( intval( $size ), array( 16, 24, 32, 48, 64 ) ) ? $size : self::$options->dfs;
@@ -3558,11 +3568,13 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Gets the slug of an object - uses own cache
-	* 
-	* @param integer $id The ID of the object that the slug is requested
-	* @param string $type The type of the object in question. "post"(any general post type), "category"(any terms) or mlwp_post(plugin-created post types)
-	**/
+	 * Gets the slug of an object - uses own cache
+	 * 
+	 * @param integer $id The ID of the object that the slug is requested
+	 * @param string $type The type of the object in question.
+	 * "post"(any general post type), "category"(any terms) or
+	 * mlwp_post(plugin-created post types)
+	 */
 	public function get_obj_slug( $id, $type, $taxonomy = false ) {
 		$_id = "_{$id}";
 		if ( $type == 'post' ) {
@@ -3624,9 +3636,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Createс a custom meta box for the Comment Language
-	* @access public
-	**/
+	 * Createс a custom meta box for the Comment Language
+	 * @access public
+	 */
 	public function comment_language_metabox( $comment ) {
 		$curr_lang = get_comment_meta( $comment->comment_ID, '_comment_language', true ); ?>
 		<table class="form-table editcomment comment_xtra">
@@ -3671,9 +3683,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Adds a "Language" header for the Edit Comments screen
-	* @access public
-	**/
+	 * Adds a "Language" header for the Edit Comments screen
+	 * @access public
+	 */
 	public function filter_edit_comments_t_headers( $columns ) {
 		if ( ! empty($columns) ) {
 			$response = $columns['response'];
@@ -3686,9 +3698,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Renders the language for each comment in the Edit Comments screen
-	* @access public
-	**/
+	 * Renders the language for each comment in the Edit Comments screen
+	 * @access public
+	 */
 	public function render_comment_lang_col( $column, $commentID ) {
 		if ( $column == 'comm_language' ) {
 			$comm_lang = get_comment_meta( $commentID, '_comment_language', true );
@@ -3701,9 +3713,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Handles the AJAX POST for bulk updating of comments language
-	* @access public
-	**/
+	 * Handles the AJAX POST for bulk updating of comments language
+	 * @access public
+	 */
 	public function handle_ajax_update() {
 		if ( isset( $_POST['language'] ) && isset( $_POST['ids'] ) && is_array( $_POST['ids'] ) && check_admin_referer( 'bulk-comments' ) ) {
 			
@@ -3729,9 +3741,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Prints the necessary JS for the Edit Comments screen
-	* @access public
-	**/
+	 * Prints the necessary JS for the Edit Comments screen
+	 * @access public
+	 */
 	public function print_comment_scripts() {
 		$languages = array();
 		foreach ( self::$options->enabled_langs as $lang ) {
@@ -3826,9 +3838,9 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Saves the comment language(single-comment-editting only)
-	* @access public
-	**/
+	 * Saves the comment language(single-comment-editting only)
+	 * @access public
+	 */
 	public function save_comment_lang( $commentID ) {
 		if ( isset( $_POST['mlwpc_language'] ) && $this->is_enabled( $_POST['mlwpc_language'] ) ) {
 			update_comment_meta( $commentID, '_comment_language', $_POST['mlwpc_language'] );
@@ -3836,10 +3848,10 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Sets the language for new comments
-	*
-	* @access public
-	**/
+	 * Sets the language for new comments
+	 *
+	 * @access public
+	 */
 	public function new_comment( $commentID ) {
 		$comm_lang = isset( $_POST['mlwpc_comment_lang'] ) && $this->is_enabled( $_POST['mlwpc_comment_lang'] ) ? $_POST['mlwpc_comment_lang'] : $this->default_lang;
 		
@@ -3852,23 +3864,27 @@ class Multilingual_WP {
 	}
 
 	/**
-	* Renders a hidden input in the comments form
-	*
-	* This hidden input contains the permalink of the current post(without the hostname) and is used to properly assign the language of the comment as well as the back URL
-	*
-	* @access public
-	**/
+	 * Renders a hidden input in the comments form
+	 *
+	 * This hidden input contains the permalink of the current
+	 * post(without the hostname) and is used to properly assign
+	 * the language of the comment as well as the back URL
+	 *
+	 * @access public
+	 */
 	public function comment_form_hook( $post_id ) {
 		echo '<input type="hidden" name="mlwpc_comment_lang" value="' . $this->current_lang . '" />';
 	}
 
 	/**
-	* Filters comments for the current language only
-	*
-	* This function is called whenever comments are fetched for the comments_template() function. This way the right comments(according to the current language) are fetched automatically.
-	* 
-	* @access public
-	**/
+	 * Filters comments for the current language only
+	 *
+	 * This function is called whenever comments are fetched
+	 * for the comments_template() function. This way the right
+	 * comments(according to the current language) are fetched automatically.
+	 * 
+	 * @access public
+	 */
 	public function filter_comments_by_lang( $comments, $post_id ) {
 		global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity, $overridden_cpage;
 
@@ -3925,5 +3941,5 @@ class Multilingual_WP {
 	}
 }
 
-// Let's allow anyone to override our class definition - this way anyone can extend the plugin and add/overwrite functionality without having the need to modify the plugin files
-scb_MLWP_init( array( apply_filters( 'mlwp_class_name', 'Multilingual_WP' ), 'plugin_init' ) );
+
+scb_MLWP_init( array( 'Multilingual_WP', 'plugin_init' ) );
