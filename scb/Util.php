@@ -2,11 +2,12 @@
 /**
  * Various utilities
  * 
- * This file is part of the "wp-scb-framework". It has been modified
+ * This file is part of the {@link https://github.com/scribu/wp-scb-framework wp-scb-framework}. It has been modified
  * in order to better fit the plugin and avoid collisions because of
  * those changes.
  *
  * @package Multilingual WP
+ * @subpackage wp-scb-framework
  * @author {@link https://github.com/scribu scribu[Cristi Burcă]}
  * @author {@link https://github.com/Rarst Rarst}
  * @author Nikola Nikolov <nikolov.tmw@gmail.com>
