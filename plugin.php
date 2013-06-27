@@ -1365,6 +1365,7 @@ class Multilingual_WP {
 				}
 				$items[ $i ]->title = $this->__( $item->title );
 			}
+			$items[ $i ]->post_content = $items[ $i ]->post_content ? $this->__( $items[ $i ]->post_content ) : $items[ $i ]->post_content;
 		}
 
 		return $items;
