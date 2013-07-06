@@ -20,7 +20,7 @@
  * @author Nikola Nikolov <nikolov.tmw@gmail.com>
  * @copyright Copyleft (ɔ) 2012-2013, Nikola Nikolov
  * @license {@link http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3}
- * @since 0.2
+ * @since 0.1.1
  */
 
 if ( ! defined( 'MLWP_DIW_MSG' ) ) {
