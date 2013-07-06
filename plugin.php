@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: Multilingual WP
-Version: 0.1
+Version: 0.1.1
 Description: Add Multilingual functionality to your WordPress site.
 Author: nikolov.tmw
-Author URI: http://themoonwatch.com
-Plugin URI: http://themoonwatch.com/multilingual-wp
+Author URI: http://themoonwatch.com/en/
+Plugin URI: http://themoonwatch.com/en/multilingual-wp/
 */
 /**
  * This is the core file for the Multilingual WP plugin
@@ -349,6 +349,8 @@ class Multilingual_WP {
 
 		add_action( 'init', array( $this, 'init' ), 100 );
 
+		add_action( 'plugins_loaded', array( $this, 'include_compat_functions' ) );
+
 		add_action( 'plugins_loaded', array( $this, 'setup_locale' ), $this->late_fp );
 
 		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
@@ -363,6 +365,12 @@ class Multilingual_WP {
 
 		// Register the template tags
 		include_once( dirname( __FILE__ ) . '/widgets.php' );
+	}
+
+	public function include_compat_functions() {
+		do_action( 'mlwp_before_include_compat_functions' );
+
+		include_once( dirname( __FILE__ ) . '/compat-functions.php' );
 	}
 
 	public function init() {
@@ -1357,6 +1365,7 @@ class Multilingual_WP {
 				}
 				$items[ $i ]->title = $this->__( $item->title );
 			}
+			$items[ $i ]->post_content = $items[ $i ]->post_content ? $this->__( $items[ $i ]->post_content ) : $items[ $i ]->post_content;
 		}
 
 		return $items;
@@ -1839,23 +1848,48 @@ class Multilingual_WP {
 	}
 
 	public function is_gen_pt( $post_type ) {
-		return in_array( $post_type, self::$options->generated_pt );
+		static $generated_pt;
+		if ( ! isset( $generated_pt ) ) {
+			$generated_pt = self::$options->generated_pt;
+		}
+
+		return in_array( $post_type, $generated_pt );
 	}
 
 	public function is_gen_tax( $tax ) {
-		return in_array( $tax, self::$options->generated_tax );
+		static $generated_tax;
+		if ( ! isset( $generated_tax ) ) {
+			$generated_tax = self::$options->generated_tax;
+		}
+
+		return in_array( $tax, $generated_tax );
 	}
 
 	public function is_enabled( $language ) {
-		return in_array( $language, self::$options->enabled_langs );
+		static $enabled_langs;
+		if ( ! isset( $enabled_langs ) ) {
+			$enabled_langs = self::$options->enabled_langs;
+		}
+
+		return in_array( $language, $enabled_langs );
 	}
 
 	public function is_enabled_pt( $pt ) {
-		return in_array( $pt, self::$options->enabled_pt );
+		static $enabled_pt;
+		if ( ! isset( $enabled_pt ) ) {
+			$enabled_pt = self::$options->enabled_pt;
+		}
+
+		return in_array( $pt, $enabled_pt );
 	}
 
 	public function is_enabled_tax( $tax ) {
-		return in_array( $tax, self::$options->enabled_tax );
+		static $enabled_tax;
+		if ( ! isset( $enabled_tax ) ) {
+			$enabled_tax = self::$options->enabled_tax;
+		}
+
+		return in_array( $tax, $enabled_tax );
 	}
 
 	public function is_sitemap() {
@@ -2431,7 +2465,7 @@ class Multilingual_WP {
 			foreach ( $this->rel_langs as $lang => $rel_pid ) {
 				if ( ! $this->is_enabled( $lang ) ) {
 					// This language doesn't exist, which most-likely means that the user has removed it, so let's clean it up
-					if ( ! isset( self::$options->languages[ $lang ] ) ) {
+					if ( ! isset( $langs_arr[ $lang ] ) ) {
 						$this->delete_post( $rel_pid, true );
 					}
 					continue;
@@ -2525,12 +2559,14 @@ class Multilingual_WP {
 		}
 
 		if ( $this->rel_t_langs ) {
+			$langs_arr = array_flip( self::$options->enabled_langs );
+
 			foreach ( $this->rel_t_langs as $lang => $rel_tid ) {
 				$_tax = $this->hash_tax_name( $this->taxonomy, $lang );
 
 				if ( ! $this->is_enabled( $lang ) ) {
 					// This language doesn't exist, which most-likely means that the user has removed it, so let's clean it up
-					if ( ! isset( self::$options->languages[ $lang ] ) ) {
+					if ( ! isset( $langs_arr[ $lang ] ) ) {
 						$this->delete_term( $rel_tid, true );
 					}
 					continue;
@@ -2603,6 +2639,7 @@ class Multilingual_WP {
 			$show_ui = (bool) self::$options->show_ui;
 			$rewrites = self::$options->rewrites['pt'];
 			$def_lang = $this->default_lang;
+			$def_lang_in_url = self::$options->def_lang_in_url;
 
 			global $wp_rewrite, $wp_post_types;
 
@@ -2623,7 +2660,7 @@ class Multilingual_WP {
 					);
 					$rewrite = false;
 					if ( $pt->rewrite ) {
-						$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || self::$options->def_lang_in_url ) ? $lang : '' ) : '';
+						$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || $def_lang_in_url ) ? $lang : '' ) : '';
 						$rewrite = array();
 						$slug .= $pt->rewrite['with_front'] ? "{$wp_rewrite->front}" : '/';
 						$slug .= is_array( $rewrites ) && isset( $rewrites[ $pt_name ][ $lang ] ) && $rewrites[ $pt_name ][ $lang ] ? $rewrites[ $pt_name ][ $lang ] : ( isset( $pt->rewrite['slug'] ) ? $pt->rewrite['slug'] : $pt_name );
@@ -2641,9 +2678,9 @@ class Multilingual_WP {
 							$rewrite = false;
 						}
 					}
-					if ( $pt_name == 'page' && ( $lang != $def_lang || self::$options->def_lang_in_url ) ) {
+					if ( $pt_name == 'page' && ( $lang != $def_lang || $def_lang_in_url ) ) {
 						$rewrite = $this->lang_mode == self::LT_PRE ? array( 'slug' => $lang, 'with_front' => false ) : array( 'slug' => '', 'with_front' => false );
-					} elseif ( $pt_name == 'post' && ( $lang != $def_lang || self::$options->def_lang_in_url ) ) {
+					} elseif ( $pt_name == 'post' && ( $lang != $def_lang || $def_lang_in_url ) ) {
 						$rewrite = array();
 						$rewrite['with_front'] = false;
 						$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/{$wp_rewrite->front}" : "{$wp_rewrite->front}";
@@ -2711,6 +2748,7 @@ class Multilingual_WP {
 			$show_ui = (bool) self::$options->show_ui;
 			$rewrites = self::$options->rewrites['tax'];
 			$def_lang = $this->default_lang;
+			$def_lang_in_url = self::$options->def_lang_in_url;
 
 			foreach ( $enabled_tax as $tax_name ) {
 				$tax = isset( $taxonomies[ $tax_name ] ) ? $taxonomies[ $tax_name ] : false;
@@ -2731,7 +2769,7 @@ class Multilingual_WP {
 					);
 					$rewrite = false;
 					if ( $tax->rewrite ) {
-						$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || self::$options->def_lang_in_url ) ? "{$lang}" : '' ) : '';
+						$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || $def_lang_in_url ) ? "{$lang}" : '' ) : '';
 						$rewrite = array();
 						$slug .= $tax->rewrite['with_front'] || in_array( $tax->name, array( 'category', 'post_tag' ) ) ? "{$wp_rewrite->front}" : '/';
 						$slug .= is_array( $rewrites ) && isset( $rewrites[ $tax_name ][ $lang ] ) && $rewrites[ $tax_name ][ $lang ] ? $rewrites[ $tax_name ][ $lang ] : ( isset( $tax->rewrite['slug'] ) ? str_replace( $wp_rewrite->front, '', $tax->rewrite['slug'] ) : $tax_name );

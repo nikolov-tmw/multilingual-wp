@@ -24,5 +24,14 @@ function &_mlwp() {
  * @uses Multilingual_WP::build_lang_switcher()
  */
 function mlwp_lang_switcher( $options = array() ) {
-	return _mlwp()->build_lang_switcher( $options );
+	return $GLOBALS['Multilingual_WP']->build_lang_switcher( $options );
+}
+
+/**
+ * Converts a URL to the current/specified language
+ * 
+ * @uses Multilingual_WP::convert_URL()
+ */
+function mlwp_convert_URL( $url = '', $lang = '', $force = false ) {
+	return $GLOBALS['Multilingual_WP']->convert_URL( $url, $lang );
 }

@@ -68,10 +68,13 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 		global $Multilingual_WP, $wpdb;
 
 		$blogUpdate = strtotime( get_lastpostdate( 'blog' ) );
+		$languages = $Multilingual_WP->get_options( 'languages' );
 
 		foreach ( $Multilingual_WP->get_enabled_languages() as $language ) {
 			$prefix = $Multilingual_WP::QUERY_VAR . "-{$language}-";
 			$Multilingual_WP->current_lang = $language;
+			$Multilingual_WP->locale = $languages[ $language ]['locale'];
+			$Multilingual_WP->fix_rewrite();
 
 			$gsg->AddSitemap( "{$prefix}misc", null, $blogUpdate );
 
@@ -154,9 +157,10 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 			if ( count( $_params ) > 1 ) {
 				$lang = array_shift( $_params );
 				if ( $Multilingual_WP->is_enabled( $lang ) ) {
-					$Multilingual_WP->current_lang = $lang;
 					$languages = $Multilingual_WP->get_options( 'languages' );
+					$Multilingual_WP->current_lang = $lang;
 					$Multilingual_WP->locale = $languages[ $lang ]['locale'];
+					$Multilingual_WP->fix_rewrite();
 
 					$type = array_shift( $_params );
 
@@ -171,5 +175,4 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 			$this->Content( $gsg, $type, $params );
 		}
 	}
-
 }
