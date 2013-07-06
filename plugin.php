@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Multilingual WP
-Version: 0.2
+Version: 0.1.1
 Description: Add Multilingual functionality to your WordPress site.
 Author: nikolov.tmw
 Author URI: http://themoonwatch.com/en/
