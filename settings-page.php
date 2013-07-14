@@ -204,49 +204,47 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			</div>';
 	}
 
-	private function get_post_types() {
-		static $pts_opts;
-		if ( isset( $pts_opts ) && $pts_opts ) {
-			return $pts_opts;
-		}
+	private function get_post_types( $scope = 'choices' ) {
 		$pts_opts = array();
-		if ( post_type_exists( 'post' ) ) {
-			$pts_opts['post'] = __( 'Post', 'multilingual-wp' ) . '<br />';
-		}
-		if ( post_type_exists( 'page' ) ) {
-			$pts_opts['page'] = __( 'Page', 'multilingual-wp' ) . '<br />';
-		}
-		$post_types = get_post_types( array( 'show_ui' => true, '_builtin' => false ), 'objects' );
+		$post_types = get_post_types( array( 'show_ui' => true ), 'objects' );
+		$exluced_pts = array( 'attachment', 'revision', 'nav_menu_item' );
 		if ( $post_types ) {
-			foreach ($post_types as $pt => $data) {
+			foreach ( $post_types as $pt => $data ) {
+				if ( in_array( $pt, $exluced_pts ) ) {
+					continue;
+				}
 				if ( in_array( $pt, $this->options->generated_pt ) ) {
 					continue;
 				}
-				$pts_opts[ $pt ] = $data->labels->name . '<br />';
+				if ( $scope == 'choices' ) {
+					$pts_opts[ $pt ] = $data->labels->name . '<br />';
+				} else {
+					$pts_opts[ $pt ] = array(
+						'label' => $data->labels->name,
+						'slug' => ( isset( $data->rewrite['slug'] ) ? $data->rewrite['slug'] : '' )
+					);
+				}
 			}
 		}
 		return $pts_opts;
 	}
 
-	private function get_taxonomies() {
-		static $tax_opts;
-		if ( isset( $tax_opts ) && $tax_opts ) {
-			return $tax_opts;
-		}
+	private function get_taxonomies( $scope = 'choices' ) {
 		$tax_opts = array();
-		if ( taxonomy_exists( 'category' ) ) {
-			$tax_opts['category'] = __( 'Categories', 'multilingual-wp' ) . '<br />';
-		}
-		if ( taxonomy_exists( 'post_tag' ) ) {
-			$tax_opts['post_tag'] = __( 'Tags', 'multilingual-wp' ) . '<br />';
-		}
-		$taxonomies = get_taxonomies( array( 'show_ui' => true, '_builtin' => false ), 'objects' );
+		$taxonomies = get_taxonomies( array( 'show_ui' => true ), 'objects' );
 		if ( $taxonomies ) {
 			foreach ( $taxonomies as $tax => $data ) {
 				if ( in_array( $tax, $this->options->generated_tax ) ) {
 					continue;
 				}
-				$tax_opts[ $tax ] = $data->labels->name . '<br />';
+				if ( $scope == 'choices' ) {
+					$tax_opts[ $tax ] = $data->labels->name . '<br />';
+				} else {
+					$tax_opts[ $tax ] = array(
+						'label' => $data->labels->name,
+						'slug' => ( isset( $data->rewrite['slug'] ) ? $data->rewrite['slug'] : $tax )
+					);
+				}
 			}
 		}
 		return $tax_opts;
@@ -465,15 +463,21 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 		// Start Post Types Box
 		$this->start_box( __( 'Post Types Slugs', 'multilingual-wp' ) );
-		$pts_opts = $this->get_post_types();
+		$pts_opts = $this->get_post_types( 'rewrites' );
 		$_rewrites = $rewrites['pt'];
 
 		foreach ( (array) $this->options->enabled_pt as $pt ) {
-			$this->start_box( strip_tags( $pts_opts[ $pt ] ) );
+			$this->start_box( $pts_opts[ $pt ]['label'] );
 
 			$options = array();
 			foreach ( $enabled_langs as $lang ) {
-				$val = isset( $_rewrites[ $pt ][ $lang ] ) ? $_rewrites[ $pt ][ $lang ] : ( isset( $_rewrites[ $pt ] ) ? $_rewrites[ $pt ] : '' );
+				if ( is_array( $_rewrites[ $pt ] ) && isset( $_rewrites[ $pt ][ $lang ] ) ) {
+					$val = $_rewrites[ $pt ][ $lang ];
+				} elseif ( isset( $_rewrites[ $pt ] ) && ! is_array( $_rewrites[ $pt ] ) ) {
+					$val = $_rewrites[ $pt ];
+				} else {
+					$val = $pts_opts[ $pt ]['slug'];
+				}
 				$options[] = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
 					'type' => 'text',
@@ -492,16 +496,22 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 		// Start Taxonomies Box
 		$this->start_box( __( 'Taxonomies Slugs', 'multilingual-wp' ) );
-		$tax_opts = $this->get_taxonomies();
+		$tax_opts = $this->get_taxonomies( 'rewrites' );
 		$_rewrites = $rewrites['tax'];
 		$default_lang = $this->options->default_lang;
 
 		foreach ( (array) $this->options->enabled_tax as $tax ) {
-			$this->start_box( strip_tags( $tax_opts[ $tax ] ) );
+			$this->start_box( $tax_opts[ $tax ]['label'] );
 
 			$options = array();
 			foreach ( $enabled_langs as $lang ) {
-				$val = isset( $_rewrites[ $tax ][ $lang ] ) ? $_rewrites[ $tax ][ $lang ] : ( isset( $_rewrites[ $tax ] ) ? $_rewrites[ $tax ] : '' );
+				if ( is_array( $_rewrites[ $tax ] ) && isset( $_rewrites[ $tax ][ $lang ] ) ) {
+					$val = $_rewrites[ $tax ][ $lang ];
+				} elseif ( isset( $_rewrites[ $tax ] ) && ! is_array( $_rewrites[ $tax ] ) ) {
+					$val = $_rewrites[ $tax ];
+				} else {
+					$val = $tax_opts[ $tax ]['slug'];
+				}
 				$_options = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
 					'type' => 'text',

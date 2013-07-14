@@ -104,7 +104,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 				$Multilingual_WP->create_rel_terms();
 
 				// Move over from qTranslate
-				if ( function_exists( 'qtrans_split' ) ) {
+				if ( function_exists( 'qtrans_split' ) && ! $Multilingual_WP->is_compat_func( 'qtrans_split' ) ) {
 					$contents = qtrans_split( $term->description );
 					$title = isset( $qtrans_term_names[ $term->name ] ) ? $qtrans_term_names[ $term->name ] : array();
 					foreach ( $title as $lang => $tit ) {
@@ -133,7 +133,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 					// TODO: Add support for other multilanguage plugins
 				} else {
 					// Set default language details
-					if ( isset( $rel_langs[ $default_lang ] ) && ( $_term = $Multilingual_WP->get_term( $rel_langs[ $default_lang ], $Multilingual_WP->hash_tax_name( $term->taxonomy, $lang ) ) ) ) {
+					if ( isset( $rel_langs[ $default_lang ] ) && ( $_term = $Multilingual_WP->get_term( $rel_langs[ $default_lang ], $Multilingual_WP->hash_tax_name( $term->taxonomy, $default_lang ) ) ) ) {
 						// If translation already exists, assign that content
 						// This way we won't override default languages
 						$_POST[ "description_{$default_lang}" ] = $term->description = $_term->description;
@@ -195,7 +195,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 				$Multilingual_WP->create_rel_posts();
 
 				// Move over from qTranslate
-				if ( function_exists( 'qtrans_split' ) ) {
+				if ( function_exists( 'qtrans_split' ) && ! $Multilingual_WP->is_compat_func( 'qtrans_split' ) ) {
 					$contents = qtrans_split( $post->post_content );
 					$titles = qtrans_split( $post->post_title );
 					foreach ( $titles as $lang => $title ) {
