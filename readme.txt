@@ -24,7 +24,9 @@ Click on the ZIP button above and then extract it to your plugins directory(or e
 == Changelog ==
 
 = 0.1.2 =
- * Fixed a problem with just "/%postname%/" permalink structure for normal posts.
+ * Fixed a problem with using just "/%postname%/" as a permalink structure.
+ * Fixed a problem with the "fix posts" script and the compat functions.
+ * Fixed a small bug with the settings page - the "Rewrite Settings" tab to be more specific.
 
 = 0.1.1 =
  * Added PHPDoc comments to all .php files. 

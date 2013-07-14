@@ -28,6 +28,7 @@ if ( ! defined( 'MLWP_DIW_MSG' ) ) {
 }
 
 if ( ! function_exists( 'qtrans_convertURL' ) ) {
+	_mlwp()->register_compat_func( 'qtrans_convertURL' );
 	function qtrans_convertURL( $url = '', $lang = '', $forceadmin = false ) {
 		_doing_it_wrong( 'qtrans_convertURL', MLWP_DIW_MSG . ' ' . __( 'Your theme or one of your plugins is using the "qtrans_convertURL" function. It should be updated to use "mlwp_convert_URL()" or "_mlwp()->convert_URL()" instead. Additionally the "$forceadmin"(last) parameter is not supported.', 'multilingual-wp' ), null );
 
@@ -36,6 +37,7 @@ if ( ! function_exists( 'qtrans_convertURL' ) ) {
 }
 
 if ( ! function_exists( 'qtrans_split' ) ) {
+	_mlwp()->register_compat_func( 'qtrans_split' );
 	function qtrans_split( $text ) {
 		_doing_it_wrong( 'qtrans_split', MLWP_DIW_MSG . ' ' . __( 'Your theme or one of your plugins is using the "qtrans_split" function. It should be updated to use "_mlwp()->get_translations()" instead. The behaviour of "_mlwp()->get_translations()" might slightly differ from "qtrans_split". Additionally the "$quicktags" parameter is not supported.', 'multilingual-wp' ), null );
 
@@ -44,6 +46,7 @@ if ( ! function_exists( 'qtrans_split' ) ) {
 }
 
 if ( ! function_exists( 'qtrans_getLanguage' ) ) {
+	_mlwp()->register_compat_func( 'qtrans_getLanguage' );
 	function qtrans_getLanguage() {
 		_doing_it_wrong( 'qtrans_getLanguage', MLWP_DIW_MSG . ' ' . __( 'Your theme or one of your plugins is using the "qtrans_getLanguage" function. It should be updated to use "_mlwp()->current_lang" instead.', 'multilingual-wp' ), null );
 
@@ -52,6 +55,7 @@ if ( ! function_exists( 'qtrans_getLanguage' ) ) {
 }
 
 if ( ! function_exists( 'qtrans_getLanguageName' ) ) {
+	_mlwp()->register_compat_func( 'qtrans_getLanguageName' );
 	function qtrans_getLanguageName() {
 		_doing_it_wrong( 'qtrans_getLanguageName', MLWP_DIW_MSG . ' ' . __( 'Your theme or one of your plugins is using the "qtrans_getLanguageName" function. It currently does not have a substitute.', 'multilingual-wp' ), null );
 
@@ -61,6 +65,7 @@ if ( ! function_exists( 'qtrans_getLanguageName' ) ) {
 }
 
 if ( ! function_exists( 'qtrans_isEnabled' ) ) {
+	_mlwp()->register_compat_func( 'qtrans_isEnabled' );
 	function qtrans_isEnabled( $lang ) {
 		_doing_it_wrong( 'qtrans_isEnabled', MLWP_DIW_MSG . ' ' . __( 'Your theme or one of your plugins is using the "qtrans_isEnabled" function. It should be updated to use "_mlwp()->is_enabled()" instead.', 'multilingual-wp' ), null );
 
@@ -69,6 +74,7 @@ if ( ! function_exists( 'qtrans_isEnabled' ) ) {
 }
 
 if ( ! function_exists( 'qtrans_generateLanguageSelectCode' ) ) {
+	_mlwp()->register_compat_func( 'qtrans_generateLanguageSelectCode' );
 	function qtrans_generateLanguageSelectCode( $style = '', $id = '' ) {
 		_doing_it_wrong( 'qtrans_generateLanguageSelectCode', MLWP_DIW_MSG . ' ' . __( 'Your theme or one of your plugins is using the "qtrans_generateLanguageSelectCode" function. It should be updated to use "mlwp_lang_switcher()" instead.', 'multilingual-wp' ), null );
 
