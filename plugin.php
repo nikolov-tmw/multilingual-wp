@@ -343,6 +343,8 @@ class Multilingual_WP {
 	function __construct() {
 		// Make sure we have the home url before adding all the filters
 		$this->home_url = home_url( '/' );
+		// Store the hostname for the home url
+		$this->home_host = parse_url( $this->home_url, PHP_URL_HOST );
 
 		$this->lang_mode = self::$options->lang_mode;
 
@@ -399,6 +401,7 @@ class Multilingual_WP {
 		$this->register_shortcodes();
 
 		$this->fix_rewrite();
+
 	}
 
 	public function fix_rewrite() {
@@ -418,11 +421,14 @@ class Multilingual_WP {
 			$category_base = preg_replace( $langs_regex, '', $category_base );
 		}
 		$category_base = $category_base ? $category_base : 'category';
-		if ( strpos( $category_base, "{$this->default_lang}/" ) === false && $def_lang_in_url ) {
-			$wp_rewrite->set_category_base( preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$category_base}" ) );
-		} elseif ( strpos( $category_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
-			$wp_rewrite->set_category_base( str_replace( "{$this->default_lang}/", '', $category_base ) );
+		if ( $this->lang_mode == self::LT_PRE ) {
+			if ( strpos( $category_base, "{$this->default_lang}/" ) === false && $def_lang_in_url ) {
+				$category_base = preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$category_base}" );
+			} elseif ( strpos( $category_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
+				$category_base = str_replace( "{$this->default_lang}/", '', $category_base );
+			}
 		}
+		$wp_rewrite->set_category_base( $category_base );
 
 		$tag_base = get_option( 'tag_base' );
 		// Get rid of the language info, in case we've switched the default language
@@ -430,11 +436,14 @@ class Multilingual_WP {
 			$tag_base = preg_replace( $langs_regex, '', $tag_base );
 		}
 		$tag_base = $tag_base ? $tag_base : 'tag';
-		if ( strpos( $tag_base, "{$this->default_lang}/") === false && $def_lang_in_url  ) {
-			$wp_rewrite->set_tag_base( preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$tag_base}" ) );
-		} elseif ( strpos( $tag_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
-			$wp_rewrite->set_tag_base( str_replace( "{$this->default_lang}/", '', $tag_base ) );
+		if ( $this->lang_mode == self::LT_PRE ) {
+			if ( strpos( $tag_base, "{$this->default_lang}/") === false && $def_lang_in_url  ) {
+				$tag_base = preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$tag_base}" );
+			} elseif ( strpos( $tag_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
+				$tag_base = str_replace( "{$this->default_lang}/", '', $tag_base );
+			}
 		}
+		$wp_rewrite->set_tag_base( $tag_base );
 
 		$rwr = $rewrites['page'];
 		$wp_rewrite->pagination_base = urlencode( isset( $rwr[ $lang ] ) ? $rwr[ $lang ] : ( ! is_array( $rwr ) && $rwr ? $rwr : 'page' ) );
@@ -556,6 +565,8 @@ class Multilingual_WP {
 
 		if ( $this->lang_mode == self::LT_QUERY && ( $this->current_lang != $this->default_lang || self::$options->def_lang_in_url ) ) {
 			add_filter( 'user_trailingslashit',        array( $this, 'remove_single_post_trailingslash' ), $this->late_fp, 2 );
+		} elseif ( $this->lang_mode == self::LT_SD ) {
+			add_filter( 'allowed_redirect_hosts',      array( $this, 'add_subdomains_safe_redirect' ) );
 		}
 	}
 
@@ -1262,6 +1273,7 @@ class Multilingual_WP {
 
 			switch ( $this->lang_mode ) {
 				case self::LT_QUERY :
+				default :
 					// Do we have the proper $_GET argument? Is it of an enabled language?
 					if ( isset( $_GET[ self::QUERY_VAR ] ) && $this->is_enabled( $_GET[ self::QUERY_VAR ] ) ) {
 						$this->current_lang = $_GET[ self::QUERY_VAR ];
@@ -1287,8 +1299,18 @@ class Multilingual_WP {
 					break;
 
 				case self::LT_SD : // Sub-domain setup is not enabled yet
-				default :
-					$this->current_lang = $this->default_lang;
+					$curr_host = $_SERVER['HTTP_HOST'];
+					if ( $this->home_host == $curr_host ) {
+						$this->current_lang = $this->default_lang;
+					} else {
+						$enabled_langs_regex = implode( '|', self::$options->enabled_langs );
+						// We're viewing the site in an enabled language
+						if ( preg_match( '~(' . $enabled_langs_regex . ')\.' . preg_quote( $this->home_host, '~' ) . '~' , $curr_host, $matches ) ) {
+							$this->current_lang = $matches[1];
+						} else {
+							$this->current_lang = $this->default_lang;
+						}
+					}
 
 					break;
 			}
@@ -1549,7 +1571,7 @@ class Multilingual_WP {
 		}
 
 		if ( ! isset( $wp->query_vars[ self::QUERY_VAR ] ) ) {
-			// $wp->query_vars[ self::QUERY_VAR ] = $this->current_lang;
+			$wp->query_vars[ self::QUERY_VAR ] = $this->current_lang;
 		}
 	}
 
@@ -2034,8 +2056,29 @@ class Multilingual_WP {
 					
 					break;
 
-				case self::LT_SD : // Sub-domain setup is not enabled yet
-					// Get/add language domain info here
+				case self::LT_SD :
+					$curr_host = $_SERVER['HTTP_HOST'];
+					$curr = $this->curPageURL();
+
+					if ( $this->home_host == $curr_host ) {
+						if ( self::$options->def_lang_in_url ) {
+							// We don't have language info, but we want it
+							wp_redirect( preg_replace( '~' . preg_quote( $this->home_host, '~' ) . '~', "{$this->default_lang}.{$this->home_host}", $curr, 1 ), 301 );
+							exit;
+						}
+						$this->current_lang = $this->default_lang;
+					} elseif ( "{$this->default_lang}.{$this->home_host}" == $curr_host && ! self::$options->def_lang_in_url ) {
+						// We have language info, but we don't want it
+						wp_redirect( preg_replace( '~' . preg_quote( "{$this->default_lang}.{$this->home_host}", '~' ) . '~', $this->home_host, $curr, 1 ), 301 );
+						exit;
+					} else {
+						$enabled_langs_regex = implode( '|', self::$options->enabled_langs );
+						// We're not viewing the site in an enabled language - redirect to default language
+						if ( ! preg_match( '~(' . $enabled_langs_regex . ')\.' . preg_quote( $this->home_host, '~' ) . '~' , $curr_host ) ) {
+							wp_redirect( preg_replace( '~' . preg_quote( "{$curr_host}", '~' ) . '~', $this->home_host, $curr, 1 ), 301 );
+							exit;
+						}
+					}
 
 					break;
 			}
@@ -2965,20 +3008,30 @@ class Multilingual_WP {
 					);
 					$rewrite = false;
 					if ( $tax->rewrite ) {
-						$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || $def_lang_in_url ) ? "{$lang}" : '' ) : '';
+						$slug = '';
 						$rewrite = array();
-						$slug .= $tax->rewrite['with_front'] || in_array( $tax->name, array( 'category', 'post_tag' ) ) ? "{$wp_rewrite->front}" : '/';
-						$slug .= is_array( $rewrites ) && isset( $rewrites[ $tax_name ][ $lang ] ) && $rewrites[ $tax_name ][ $lang ] ? $rewrites[ $tax_name ][ $lang ] : ( isset( $tax->rewrite['slug'] ) ? str_replace( $wp_rewrite->front, '', $tax->rewrite['slug'] ) : $tax_name );
-						
-						$rewrite['with_front'] = false;
-						$rewrite['slug'] = preg_replace( '~/{2,}~', '/', $slug );
-						$rewrite['hierarchical'] = isset( $tax->rewrite['hierarchical'] ) && $tax->rewrite['hierarchical'] ? true : false;
-
-						if ( $lang == $def_lang ) {
-							if ( isset( $wp_taxonomies[ $tax_name ] ) ) {
-								$wp_taxonomies[ $tax_name ]->rewrite['slug'] = $rewrite['slug'];
-							}
+						if ( $this->lang_mode == self::LT_SD ) {
+							$slug .= is_array( $rewrites ) && isset( $rewrites[ $tax_name ][ $lang ] ) && $rewrites[ $tax_name ][ $lang ] ? $rewrites[ $tax_name ][ $lang ] : ( isset( $tax->rewrite['slug'] ) ? str_replace( $wp_rewrite->front, '', $tax->rewrite['slug'] ) : $tax_name );
+							// Only create rewrite settings if the slug is unique
+							$slug = $slug == $wp_taxonomies[ $tax_name ]->rewrite['slug'] ? false : $slug;
+						} else {
+							$slug = $this->lang_mode == self::LT_PRE ? ( ( $lang != $def_lang || $def_lang_in_url ) ? "{$lang}" : '' ) : '';
+							$slug .= $tax->rewrite['with_front'] || in_array( $tax->name, array( 'category', 'post_tag' ) ) ? "{$wp_rewrite->front}" : '/';
+							$slug .= is_array( $rewrites ) && isset( $rewrites[ $tax_name ][ $lang ] ) && $rewrites[ $tax_name ][ $lang ] ? $rewrites[ $tax_name ][ $lang ] : ( isset( $tax->rewrite['slug'] ) ? str_replace( $wp_rewrite->front, '', $tax->rewrite['slug'] ) : $tax_name );
+						}
+						if ( ! $slug ) {
 							$rewrite = false;
+						} else {
+							$rewrite['with_front'] = false;
+							$rewrite['slug'] = preg_replace( '~/{2,}~', '/', $slug );
+							$rewrite['hierarchical'] = isset( $tax->rewrite['hierarchical'] ) && $tax->rewrite['hierarchical'] ? true : false;
+
+							if ( $lang == $def_lang ) {
+								if ( isset( $wp_taxonomies[ $tax_name ] ) ) {
+									$wp_taxonomies[ $tax_name ]->rewrite['slug'] = $rewrite['slug'];
+								}
+								$rewrite = false;
+							}
 						}
 					}
 					$args = array(
@@ -3326,13 +3379,7 @@ class Multilingual_WP {
 	}
 
 	public function convert_URL( $url = '', $lang = '', $force = false ) {
-		static $enabled_langs_regex;
-		if ( ! isset( $enabled_langs_regex ) ) {
-			$enabled_langs_regex = '';
-			if ( $this->lang_mode == self::LT_PRE ) {
-				$enabled_langs_regex = implode( '|', self::$options->enabled_langs );
-			}
-		}
+		$this->setup_elr();
 
 		// Work-around for not confusing the WP::parse_request() method with thinking that the root 
 		// URL doesn't actually contain the language information
@@ -3362,6 +3409,8 @@ class Multilingual_WP {
 							$url = untrailingslashit( str_replace( get_post_type( $langs[ $lang ] ) . '/', '', get_permalink( $langs[ $lang ] ) ) );
 						}
 						$url = strpos( $url, self::QUERY_VAR . "={$lang}" ) !== false ? untrailingslashit( $url ) : $url;
+					} elseif ( $this->lang_mode == self::LT_SD ) {
+						$url = $this->subdomain_url( get_permalink( $this->ID ), $lang );
 					}
 				} else {
 					if ( $this->lang_mode == self::LT_QUERY ) {
@@ -3425,11 +3474,11 @@ class Multilingual_WP {
 				$has_ts = substr( $url, -1 ) === '/';
 				// If this is the default language and the user doesn't want it in the URL's
 				if ( $lang == $this->default_lang && ! self::$options->def_lang_in_url ) {
-					$url = preg_replace( '~^(.*' . preg_quote( trailingslashit( $home ), '~' ) . ')(?:' . $enabled_langs_regex . ')(.*)$~', '$1$2', $url );
+					$url = preg_replace( '~^(.*' . preg_quote( trailingslashit( $home ), '~' ) . ')(?:' . $this->enabled_langs_regex . ')(.*)$~', '$1$2', $url );
 				} else {
-					preg_match( '~^.*' . preg_quote( trailingslashit( $home ), '~' ) . '(' . $enabled_langs_regex . ')(?![^/]).*?$~', $url, $matches );
+					preg_match( '~^.*' . preg_quote( trailingslashit( $home ), '~' ) . '(' . $this->enabled_langs_regex . ')(?![^/]).*?$~', $url, $matches );
 
-					// Did the URL matched a language?
+					// Did the URL match a language?
 					if ( ! empty( $matches ) ) {
 						if ( $matches[1] != $lang ) {
 							$url = preg_replace( '~^(.*' . preg_quote( trailingslashit( $home ), '~' ) . ')(?:' . $matches[1] . ')?(.*)$~', '$1' . $lang . '/$2', $url );
@@ -3444,7 +3493,7 @@ class Multilingual_WP {
 				break;
 
 			case self::LT_SD : // Sub-domain setup is not enabled yet
-				// Get/add language domain info here
+				$url = $this->subdomain_url( $url, $lang );
 
 				break;
 		}
@@ -3463,7 +3512,7 @@ class Multilingual_WP {
 			return $this->convert_URL( '', '', true );
 		}
 
-		if ( $this->lang_mode == self::LT_PRE ) {
+		if ( $this->lang_mode == self::LT_PRE || $this->lang_mode == self::LT_SD ) {
 			if ( $this->is_enabled_pt( $post->post_type ) ) {
 				if ( $post->post_parent ) {
 					$slugs = array();
@@ -3488,6 +3537,9 @@ class Multilingual_WP {
 				if ( isset( $rel_langs[ $this->current_lang ] ) ) {
 					$url = str_replace( '/' . $post->post_name, '/' . $this->get_obj_slug( $rel_langs[ $this->current_lang ], 'mlwp_post' ), $url );
 				}
+			}
+			if ( $this->lang_mode == self::LT_SD ) {
+				$url = $this->convert_URL( $url, '', true );
 			}
 		} elseif ( $this->lang_mode == self::LT_QUERY ) {
 			if ( $this->is_gen_pt( $post->post_type ) && ! $this->getting_gen_pt_permalink ) {
@@ -3542,16 +3594,58 @@ class Multilingual_WP {
 			$slug = $slug ? $slug : $this->get_term_slug_c( $id, $taxonomy );
 			$this->add_slug_cache( $id, $slug, $type1 );
 
-			// We seem to no longer need this :) 
-			// if ( isset( $rel_langs[ $this->current_lang ] ) ) {
-			// 	$url = str_replace( $slug, $this->get_obj_slug( $rel_langs[ $this->current_lang ], $type2, $this->hash_tax_name( $taxonomy ) ), $url );
-			// }
 			$url = str_replace( $rewrites[0], $rewrites[1], $url );
 		} else {
 			$url = $this->convert_URL( $url );
 		}
 
 		return $url;
+	}
+
+	public function subdomain_url( $url = '', $lang = '' ) {
+		$url = $url ? $url : $this->curPageURL();
+		$lang = $lang && $this->is_enabled( $lang ) ? $lang : $this->current_lang;
+		$this->setup_elr();
+
+		// If this is the default language and the user doesn't want it in the URL's
+		if ( $lang == $this->default_lang && ! self::$options->def_lang_in_url ) {
+			$url = preg_replace( '~^(.*)(?:' . $this->enabled_langs_regex . ')\.(' . preg_quote( $this->home_host, '~' ) . '.*)$~', '$1$2', $url, 1 );
+		} else {
+			preg_match( '~^.*(' . $this->enabled_langs_regex . ')\.' . preg_quote( $this->home_host, '~' ) . '.*?$~', $url, $matches );
+
+			// Did the URL match a language?
+			if ( ! empty( $matches ) ) {
+				if ( $matches[1] != $lang ) {
+					$url = preg_replace( '~^(.*)(?:' . $this->enabled_langs_regex . ')\.(' . preg_quote( $this->home_host, '~' ) . '.*)$~', '$1' . $lang . '.$2', $url, 1 );
+				}
+			} else { // Add the language to the URL
+				$url = preg_replace( '~^(.*)(' . preg_quote( $this->home_host, '~' ) . '.*)$~', '$1' . $this->current_lang . '.$2', $url, 1 );
+			}
+		}
+
+		return $url;
+	}
+
+	public function setup_elr() {
+		if ( ! isset( $this->enabled_langs_regex ) || ( $this->enabled_langs_regex == '' && ( $this->lang_mode == self::LT_PRE || $this->lang_mode == self::LT_SD ) ) ) {
+			$this->enabled_langs_regex = '';
+			if ( $this->lang_mode == self::LT_PRE || $this->lang_mode == self::LT_SD ) {
+				$this->enabled_langs_regex = implode( '|', self::$options->enabled_langs );
+			}
+		}
+	}
+
+	public function add_subdomains_safe_redirect( $allowed_hosts ) {
+		// Just in case
+		if ( $this->lang_mode == self::LT_SD ) {
+			foreach ( self::$options->enabled_langs as $lang ) {
+				if ( $lang == $this->default_lang && ! self::$options->def_lang_in_url ) {
+					continue;
+				}
+				$allowed_hosts[] = $lang . '.' . $this->home_host;
+			}
+		}
+		return $allowed_hosts;
 	}
 
 	/**
@@ -4153,7 +4247,7 @@ class Multilingual_WP {
 	 * @access public
 	 */
 	public function filter_comments_by_lang( $comments, $post_id ) {
-		global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity, $overridden_cpage;
+		global $wp_query, $wp_version, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity, $overridden_cpage;
 
 		// Store the Meta Query arguments
 		$meta_query = array( array( 'key' => '_comment_language', 'value' => $this->current_lang ) );
