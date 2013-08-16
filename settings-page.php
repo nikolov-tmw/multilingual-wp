@@ -473,10 +473,10 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			foreach ( $enabled_langs as $lang ) {
 				if ( is_array( $_rewrites[ $pt ] ) && isset( $_rewrites[ $pt ][ $lang ] ) ) {
 					$val = $_rewrites[ $pt ][ $lang ];
-				} elseif ( isset( $_rewrites[ $pt ] ) && ! is_array( $_rewrites[ $pt ] ) ) {
+				} elseif ( is_array( $_rewrites ) && isset( $_rewrites[ $pt ] ) && ! is_array( $_rewrites[ $pt ] ) ) {
 					$val = $_rewrites[ $pt ];
 				} else {
-					$val = $pts_opts[ $pt ]['slug'];
+					$val = preg_replace( '~^/~', '', $pts_opts[ $pt ]['slug'] );
 				}
 				$options[] = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
@@ -507,10 +507,10 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 			foreach ( $enabled_langs as $lang ) {
 				if ( is_array( $_rewrites[ $tax ] ) && isset( $_rewrites[ $tax ][ $lang ] ) ) {
 					$val = $_rewrites[ $tax ][ $lang ];
-				} elseif ( isset( $_rewrites[ $tax ] ) && ! is_array( $_rewrites[ $tax ] ) ) {
+				} elseif ( is_array( $_rewrites ) && isset( $_rewrites[ $tax ] ) && ! is_array( $_rewrites[ $tax ] ) ) {
 					$val = $_rewrites[ $tax ];
 				} else {
-					$val = $tax_opts[ $tax ]['slug'];
+					$val = preg_replace( '~^/~', '', $tax_opts[ $tax ]['slug'] );
 				}
 				$_options = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
