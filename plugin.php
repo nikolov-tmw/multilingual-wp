@@ -4302,5 +4302,19 @@ class Multilingual_WP {
 	}
 }
 
-
 scb_MLWP_init( array( 'Multilingual_WP', 'plugin_init' ) );
+
+$mlwp_options = get_option( 'mlwp_options', array() );
+// Wether we have to override the functions or not
+if ( isset( $mlwp_options['lang_mode'] ) && $mlwp_options['lang_mode'] == Multilingual_WP::LT_SD ) {
+	global $mlwp_login_funcs_exist;
+	$mlwp_login_funcs_exist = false;
+
+	if ( ! function_exists( 'wp_set_auth_cookie' ) && ! function_exists( 'wp_clear_auth_cookie' ) ) {
+		
+	} else {
+		// Will later display a message in the admin section that those functions
+		// have not been overridden and problems might occur.
+		$mlwp_login_funcs_exist = true;
+	}
+}
