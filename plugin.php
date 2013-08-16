@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Multilingual WP
-Version: 0.1.2
+Version: 0.1.2.1
 Description: Add Multilingual functionality to your WordPress site.
 Author: nikolov.tmw
 Author URI: http://themoonwatch.com/en/
@@ -403,7 +403,7 @@ class Multilingual_WP {
 
 	public function fix_rewrite() {
 		global $wp_rewrite;
-		$this->use_trailing_slashes = $wp_rewrite->use_trailing_slashes;
+		$this->use_trailing_slashes = isset( $wp_rewrite->use_trailing_slashes ) ? $wp_rewrite->use_trailing_slashes : false;
 
 		$lang = $this->current_lang;
 
@@ -1616,7 +1616,7 @@ class Multilingual_WP {
 	public function fix_home_page( $wp ) {
 		if ( isset( $wp->query_vars['s'] ) ) {
 			unset( $wp->query_vars['pagename'], $wp->query_vars['page'] );
-		} elseif ( in_array( $wp->request, self::$options->enabled_langs ) ) {
+		} elseif ( in_array( $wp->request, self::$options->enabled_langs ) || ! $wp->request ) {
 			// So we set the query_vars array to an empty array, thus forcing the display of the home page :)
 			$wp->query_vars = array();
 		}
