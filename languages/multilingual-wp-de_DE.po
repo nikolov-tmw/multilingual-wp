@@ -3,9 +3,9 @@ msgstr ""
 "Project-Id-Version: Multilingual WP v0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-08-13 15:29+0100\n"
+"PO-Revision-Date: 2013-08-28 08:25+0100\n"
 "Last-Translator: Gérard <Mathiuet>\n"
-"Language-Team: \n"
+"Language-Team: Gérard Mathiuet <gerard@mathiuet.ch>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -75,7 +75,7 @@ msgstr ""
 # @ multilingual-wp
 #: add-language-page.php:131 settings-page.php:360
 msgid "Language Locale <span class=\"required\">*</span>"
-msgstr ""
+msgstr "Sprach-Code <span class=\"required\">*</span>"
 
 # @ multilingual-wp
 #: add-language-page.php:134
@@ -83,21 +83,24 @@ msgid ""
 "Enter the PHP/WordPress locale for this language. Example: <code>en_US</"
 "code>."
 msgstr ""
+"Gib den PHP/WordPress-Code für diese Sprache ein. Beispiel: <code>de_DE</"
+"code>."
 
 # @ multilingual-wp
 #: add-language-page.php:139
 msgid "Language ID <span class=\"required\">*</span>"
-msgstr ""
+msgstr "Sprach-ID <span class=\"required\">*</span>"
 
 # @ multilingual-wp
 #: add-language-page.php:142
 msgid "Enter the two-letter ID for this language. Example: <code>en</code>."
 msgstr ""
+"Gib eine zwei-Zeichen-ID für diese Sprache ein. Beispiel: <code>de</code>."
 
 # @ multilingual-wp
 #: add-language-page.php:147 settings-page.php:375
 msgid "Not Available Message <span class=\"required\">*</span>"
-msgstr ""
+msgstr "«Nicht verfügbar»-Mitteilung <span class=\"required\">*</span>"
 
 # @ multilingual-wp
 #: add-language-page.php:150 settings-page.php:378
@@ -105,36 +108,38 @@ msgid ""
 "Enter the message that will be displayed when the requested post/page is not "
 "available in this language."
 msgstr ""
+"Gib die Mitteilung ein, die angezeigt wird, wenn die gewünschte Seite nicht "
+"in dieser Sprache verfügbar ist."
 
 # @ multilingual-wp
 #: add-language-page.php:154 settings-page.php:382
 msgid "Date Format"
-msgstr ""
+msgstr "Datums-Format"
 
 # @ multilingual-wp
 #: add-language-page.php:157 settings-page.php:385
 msgid "Enter a custom date format for this language."
-msgstr ""
+msgstr "Gib ein benutzerdefiniertes Datums-Format für diese Sprache ein."
 
 # @ multilingual-wp
 #: add-language-page.php:161 settings-page.php:389
 msgid "Time Format"
-msgstr ""
+msgstr "Zeit-Format"
 
 # @ multilingual-wp
 #: add-language-page.php:164
 msgid "Enter a custo time format for this language."
-msgstr ""
+msgstr "Gib ein benutzerdefiniertes Zeit-Format für diese Sprache ein."
 
 # @ multilingual-wp
 #: add-language-page.php:168 settings-page.php:367
 msgid "Language Flag <span class=\"required\">*</span>"
-msgstr ""
+msgstr "Sprach-Flagge <span class=\"required\">*</span>"
 
 # @ multilingual-wp
 #: add-language-page.php:177 settings-page.php:396
 msgid "Language Order"
-msgstr ""
+msgstr "Sprach-Reihenfolge"
 
 # @ multilingual-wp
 #: add-language-page.php:180 settings-page.php:399
@@ -142,1349 +147,1351 @@ msgid ""
 "Enter the position in which this language should appear( smallest to "
 "largest )."
 msgstr ""
+"Gib die Reihenfolge ein, in welcher die Sprache erscheinen soll (kleinste "
+"zur grössten)."
 
 # @ multilingual-wp
 #: add-language-page.php:219 add-language-page.php:221 settings-page.php:418
 #: settings-page.php:420
 msgid "Custom Flag"
-msgstr ""
+msgstr "Benutzerdefinierte Flagge"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "afghanistan"
-msgstr ""
+msgstr "afghanistan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "aland islands"
-msgstr ""
+msgstr "aland islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "albania"
-msgstr ""
+msgstr "albania"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "algeria"
-msgstr ""
+msgstr "algeria"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "american samoa"
-msgstr ""
+msgstr "american samoa"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "andorra"
-msgstr ""
+msgstr "andorra"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "angola"
-msgstr ""
+msgstr "angola"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "anguilla"
-msgstr ""
+msgstr "anguilla"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "antarctica"
-msgstr ""
+msgstr "antarctica"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "antigua and barbuda"
-msgstr ""
+msgstr "antigua and barbuda"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "argentina"
-msgstr ""
+msgstr "argentina"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "armenia"
-msgstr ""
+msgstr "armenia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "aruba"
-msgstr ""
+msgstr "aruba"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "australia"
-msgstr ""
+msgstr "australia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "austria"
-msgstr ""
+msgstr "austria"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "azerbaijan"
-msgstr ""
+msgstr "azerbaijan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bahamas"
-msgstr ""
+msgstr "bahamas"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bahrain"
-msgstr ""
+msgstr "bahrain"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bangladesh"
-msgstr ""
+msgstr "bangladesh"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "barbados"
-msgstr ""
+msgstr "barbados"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "belarus"
-msgstr ""
+msgstr "belarus"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "belgium"
-msgstr ""
+msgstr "belgium"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "belize"
-msgstr ""
+msgstr "belize"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "benin"
-msgstr ""
+msgstr "benin"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bermuda"
-msgstr ""
+msgstr "bermuda"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bhutan"
-msgstr ""
+msgstr "bhutan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "biot"
-msgstr ""
+msgstr "biot"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bolivia"
-msgstr ""
+msgstr "bolivia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bosnian"
-msgstr ""
+msgstr "bosnian"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "botswana"
-msgstr ""
+msgstr "botswana"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bouvet island"
-msgstr ""
+msgstr "bouvet island"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "brazil"
-msgstr ""
+msgstr "brazil"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "british antarctic territory"
-msgstr ""
+msgstr "british antarctic territory"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "british virgin islands"
-msgstr ""
+msgstr "british virgin islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "brunei"
-msgstr ""
+msgstr "brunei"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "bulgaria"
-msgstr ""
+msgstr "bulgaria"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "burkina faso"
-msgstr ""
+msgstr "burkina faso"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "burma"
-msgstr ""
+msgstr "burma"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "burundi"
-msgstr ""
+msgstr "burundi"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cambodia"
-msgstr ""
+msgstr "cambodia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cameroon"
-msgstr ""
+msgstr "cameroon"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "canada"
-msgstr ""
+msgstr "canada"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cape verde"
-msgstr ""
+msgstr "cape verde"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cayman islands"
-msgstr ""
+msgstr "cayman islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "centralafricanrepublic"
-msgstr ""
+msgstr "centralafricanrepublic"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "chad"
-msgstr ""
+msgstr "chad"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "chile"
-msgstr ""
+msgstr "chile"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "china"
-msgstr ""
+msgstr "china"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "christmas island"
-msgstr ""
+msgstr "christmas island"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cocos islands"
-msgstr ""
+msgstr "cocos islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "colombia"
-msgstr ""
+msgstr "colombia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "comoros"
-msgstr ""
+msgstr "comoros"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "congo kinshasa"
-msgstr ""
+msgstr "congo kinshasa"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "congo"
-msgstr ""
+msgstr "congo"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cook islands"
-msgstr ""
+msgstr "cook islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "costa rica"
-msgstr ""
+msgstr "costa rica"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "croatian"
-msgstr ""
+msgstr "croatian"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cuba"
-msgstr ""
+msgstr "cuba"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "cyprus"
-msgstr ""
+msgstr "cyprus"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "czech republic"
-msgstr ""
+msgstr "czech republic"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "denmark"
-msgstr ""
+msgstr "denmark"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "djibouti"
-msgstr ""
+msgstr "djibouti"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "dominicana"
-msgstr ""
+msgstr "dominicana"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "dominican republic"
-msgstr ""
+msgstr "dominican republic"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "east timor"
-msgstr ""
+msgstr "east timor"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "ecuador"
-msgstr ""
+msgstr "ecuador"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "egypt"
-msgstr ""
+msgstr "egypt"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "el salvador"
-msgstr ""
+msgstr "el salvador"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "england"
-msgstr ""
+msgstr "england"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "equatorial guinea"
-msgstr ""
+msgstr "equatorial guinea"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "eritrea"
-msgstr ""
+msgstr "eritrea"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "estonia"
-msgstr ""
+msgstr "estonia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "ethiopia"
-msgstr ""
+msgstr "ethiopia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "european union"
-msgstr ""
+msgstr "european union"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "ex yugoslavia"
-msgstr ""
+msgstr "ex yugoslavia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "falkland islands"
-msgstr ""
+msgstr "falkland islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "faroe islands"
-msgstr ""
+msgstr "faroe islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "fiji"
-msgstr ""
+msgstr "fiji"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "finland"
-msgstr ""
+msgstr "finland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "france"
-msgstr ""
+msgstr "france"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "french polynesia"
-msgstr ""
+msgstr "french polynesia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "french southern territories"
-msgstr ""
+msgstr "french southern territories"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "gabon"
-msgstr ""
+msgstr "gabon"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "gambia"
-msgstr ""
+msgstr "gambia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "georgia"
-msgstr ""
+msgstr "georgia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "germany"
-msgstr ""
+msgstr "germany"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "ghana"
-msgstr ""
+msgstr "ghana"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "gibraltar"
-msgstr ""
+msgstr "gibraltar"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "greece"
-msgstr ""
+msgstr "greece"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "greenland"
-msgstr ""
+msgstr "greenland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "grenada"
-msgstr ""
+msgstr "grenada"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "guadeloupe"
-msgstr ""
+msgstr "guadeloupe"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "guam"
-msgstr ""
+msgstr "guam"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "guatemala"
-msgstr ""
+msgstr "guatemala"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "guernsey"
-msgstr ""
+msgstr "guernsey"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "guinea bissau"
-msgstr ""
+msgstr "guinea bissau"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "guinea"
-msgstr ""
+msgstr "guinea"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "guyana"
-msgstr ""
+msgstr "guyana"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "haiti"
-msgstr ""
+msgstr "haiti"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "holy see"
-msgstr ""
+msgstr "holy see"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "honduras"
-msgstr ""
+msgstr "honduras"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "hong kong"
-msgstr ""
+msgstr "hong kong"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "hungary"
-msgstr ""
+msgstr "hungary"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "iceland"
-msgstr ""
+msgstr "iceland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "india"
-msgstr ""
+msgstr "india"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "indonesia"
-msgstr ""
+msgstr "indonesia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "iran"
-msgstr ""
+msgstr "iran"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "iraq"
-msgstr ""
+msgstr "iraq"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "ireland"
-msgstr ""
+msgstr "ireland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "isle of man"
-msgstr ""
+msgstr "isle of man"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "israel"
-msgstr ""
+msgstr "israel"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "italy"
-msgstr ""
+msgstr "italy"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "ivory coast"
-msgstr ""
+msgstr "ivory coast"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "jamaica"
-msgstr ""
+msgstr "jamaica"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "jan mayen"
-msgstr ""
+msgstr "jan mayen"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "japan"
-msgstr ""
+msgstr "japan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "jarvis island"
-msgstr ""
+msgstr "jarvis island"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "jersey"
-msgstr ""
+msgstr "jersey"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "jordan"
-msgstr ""
+msgstr "jordan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "kazakhstan"
-msgstr ""
+msgstr "kazakhstan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "kenya"
-msgstr ""
+msgstr "kenya"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "kiribati"
-msgstr ""
+msgstr "kiribati"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "korea"
-msgstr ""
+msgstr "korea"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "kosovo"
-msgstr ""
+msgstr "kosovo"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "kuwait"
-msgstr ""
+msgstr "kuwait"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "kyrgyzstan"
-msgstr ""
+msgstr "kyrgyzstan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "laos"
-msgstr ""
+msgstr "laos"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "latvia"
-msgstr ""
+msgstr "latvia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "lebanon"
-msgstr ""
+msgstr "lebanon"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "lesotho"
-msgstr ""
+msgstr "lesotho"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "liberia"
-msgstr ""
+msgstr "liberia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "libya"
-msgstr ""
+msgstr "libya"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "liechtenstein"
-msgstr ""
+msgstr "liechtenstein"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "lithuania"
-msgstr ""
+msgstr "lithuania"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "luxembourg"
-msgstr ""
+msgstr "luxembourg"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "macau"
-msgstr ""
+msgstr "macau"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "macedonia"
-msgstr ""
+msgstr "macedonia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "madagascar"
-msgstr ""
+msgstr "madagascar"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "malawi"
-msgstr ""
+msgstr "malawi"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "malaysia"
-msgstr ""
+msgstr "malaysia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "maldives"
-msgstr ""
+msgstr "maldives"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "mali"
-msgstr ""
+msgstr "mali"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "malta"
-msgstr ""
+msgstr "malta"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "marshall islands"
-msgstr ""
+msgstr "marshall islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "martinique"
-msgstr ""
+msgstr "martinique"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "mauritania"
-msgstr ""
+msgstr "mauritania"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "mauritius"
-msgstr ""
+msgstr "mauritius"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "mayotte"
-msgstr ""
+msgstr "mayotte"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "mexico"
-msgstr ""
+msgstr "mexico"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "micronesia"
-msgstr ""
+msgstr "micronesia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "moldova"
-msgstr ""
+msgstr "moldova"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "monaco"
-msgstr ""
+msgstr "monaco"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "mongolia"
-msgstr ""
+msgstr "mongolia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "montenegro"
-msgstr ""
+msgstr "montenegro"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "montserrat"
-msgstr ""
+msgstr "montserrat"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "morocco"
-msgstr ""
+msgstr "morocco"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "mozambique"
-msgstr ""
+msgstr "mozambique"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "myanmar"
-msgstr ""
+msgstr "myanmar"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "namibia"
-msgstr ""
+msgstr "namibia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "nauru"
-msgstr ""
+msgstr "nauru"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "nepal"
-msgstr ""
+msgstr "nepal"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "netherlands antilles"
-msgstr ""
+msgstr "netherlands antilles"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "netherlands"
-msgstr ""
+msgstr "netherlands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "new caledonia"
-msgstr ""
+msgstr "new caledonia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "new zealand"
-msgstr ""
+msgstr "new zealand"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "nicaragua"
-msgstr ""
+msgstr "nicaragua"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "nigeria"
-msgstr ""
+msgstr "nigeria"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "niger"
-msgstr ""
+msgstr "niger"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "niue"
-msgstr ""
+msgstr "niue"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "norfolk island"
-msgstr ""
+msgstr "norfolk island"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "northern ireland"
-msgstr ""
+msgstr "northern ireland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "northern mariana islands"
-msgstr ""
+msgstr "northern mariana islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "north korea"
-msgstr ""
+msgstr "north korea"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "norway"
-msgstr ""
+msgstr "norway"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "oman"
-msgstr ""
+msgstr "oman"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "pakistan"
-msgstr ""
+msgstr "pakistan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "palau"
-msgstr ""
+msgstr "palau"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "palestinian territory"
-msgstr ""
+msgstr "palestinian territory"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "panama"
-msgstr ""
+msgstr "panama"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "papua new guinea"
-msgstr ""
+msgstr "papua new guinea"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "paraguay"
-msgstr ""
+msgstr "paraguay"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "peru"
-msgstr ""
+msgstr "peru"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "philippines"
-msgstr ""
+msgstr "philippines"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "pitcairn"
-msgstr ""
+msgstr "pitcairn"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "poland"
-msgstr ""
+msgstr "poland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "portugal"
-msgstr ""
+msgstr "portugal"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "puerto rico"
-msgstr ""
+msgstr "puerto rico"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "qatar"
-msgstr ""
+msgstr "qatar"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "reunion"
-msgstr ""
+msgstr "reunion"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "romania"
-msgstr ""
+msgstr "romania"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "russia"
-msgstr ""
+msgstr "russia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "rwanda"
-msgstr ""
+msgstr "rwanda"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint barthelemy"
-msgstr ""
+msgstr "saint barthelemy"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint helena dependencies"
-msgstr ""
+msgstr "saint helena dependencies"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint helena"
-msgstr ""
+msgstr "saint helena"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint kitts and nevis"
-msgstr ""
+msgstr "saint kitts and nevis"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint lucia"
-msgstr ""
+msgstr "saint lucia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint martin"
-msgstr ""
+msgstr "saint martin"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint pierre and miquelon"
-msgstr ""
+msgstr "saint pierre and miquelon"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saint vincent and the grenadines"
-msgstr ""
+msgstr "saint vincent and the grenadines"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "samoa"
-msgstr ""
+msgstr "samoa"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "san marino"
-msgstr ""
+msgstr "san marino"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "sao tome and principe"
-msgstr ""
+msgstr "sao tome and principe"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "saudi arabia"
-msgstr ""
+msgstr "saudi arabia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "scotland"
-msgstr ""
+msgstr "scotland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "senegal"
-msgstr ""
+msgstr "senegal"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "serbia"
-msgstr ""
+msgstr "serbia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "seychelles"
-msgstr ""
+msgstr "seychelles"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "sierra leone"
-msgstr ""
+msgstr "sierra leone"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "singapore"
-msgstr ""
+msgstr "singapore"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "slovakia"
-msgstr ""
+msgstr "slovakia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "slovenia"
-msgstr ""
+msgstr "slovenia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "smom"
-msgstr ""
+msgstr "smom"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "solomon islands"
-msgstr ""
+msgstr "solomon islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "somalia"
-msgstr ""
+msgstr "somalia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "south africa"
-msgstr ""
+msgstr "south africa"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "south georgia"
-msgstr ""
+msgstr "south georgia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "spain"
-msgstr ""
+msgstr "spain"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "spm"
-msgstr ""
+msgstr "spm"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "sri lanka"
-msgstr ""
+msgstr "sri lanka"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "sudan"
-msgstr ""
+msgstr "sudan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "suriname"
-msgstr ""
+msgstr "suriname"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "svalbard"
-msgstr ""
+msgstr "svalbard"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "svg"
-msgstr ""
+msgstr "svg"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "swaziland"
-msgstr ""
+msgstr "swaziland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "sweden"
-msgstr ""
+msgstr "sweden"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "switzerland"
-msgstr ""
+msgstr "switzerland"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "syria"
-msgstr ""
+msgstr "syria"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "taiwan"
-msgstr ""
+msgstr "taiwan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "tajikistan"
-msgstr ""
+msgstr "tajikistan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "tanzania"
-msgstr ""
+msgstr "tanzania"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "thailand"
-msgstr ""
+msgstr "thailand"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "timor leste"
-msgstr ""
+msgstr "timor leste"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "togo"
-msgstr ""
+msgstr "togo"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "tokelau"
-msgstr ""
+msgstr "tokelau"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "tonga"
-msgstr ""
+msgstr "tonga"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "trinidad and tobago"
-msgstr ""
+msgstr "trinidad and tobago"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "tunisia"
-msgstr ""
+msgstr "tunisia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "turkey"
-msgstr ""
+msgstr "turkey"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "turkmenistan"
-msgstr ""
+msgstr "turkmenistan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "turks and caicos islands"
-msgstr ""
+msgstr "turks and caicos islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "tuvalu"
-msgstr ""
+msgstr "tuvalu"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "uganda"
-msgstr ""
+msgstr "uganda"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "ukraine"
-msgstr ""
+msgstr "ukraine"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "united arab emirates"
-msgstr ""
+msgstr "united arab emirates"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "united kingdom"
-msgstr ""
+msgstr "united kingdom"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "united states"
-msgstr ""
+msgstr "united states"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "uruguay"
-msgstr ""
+msgstr "uruguay"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "uzbekistan"
-msgstr ""
+msgstr "uzbekistan"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "vanuatu"
-msgstr ""
+msgstr "vanuatu"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "vatican city"
-msgstr ""
+msgstr "vatican city"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "venezuela"
-msgstr ""
+msgstr "venezuela"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "vietnam"
-msgstr ""
+msgstr "vietnam"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "virgin islands"
-msgstr ""
+msgstr "virgin islands"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "wales"
-msgstr ""
+msgstr "wales"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "wallis and futuna"
-msgstr ""
+msgstr "wallis and futuna"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "western sahara"
-msgstr ""
+msgstr "western sahara"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "yemen"
-msgstr ""
+msgstr "yemen"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "zambia"
-msgstr ""
+msgstr "zambia"
 
 # @ multilingual-wp
 #: flags_data.php:13
 msgid "zimbabwe"
-msgstr ""
+msgstr "zimbabwe"
 
 # @ multilingual-wp
 #: plugin.php:422
 msgid "Comment Language"
-msgstr "Език на коментара"
+msgstr "Kommentar-Sprache"
 
 # @ multilingual-wp
 #: plugin.php:536 plugin.php:539
 msgid "Languages"
-msgstr "Езици"
+msgstr "Sprachen"
 
 # @ multilingual-wp
 #: plugin.php:1754 plugin.php:2333
 msgid "Language"
-msgstr "Език"
+msgstr "Sprache"
 
 # @ multilingual-wp
 #: plugin.php:1759
 msgid "Slug:"
-msgstr ""
+msgstr "Slug:"
 
 # @ multilingual-wp
 #: plugin.php:2293
 msgid "Select the Comment's Language:"
-msgstr "Изберете езика за този коментар:"
+msgstr "Wähle die Sprache des Kommentars:"
 
 # @ multilingual-wp
 #: plugin.php:2350
 #, php-format
 msgid "Language not set, or inactive(language ID is \"%s\")"
-msgstr "Няма избран език, или езика е деактивиран(кода на езика е \"%s\")"
+msgstr "Sprache nicht gesetzt oder inaktiv (Sprach-ID ist «%s»)"
 
 # @ multilingual-wp
 #: plugin.php:2369
 #, php-format
 msgid "The language with id \"%s\" is currently not enabled."
-msgstr "Езика с код \"%s\" не е активен в момента."
+msgstr "Die Sprache mit der ID «%s» ist zur Zeit nicht aktiviert."
 
 # @ multilingual-wp
 #: plugin.php:2375
@@ -1492,7 +1499,9 @@ msgstr "Езика с код \"%s\" не е активен в момента."
 msgid ""
 "The language of comments with ids \"%s\" has been successfully changed to "
 "\"%s\"."
-msgstr "Езика на коментари с ID-та \"%s\" беше променен успешно на \"%s\"."
+msgstr ""
+"Die Sprache der Kommentare mit den IDs «%s» wurden erfolgreich zu «%s» "
+"geändert."
 
 # @ multilingual-wp
 #: plugin.php:2405
@@ -1502,7 +1511,7 @@ msgstr "Bitte wähle zuerst den/die Kommentar(e) aus!"
 # @ multilingual-wp
 #: plugin.php:2462
 msgid "Bulk Set Language"
-msgstr ""
+msgstr "Massenbearbeitung: Sprache setzen"
 
 # @ multilingual-wp
 #: scb/AdminPage.php:176 settings-page.php:126
@@ -1517,7 +1526,7 @@ msgstr "Änderungen speichern"
 # @ multilingual-wp
 #: scb/AdminPage.php:363 settings-page.php:10 settings-page.php:13
 msgid "Settings"
-msgstr ""
+msgstr "Einstellungen"
 
 # @ multilingual-wp
 #: settings-page.php:45
@@ -1527,22 +1536,27 @@ msgid ""
 "\"Update all of my posts\" button in order to make sure that all of your "
 "posts are available in all languages."
 msgstr ""
+"Bitte besuche die Seite <a href=\"%1$s\">Einträge aktualisieren</a> und "
+"klicke auf den «Aktualisiere alle Beiträge»-Knopf, um sicherzustellen, dass "
+"alle Beiträge in allen Sprachen verfügbar sind."
 
 # @ multilingual-wp
 #: settings-page.php:130
 #, php-format
 msgid "Could not write to \"%s\", Gettext Databases could not be downloaded!"
 msgstr ""
+"Konnte «%s» nicht schreiben, Gettext-Datenbanken konnten nicht "
+"heruntergeladen werden!"
 
 # @ multilingual-wp
 #: settings-page.php:9
 msgid "Multilingual WP"
-msgstr ""
+msgstr "Multilingual WP"
 
 # @ multilingual-wp
 #: settings-page.php:142
 msgid "Hold on, while we're updating the .mo files for you."
-msgstr ""
+msgstr "Bitte warte, während wir die .mo-Dateien für dich aktualisieren."
 
 # @ multilingual-wp
 #: settings-page.php:152
@@ -1551,36 +1565,38 @@ msgid ""
 "Oh snap! We were unable to get any .mo files :( Please try <a target=\"_blank"
 "\" href=\"%s\">downloading them manually</a>."
 msgstr ""
+"Oh nein! Wir konnten keine .mo-Dateien herunterladen :( Bitte versuche, sie "
+"<a target=\"_blank\" href=\"%s\">manuell herunterzuladen</a>."
 
 # @ multilingual-wp
 #: settings-page.php:196
 msgid "General Settings"
-msgstr ""
+msgstr "Allgemeine Einstellungen"
 
 # @ multilingual-wp
 #: settings-page.php:200
 msgid "Update .mo files now"
-msgstr ""
+msgstr "Aktualisiere jetzt .mo-Dateien"
 
 # @ multilingual-wp
 #: settings-page.php:219
 msgid "Default Language"
-msgstr ""
+msgstr "Standard-Sprache"
 
 # @ multilingual-wp
 #: settings-page.php:222
 msgid "Please select your blog's default language."
-msgstr ""
+msgstr "Bitte wähle die Standard-Sprache."
 
 # @ multilingual-wp
 #: settings-page.php:229
 msgid "Please select the languages that you want your website to support."
-msgstr ""
+msgstr "Bitte wähle die Sprachen, die WordPress unterstützen soll."
 
 # @ multilingual-wp
 #: settings-page.php:239
 msgid "Default Flag Size"
-msgstr ""
+msgstr "Standard-Flaggengrösse"
 
 # @ multilingual-wp
 #: settings-page.php:242
@@ -1590,26 +1606,29 @@ msgid ""
 "language-select widgets). You can override this on a per-widget bassis. Here "
 "is an example of the selected size: <br />%s"
 msgstr ""
+"Setze die standardmässige Grösse der Flaggen, welche die jeweilige Sprache "
+"repräsentieren (normalerweise im Sprachwechsler-Widget). Du kannst dies im "
+"Widget überschreiben. Hier ist ein Beispiel der ausgewählen Grösse:<br>%s"
 
 # @ multilingual-wp
 #: settings-page.php:242
 msgid "Antarctica"
-msgstr ""
+msgstr "Antarktis"
 
 # @ multilingual-wp
 #: settings-page.php:250
 msgid "Post"
-msgstr ""
+msgstr "Beitrag"
 
 # @ multilingual-wp
 #: settings-page.php:253
 msgid "Page"
-msgstr ""
+msgstr "Seite"
 
 # @ multilingual-wp
 #: settings-page.php:267
 msgid "Please select which post types you want to be multilingual."
-msgstr ""
+msgstr "Bitte wähle, welche Seiten-Typen mehrsprachig sein sollen."
 
 # @ multilingual-wp
 #: settings-page.php:310
@@ -1619,12 +1638,12 @@ msgstr "UI anzeigen?"
 # @ multilingual-wp
 #: settings-page.php:314 settings-page.php:332 widgets.php:106
 msgid "No"
-msgstr ""
+msgstr "Nein"
 
 # @ multilingual-wp
 #: settings-page.php:314 settings-page.php:332 widgets.php:107
 msgid "Yes"
-msgstr ""
+msgstr "Ja"
 
 # @ multilingual-wp
 #: settings-page.php:315
@@ -1632,26 +1651,28 @@ msgid ""
 "Whether to display the User Interface for the post types added by "
 "Multilingual WP."
 msgstr ""
+"Ob die Benutzeroberfläche für die von «Multilingual WP» hinzugefügten "
+"Seitentypen angezeigt werden soll. "
 
 # @ multilingual-wp
 #: settings-page.php:319
 msgid "Language Rewrite Mode"
-msgstr ""
+msgstr "Link-Umschreibung"
 
 # @ multilingual-wp
 #: settings-page.php:323
 msgid "Pre-Path mode"
-msgstr ""
+msgstr "«Vor dem Pfad»-Modus"
 
 # @ multilingual-wp
 #: settings-page.php:323
 msgid "Query Variable mode"
-msgstr ""
+msgstr "«Query-Variable»-Modus"
 
 # @ multilingual-wp
 #: settings-page.php:323
 msgid "Sub-Domain mode"
-msgstr ""
+msgstr "«Sub-Domain»-Modus"
 
 # @ multilingual-wp
 #: settings-page.php:324
@@ -1664,11 +1685,17 @@ msgid ""
 "prepend {xx}. to your site's domain to all non-default language links. This "
 "requires additional server configuration."
 msgstr ""
+"Wähle den Typ für die Umschreibung der Links.<br><code>«Vor dem Pfad»</code> "
+"wird bei allen nicht-standardsprachigen Links ein {xx}/ hinzufügen, bei "
+"welchem {xx} für die zwei Buchstaben des Sprachcodes steht.<br>Der "
+"<code>«Query-Variable»-Modus</code> wird allen nicht-standardsprachigen "
+"Links <code>?language={xx}</code> hinzufügen, wobei {xx} für die zwei "
+"Buchstaben des Sprachcodes steht.<br>Der <code>«Sub-Domain»-Modus</code>"
 
 # @ multilingual-wp
 #: settings-page.php:328
 msgid "Default Language in URL's?"
-msgstr ""
+msgstr "Standard-Sprache in URL's?"
 
 # @ multilingual-wp
 #: settings-page.php:333
@@ -1678,16 +1705,19 @@ msgid ""
 "selected \"Yes\", the home page URL will be <code>http://example.com/en/</"
 "code> otherwise it will be <code>http://example.com/</code>."
 msgstr ""
+"Wenn «Ja» ausgewählt ist, werden der Standard-Sprache auch in der URL "
+"angezeigt, zum Beispiel <code>http://example.com/en/</code>. Ansonsten "
+"lautet die URL <code>http://example.com/</code>"
 
 # @ multilingual-wp
 #: settings-page.php:342
 msgid "Language Settings"
-msgstr ""
+msgstr "Sprach-Einstellungen"
 
 # @ multilingual-wp
 #: settings-page.php:346
 msgid "Here you can change the settings for each supported language."
-msgstr ""
+msgstr "Hier kannst du die Einstellungen für jede unterstützte Sprache ändern."
 
 # @ multilingual-wp
 #: settings-page.php:363
@@ -1695,16 +1725,18 @@ msgid ""
 "Enter the PHP/WordPress locale for this language. For instance: <code>en_US</"
 "code>."
 msgstr ""
+"Gib den PHP/WordPress-Code für diese Sprache ein. Zum Beispiel: <code>de_DE</"
+"code>."
 
 # @ multilingual-wp
 #: settings-page.php:392
 msgid "Enter a custom time format for this language."
-msgstr ""
+msgstr "Gib ein benutzerdefiniertes Zeitformat für diese Sprahe ein."
 
 # @ multilingual-wp
 #: update-posts-page.php:55
 msgid "Cheatin&#8217; uh?"
-msgstr ""
+msgstr "Da ist etwas schief gelaufen…"
 
 # @ multilingual-wp
 #: update-posts-page.php:71
@@ -1713,22 +1745,24 @@ msgid ""
 "The post \"%s\" was ignored, because it's parent post has not been updated "
 "yet."
 msgstr ""
+"Der Beitrag «%s» wurde ignoriert, weil der Eltern-Beitrag noch nicht "
+"aktualisiert wurde."
 
 # @ multilingual-wp
 #: update-posts-page.php:110
 #, php-format
 msgid "The post \"%s\" has been successfully updated."
-msgstr ""
+msgstr "Der Beitrag «%s» wurde erfolgreich aktualisiert."
 
 # @ multilingual-wp
 #: update-posts-page.php:116
 msgid "All posts have been successfully updated!"
-msgstr ""
+msgstr "Alle Beiträge wurden erfolgreich aktualisiert!"
 
 # @ multilingual-wp
 #: update-posts-page.php:9 update-posts-page.php:11
 msgid "Fix Posts"
-msgstr ""
+msgstr "Beiträge aktualisieren"
 
 # @ multilingual-wp
 #: update-posts-page.php:160
@@ -1736,54 +1770,56 @@ msgid ""
 "This tool will run all of your enabled post types and make sure that all "
 "enabled languages are present."
 msgstr ""
+"Dieses Werkzeug wird alle aktivierten Seitentypen durchlaufen und "
+"sicherstellen, dass alle aktivierten Sprachen präsent sind."
 
 # @ multilingual-wp
 #: update-posts-page.php:162
 #, php-format
 msgid "We found %s posts in your site."
-msgstr ""
+msgstr "Es wurden %s Beiträge gefunden."
 
 # @ multilingual-wp
 #: update-posts-page.php:163
 #, php-format
 msgid "Wait for %s seconds, before doing another batch."
-msgstr ""
+msgstr "Warte %s Sekunden, bevor du einen weiteren Stapel machst."
 
 # @ multilingual-wp
 #: update-posts-page.php:168
 msgid "Posts Per Batch:"
-msgstr ""
+msgstr "Beiträge pro Stapel:"
 
 # @ multilingual-wp
 #: update-posts-page.php:169
 msgid "Loading..."
-msgstr ""
+msgstr "Lade…"
 
 # @ multilingual-wp
 #: update-posts-page.php:170
 #, php-format
 msgid "Waiting for %s seconds, until next batch..."
-msgstr ""
+msgstr "Warte %s Sekunden bis zum nächsten Stapel"
 
 # @ multilingual-wp
 #: update-posts-page.php:171
 msgid "Update all of my posts"
-msgstr ""
+msgstr "Aktualisiere alle Beiträge"
 
 # @ multilingual-wp
 #: update-posts-page.php:171
 msgid "Stop!"
-msgstr ""
+msgstr "Stop!"
 
 # @ multilingual-wp
 #: widgets.php:26
 msgid "Language Switcher"
-msgstr ""
+msgstr "Sprachwechsler"
 
 # @ multilingual-wp
 #: widgets.php:27
 msgid "Display a language selector in your sidebar."
-msgstr ""
+msgstr "Zeige einen Sprachwähler in der Sidebar."
 
 # @ multilingual-wp
 #: widgets.php:41
@@ -1818,17 +1854,17 @@ msgstr "Auswahl-Feld"
 # @ multilingual-wp
 #: widgets.php:61
 msgid "Outer Wrap HTML Element"
-msgstr ""
+msgstr "Äusseres Wrap-HTML-Element"
 
 # @ multilingual-wp
 #: widgets.php:68
 msgid "Wrap"
-msgstr ""
+msgstr "Wrap"
 
 # @ multilingual-wp
 #: widgets.php:75
 msgid "CSS Class"
-msgstr ""
+msgstr "CSS Klasse"
 
 # @ multilingual-wp
 #: widgets.php:82
@@ -1843,207 +1879,207 @@ msgstr "Separator"
 # @ multilingual-wp
 #: widgets.php:96
 msgid "Active Class"
-msgstr ""
+msgstr "Aktive Klasse"
 
 # @ multilingual-wp
 #: widgets.php:103
 msgid "Hide Current?"
-msgstr ""
+msgstr "Aktuelles verstecken?"
 
 # @ multilingual-wp
 #: widgets.php:114
 msgid "Flag Size"
-msgstr ""
+msgstr "Flaggen-Grösse"
 
 # @ multilingual-wp
 #: win_locales.php:4
 msgid "Chinese"
-msgstr ""
+msgstr "Chinesisch"
 
 # @ multilingual-wp
 #: win_locales.php:5
 msgid "Chinese (simplified)"
-msgstr ""
+msgstr "Chinesisch (vereinfacht)"
 
 # @ multilingual-wp
 #: win_locales.php:6
 msgid "Chinese (traditional)"
-msgstr ""
+msgstr "Chinesisch (traditionell)"
 
 # @ multilingual-wp
 #: win_locales.php:7
 msgid "Czech"
-msgstr ""
+msgstr "Tschechisch"
 
 # @ multilingual-wp
 #: win_locales.php:8
 msgid "Danish"
-msgstr ""
+msgstr "Dänisch"
 
 # @ multilingual-wp
 #: win_locales.php:9
 msgid "Dutch (default)"
-msgstr ""
+msgstr "Niederländisch"
 
 # @ multilingual-wp
 #: win_locales.php:10
 msgid "Dutch (Belgium)"
-msgstr ""
+msgstr "Niederländisch (Belgien)"
 
 # @ multilingual-wp
 #: win_locales.php:11
 msgid "English"
-msgstr ""
+msgstr "Englisch"
 
 # @ multilingual-wp
 #: win_locales.php:12
 msgid "English (Australia)"
-msgstr ""
+msgstr "Englisch (Australien)"
 
 # @ multilingual-wp
 #: win_locales.php:13
 msgid "English (Canada)"
-msgstr ""
+msgstr "Englisch (Kanada)"
 
 # @ multilingual-wp
 #: win_locales.php:14
 msgid "English (New Zealand)"
-msgstr ""
+msgstr "Englisch (Neuseeland)"
 
 # @ multilingual-wp
 #: win_locales.php:15
 msgid "English (United Kingdom)"
-msgstr ""
+msgstr "Englisch (Vereinigtes Königreich)"
 
 # @ multilingual-wp
 #: win_locales.php:16
 msgid "English (United States)"
-msgstr ""
+msgstr "Englisch (Vereinigte Staaten)"
 
 # @ multilingual-wp
 #: win_locales.php:17
 msgid "Finnish"
-msgstr ""
+msgstr "Finnisch"
 
 # @ multilingual-wp
 #: win_locales.php:18
 msgid "French (default)"
-msgstr ""
+msgstr "Französisch"
 
 # @ multilingual-wp
 #: win_locales.php:19
 msgid "French (Belgium)"
-msgstr ""
+msgstr "Französisch (Belgien)"
 
 # @ multilingual-wp
 #: win_locales.php:20
 msgid "French (Canada)"
-msgstr ""
+msgstr "Französisch (Kanada)"
 
 # @ multilingual-wp
 #: win_locales.php:21
 msgid "French (Switzerland)"
-msgstr ""
+msgstr "Französisch (Schweiz)"
 
 # @ multilingual-wp
 #: win_locales.php:22
 msgid "German (default)"
-msgstr ""
+msgstr "Deutsch"
 
 # @ multilingual-wp
 #: win_locales.php:23
 msgid "German (Austria)"
-msgstr ""
+msgstr "Deutsch (Österreich)"
 
 # @ multilingual-wp
 #: win_locales.php:24
 msgid "German (Switzerland)"
-msgstr ""
+msgstr "Deutsch (Schweiz)"
 
 # @ multilingual-wp
 #: win_locales.php:25
 msgid "Greek"
-msgstr ""
+msgstr "Griechenland"
 
 # @ multilingual-wp
 #: win_locales.php:26
 msgid "Hungarian"
-msgstr ""
+msgstr "Ungarn"
 
 # @ multilingual-wp
 #: win_locales.php:27
 msgid "Icelandic"
-msgstr ""
+msgstr "Island"
 
 # @ multilingual-wp
 #: win_locales.php:28
 msgid "Italian (default)"
-msgstr ""
+msgstr "Italienisch"
 
 # @ multilingual-wp
 #: win_locales.php:29
 msgid "Italian (Switzerland)"
-msgstr ""
+msgstr "Italienisch (Schweiz)"
 
 # @ multilingual-wp
 #: win_locales.php:30
 msgid "Japanese"
-msgstr ""
+msgstr "Japanisch"
 
 # @ multilingual-wp
 #: win_locales.php:31
 msgid "Korean"
-msgstr ""
+msgstr "Koreanisch"
 
 # @ multilingual-wp
 #: win_locales.php:32
 msgid "Norwegian (default)"
-msgstr ""
+msgstr "Norwegisch"
 
 # @ multilingual-wp
 #: win_locales.php:33
 msgid "Norwegian (Bokmal)"
-msgstr ""
+msgstr "Norwegisch (Bokmal)"
 
 # @ multilingual-wp
 #: win_locales.php:34
 msgid "Norwegian (Nynorsk)"
-msgstr ""
+msgstr "Norwegisch (Nynorsk)"
 
 # @ multilingual-wp
 #: win_locales.php:35
 msgid "Polish"
-msgstr ""
+msgstr "Polnisch"
 
 # @ multilingual-wp
 #: win_locales.php:36
 msgid "Portuguese (default)"
-msgstr ""
+msgstr "Portugiesisch"
 
 # @ multilingual-wp
 #: win_locales.php:37
 msgid "Portuguese (Brazil)"
-msgstr ""
+msgstr "Portugiesisch (Brasilien)"
 
 # @ multilingual-wp
 #: win_locales.php:38
 msgid "Russian (default)"
-msgstr ""
+msgstr "Russisch"
 
 # @ multilingual-wp
 #: win_locales.php:39
 msgid "Slovak"
-msgstr ""
+msgstr "Slowenisch"
 
 # @ multilingual-wp
 #: win_locales.php:40
 msgid "Spanish (default)"
-msgstr ""
+msgstr "Spanisch"
 
 # @ multilingual-wp
 #: win_locales.php:41
 msgid "Spanish (Mexico)"
-msgstr ""
+msgstr "Spanisch (Mexiko)"
 
 # @ multilingual-wp
 #: win_locales.php:42
@@ -2053,23 +2089,23 @@ msgstr "Spanisch (modern)"
 # @ multilingual-wp
 #: win_locales.php:43
 msgid "Swedish"
-msgstr ""
+msgstr "Schwedisch"
 
 # @ multilingual-wp
 #: win_locales.php:44
 msgid "Turkish"
-msgstr ""
+msgstr "Türkisch"
 
 # @ multilingual-wp
 #: plugin.php:1231
 msgid "This is not a multilingual post."
-msgstr ""
+msgstr "Dies ist kein mehrsprachiger Beitrag."
 
 # @ default
 #. translators: draft saved date format, see http://php.net/date
 #: plugin.php:1243
 msgid "g:i:s a"
-msgstr ""
+msgstr "G:i:s"
 
 # @ default
 #. translators: %s: date and time
@@ -2085,6 +2121,8 @@ msgid ""
 "Your login has expired. Please open a new browser window and <a href=\"%s\" "
 "target=\"_blank\">log in again</a>. "
 msgstr ""
+"Deine Sitzung ist abgelaufen. Bitte öffne ein neues Browser-Fenster bzw. "
+"einen neuen Tab und <a href=\"%s\" target=\"_blank\">melde dich neu an</a>. "
 
 # @ default
 #: plugin.php:1263
@@ -2094,7 +2132,7 @@ msgstr "Jemand"
 # @ default
 #: plugin.php:1264
 msgid "Autosave disabled."
-msgstr ""
+msgstr "Automatische Sicherung deaktiviert."
 
 # @ default
 #: plugin.php:1267
@@ -2103,16 +2141,18 @@ msgid ""
 "%s is currently editing this article. If you update it, you will overwrite "
 "the changes."
 msgstr ""
+"%s bearbeitet gerade diesen Eintrag. Wenn du aktualisierst, werden die "
+"Änderungen überschrieben."
 
 # @ default
 #: plugin.php:1272
 msgid "You are not allowed to edit this page."
-msgstr ""
+msgstr "Dir fehlt die Berechtigung, diese Seite zu bearbeiten."
 
 # @ default
 #: plugin.php:1275
 msgid "You are not allowed to edit this post."
-msgstr ""
+msgstr "Dir fehlt die Berechtigung, diesen Beitrag zu bearbeiten."
 
 # @ default
 #: plugin.php:1740 plugin.php:1756
@@ -2129,13 +2169,13 @@ msgstr "Wörteranzahl: %s"
 #: plugin.php:1771
 #, php-format
 msgid "Last edited by %1$s on %2$s at %3$s"
-msgstr ""
+msgstr "Zuletzt editiert von %1$s am %2$s um %3$s"
 
 # @ default
 #: plugin.php:1773
 #, php-format
 msgid "Last edited on %1$s at %2$s"
-msgstr ""
+msgstr "Zuletzt editiert am %1$s um %2$s"
 
 # @ multilingual-wp
 #: remove-language-page.php:10
@@ -2150,11 +2190,13 @@ msgid ""
 "Sorry, but the \"%s\" language is currently enabled. Please consider "
 "deactivating it first."
 msgstr ""
+"Sorry, aber die Sprache «%s» ist zurzeit aktiviert. Bitte deaktiviere sie "
+"zuerst."
 
 # @ multilingual-wp
 #: remove-language-page.php:60
 msgid "You're trying to delete a non-existing language."
-msgstr ""
+msgstr "Du versuchst, eine nicht-existente Sprache zu löschen."
 
 # @ multilingual-wp
 #: remove-language-page.php:68
@@ -2163,7 +2205,7 @@ msgid ""
 "You just deleted the following language/s: %s. <br /> Please consider "
 "visiting the \"Fix Posts\" page in order to completely remove any trace of "
 "the removed language/s."
-msgstr ""
+msgstr "Du hast gerade die folgende/n Sprache/n gelöscht: %s.<br>Bitte "
 
 # @ multilingual-wp
 #: remove-language-page.php:78
@@ -2171,7 +2213,7 @@ msgid ""
 "WARNING: If you select to delete one of the languages bellow and then "
 "procede to the \"Fix Posts\" page, all of your posts for this language will "
 "be permanently deleted. There is no way to reverse that!"
-msgstr ""
+msgstr "WARNUNG: Wenn du eine der unten aufgeführten Sprachen löschst"
 
 # @ multilingual-wp
 #: remove-language-page.php:91
@@ -2180,11 +2222,13 @@ msgid ""
 "In order to remove a language, you have to disable it first from the <a href="
 "\"%1s\">Settings Page</a>"
 msgstr ""
+"Um eine Sprache entfernen zu können, muss diese zuerst in den <a href=\"%1s"
+"\">Einstellungen</a> deaktiviert werden."
 
 # @ multilingual-wp
 #: remove-language-page.php:95
 msgid "Please select the languages you want to remove."
-msgstr ""
+msgstr "Bitte wähle die Sprachen aus, die du entfernen möchtest."
 
 # @ multilingual-wp
 #: remove-language-page.php:107
@@ -2197,6 +2241,8 @@ msgid ""
 "You can't disable all languages. You need to have at least one enabled "
 "language."
 msgstr ""
+"Du kannst nicht alle Sprachen deaktivieren. Eine Sprache muss mindestens "
+"aktiv sein."
 
 # @ multilingual-wp
 #: settings-page.php:85
@@ -2220,7 +2266,7 @@ msgstr "Schlagwörter"
 # @ multilingual-wp
 #: settings-page.php:293
 msgid "Please select which taxonomies you want to be multilingual."
-msgstr ""
+msgstr "Bitte wähle, welche Taxonomien mehrsprachig sein sollen."
 
 # @ multilingual-wp
 #: settings-page.php:301
@@ -2230,7 +2276,7 @@ msgstr "Leere Übersetzung"
 # @ multilingual-wp
 #: settings-page.php:305
 msgid "Display the \"Not Available Message\" for that language"
-msgstr ""
+msgstr "Zeige die «Nicht verfügbar Mitteilung» für diese Sprache an"
 
 # @ multilingual-wp
 #: settings-page.php:305
