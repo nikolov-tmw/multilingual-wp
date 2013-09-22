@@ -357,14 +357,6 @@ class Multilingual_WP {
 		add_action( 'plugins_loaded', array( $this, 'setup_locale' ), $this->late_fp );
 
 		add_filter( 'locale', array( $this, 'set_locale' ), $this->late_fp );
-
-		// If the user is using sub-domains, add/delete additional cookies on log-in/out
-		if ( $this->lang_mode == self::LT_SD ) {
-			add_action( 'set_auth_cookie', array( $this, 'set_auth_cookie' ), 10, 5 );
-			add_action( 'set_logged_in_cookie', array( $this, 'set_logged_in_cookie' ), 10, 4 );
-
-			add_action( 'clear_auth_cookie', array( $this, 'clear_auth_cookie' ) );
-		}
 	}
 
 	public static function include_additional_files() {
@@ -435,10 +427,6 @@ class Multilingual_WP {
 			} elseif ( strpos( $category_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
 				$category_base = str_replace( "{$this->default_lang}/", '', $category_base );
 			}
-		} else {
-			if ( strpos( $category_base, "{$this->default_lang}/" ) !== false ) {
-				$category_base = str_replace( "{$this->default_lang}/", '', preg_replace( '~/{2,}~', '/', $category_base ) );
-			}
 		}
 		$wp_rewrite->set_category_base( $category_base );
 
@@ -453,10 +441,6 @@ class Multilingual_WP {
 				$tag_base = preg_replace( '~/{2,}~', '/', "{$this->default_lang}/{$tag_base}" );
 			} elseif ( strpos( $tag_base, "{$this->default_lang}/" ) !== false && ! $def_lang_in_url ) {
 				$tag_base = str_replace( "{$this->default_lang}/", '', $tag_base );
-			}
-		} else {
-			if ( strpos( $tag_base, "{$this->default_lang}/" ) !== false ) {
-				$tag_base = str_replace( "{$this->default_lang}/", '', preg_replace( '~/{2,}~', '/', $tag_base ) );
 			}
 		}
 		$wp_rewrite->set_tag_base( $tag_base );
@@ -1094,129 +1078,11 @@ class Multilingual_WP {
 	public function add_rewrite_rules( $rules ) {
 		static $did_rules = false;
 		global $wp_rewrite;
-
-		if ( $did_rules ) {
+		// Don't know what to do with sub-domains yet, let's skip that for now :)
+		if ( $this->lang_mode != self::LT_PRE ) {
 			return $rules;
 		}
-
-		// Rules for sub-domain setup, or permalinks with query argument
-		if (  $this->lang_mode == self::LT_SD || ( $this->using_permalinks() && $this->lang_mode == self::LT_QUERY ) ) {
-			$search = array();
-			$langs = self::$options->enabled_langs;
-			$rewrites = self::$options->rewrites;
-			$def_lang_in_url = self::$options->def_lang_in_url;
-
-			foreach ( self::$options->enabled_pt as $pt ) {
-				foreach ( $langs as $lang ) {
-					if ( $lang != $this->default_lang ) {
-						$search[] = $this->hash_pt_name( $pt, $lang );
-					}
-				}
-			}
-			$_pt_regex = '/' . implode( '|', array_map( 'preg_quote', $search ) ) . '/';
-
-			$tax_search = $tax_replace = array();
-			$taxonomies = get_taxonomies( array(  ), 'objects' );
-			foreach ( self::$options->enabled_tax as $tax ) {
-				if ( isset( $taxonomies[ $tax ] ) && is_array( $taxonomies[ $tax ]->rewrite ) ) {
-					$orig_slug = isset( $taxonomies[ $tax ]->rewrite['slug'] ) ? trailingslashit( $taxonomies[ $tax ]->rewrite['slug'] ) : trailingslashit( $tax );
-				} else {
-					$orig_slug = false;
-				}
-				// Rewrites are disabled for this taxonomy
-				if ( ! $orig_slug && ! in_array( $tax, array( 'post_tag', 'category' ) ) ) {
-					continue;
-				}
-				foreach ( $langs as $lang ) {
-					if ( $lang != $this->default_lang ) {
-						$search[] = $this->hash_tax_name( $tax, $lang );
-						if ( is_array( $rewrites['tax'][ $tax ] ) && isset( $rewrites['tax'][ $tax ][ $lang ] ) ) {
-							$tax_search[] = $orig_slug;
-							$tax_replace[] = $rewrites['tax'][ $tax ][ $lang ];
-						} elseif ( isset( $rewrites['tax'][ $tax ] ) && ! is_array( $rewrites['tax'][ $tax ] ) ) {
-							$tax_search[] = $orig_slug;
-							$tax_replace[] = $rewrites['tax'][ $tax ];
-						}
-					} else {
-						$_taxonomy = get_taxonomy( $tax );
-						$search[] = isset( $_taxonomy->query_var ) && $_taxonomy->query_var ? $_taxonomy->query_var : $tax;
-					}
-				}
-			}
-			$_tax_regex = '/' . implode( '|', array_map( 'preg_quote', $search ) ) . '/';
-
-			$search = array();
-			foreach ( self::$options->enabled_pt as $pt ) {
-				$search[] = "$pt=";
-				$search[] = "post_type=$pt&";
-			}
-			$_regex2 = '/' . implode( '|', array_map( 'preg_quote', $search ) ) . '/';
-
-			$rewrites = self::$options->rewrites;
-
-			$additional_rules = array();
-
-			$rewrite_slugs = apply_filters( 'mlwp_lang_rewrite_slugs', array(
-				'search' => 'search',
-				'page' => 'page',
-				'comments' => 'comments',
-				'feed' => 'feed',
-				'author' => 'author',
-				'attachment' => 'attachment',
-				'date' => 'date',
-			) );
-
-			$slugs_search = array_map( 'trailingslashit', array_keys( $rewrite_slugs ) );
-			$slugs_replace = array();
-
-			$page = isset( $rewrites['page'][ $lang ] ) ? $rewrites['page'][ $lang ] : ( ! is_array( $rewrites['page'] ) && $rewrites['page'] ? $rewrites['page'] : 'page' );
-
-			extract( $this->builtin_rules );
-			// Order the built-in rules in the proper way
-			if ( $wp_rewrite->use_verbose_page_rules ) {
-				foreach ( $page_rewrite_rules as $regex => $match ) {
-					$page_rewrite_rules[ $regex ] = $this->add_query_arg( 'is_transl_p', 1, $match );
-				}
-				$this->builtin_rules = array_merge( $root_rewrite_rules, $comments_rewrite_rules, $search_rewrite_rules, $author_rewrite_rules, $date_rewrite_rules, $page_rewrite_rules, $post_rewrite_rules );
-			} else {
-				$this->builtin_rules = array_merge( $root_rewrite_rules, $comments_rewrite_rules, $search_rewrite_rules, $author_rewrite_rules, $date_rewrite_rules, $post_rewrite_rules, $page_rewrite_rules );
-			}
-
-			$important_rules = array();
-			foreach ( $this->builtin_rules as $regex => $match ) {
-				foreach ( $langs as $lang ) {
-					$slugs_replace = array();
-					foreach ( $rewrite_slugs as $search => $replace ) {
-						$slugs_replace[] = isset( $rewrites[ $search ][ $lang ] ) ? $rewrites[ $search ][ $lang ] : ( ! is_array( $rewrites[ $search ] ) && $rewrites[ $search ] ? $rewrites[ $search ] : $replace );
-					}
-					$slugs_replace = array_map( 'trailingslashit', $slugs_replace );
-
-					$regex = str_replace( $slugs_search, $slugs_replace, $regex );
-					$important_rules[ $regex ] = $this->add_query_arg( self::QUERY_VAR, $lang, $match );
-				}
-			}
-			
-			$pt_add_rules = array();
-			$tax_add_rules = array();
-
-			foreach ( $rules as $regex => $match ) {
-				if ( preg_match( $_pt_regex, $match ) === 1 ) {
-					// Move rules for translation taxonomies/pts to the top of the stack as well :)
-					$pt_add_rules[ $regex ] = $match;
-					unset( $rules[ $regex ] );
-				} elseif ( preg_match( $_tax_regex, $match ) === 1 ) {
-					// Move rules for translation taxonomies/pts to the top of the stack as well :)
-					$tax_add_rules[ $regex ] = $match;
-					unset( $rules[ $regex ] );
-				}
-			}
-			$additional_rules = array_merge( $important_rules, $additional_rules );
-			$additional_rules = array_merge( $tax_add_rules, $additional_rules );
-			$additional_rules = array_merge( $additional_rules, $pt_add_rules );
-
-			// Add our rewrite rules at the beginning of all rewrite rules - they are with a higher priority
-			$rules = array_merge( $additional_rules, $rules );
-		} else {
+		if ( ! $did_rules ) {
 			$search = array();
 			$langs = self::$options->enabled_langs;
 			$rewrites = self::$options->rewrites;
@@ -2779,7 +2645,7 @@ class Multilingual_WP {
 		// Option not added yet
 		if ( $slug === false && $taxonomy !== false ) {
 			$term = $this->get_term( $term_id, $taxonomy );
-			if ( $term && ! is_wp_error( $term ) ) {
+			if ( ! is_wp_error( $term ) ) {
 				$this->update_term_slug_c( $term );
 				return $term->slug;
 			} else {
@@ -3056,7 +2922,7 @@ class Multilingual_WP {
 					} elseif ( $pt_name == 'post' && ( $lang != $def_lang || $def_lang_in_url ) ) {
 						$rewrite = array();
 						$rewrite['with_front'] = false;
-						$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/{$wp_rewrite->front}" : $wp_rewrite->front;
+						$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/{$wp_rewrite->front}" : "{$wp_rewrite->front}";
 						$rewrite['slug'] = untrailingslashit( preg_replace( '~/{2,}~', '/', $slug ) );
 					}
 					$args = array(
@@ -3166,16 +3032,6 @@ class Multilingual_WP {
 								}
 								$rewrite = false;
 							}
-						}
-					}
-					if ( in_array( $tax_name, array( 'category', 'post_tag' ) ) ) {
-						if ( $lang != $def_lang || ( $this->lang_mode == self::LT_PRE && $def_lang_in_url ) ) {
-							$slug = $tax_name == 'category' ? get_option( 'category_base' ) : get_option( 'tag_base' );
-							$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/{$slug}" : $slug;
-							if ( is_array( $rewrites[ $tax_name ] ) && isset( $rewrites[ $tax_name ][ $lang ] ) ) {
-								$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/" . $rewrites[ $tax_name ][ $lang ] : $rewrites[ $tax_name ][ $lang ];
-							}
-							$rewrite = array( 'slug' => $slug, 'with_front' => false );
 						}
 					}
 					$args = array(
@@ -3636,7 +3492,7 @@ class Multilingual_WP {
 				
 				break;
 
-			case self::LT_SD : 
+			case self::LT_SD : // Sub-domain setup is not enabled yet
 				$url = $this->subdomain_url( $url, $lang );
 
 				break;
@@ -3738,7 +3594,7 @@ class Multilingual_WP {
 			$slug = $slug ? $slug : $this->get_term_slug_c( $id, $taxonomy );
 			$this->add_slug_cache( $id, $slug, $type1 );
 
-			$url = str_replace( trailingslashit( $rewrites[0] ), trailingslashit( $rewrites[1] ), $url );
+			$url = str_replace( $rewrites[0], $rewrites[1], $url );
 		} else {
 			$url = $this->convert_URL( $url );
 		}
@@ -4444,62 +4300,21 @@ class Multilingual_WP {
 	public function urlencode_regex_cb( $matches ) {
 		return urlencode( $matches[0] );
 	}
-
-	/**
-	 * Sets sub-domain available authentication cookie
-	 * 
-	 * If COOKIE_DOMAIN already supports all sub-domains, then no extra cookies would be sent to the browser.
-	 * Otherwise two extra cookies get set, which will be available to all sub-domains
-	 */
-	public function set_auth_cookie( $auth_cookie, $expire, $expiration, $user_id, $scheme ) {
-		// Cookies can already be accessed on all sub-domains
-		if ( COOKIE_DOMAIN == ".{$this->home_host}" ) {
-			return;
-		}
-		$secure = $scheme == 'secure_auth' ? true : false;
-		$secure = apply_filters( 'secure_auth_cookie', $secure, $user_id );
-		if ( $secure ) {
-			$auth_cookie_name = SECURE_AUTH_COOKIE;
-		} else {
-			$auth_cookie_name = AUTH_COOKIE;
-		}
-
-		setcookie( $auth_cookie_name, $auth_cookie, $expire, PLUGINS_COOKIE_PATH, ".{$this->home_host}", $secure, true );
-		setcookie( $auth_cookie_name, $auth_cookie, $expire, ADMIN_COOKIE_PATH, ".{$this->home_host}", $secure, true );
-	}
-
-	/**
-	 * Sets sub-domain available logged-in cookie
-	 * 
-	 * If COOKIE_DOMAIN already supports all sub-domains, then no extra cookies would be sent to the browser.
-	 * Otherwise two extra cookies get set, which will be available to all sub-domains
-	 */
-	public function set_logged_in_cookie( $logged_in_cookie, $expire, $expiration, $user_id ) {
-		// Cookies can already be accessed on all sub-domains
-		if ( COOKIE_DOMAIN == ".{$this->home_host}" ) {
-			return;
-		}
-		$secure_logged_in_cookie = apply_filters( 'secure_logged_in_cookie', false, $user_id, is_ssl() );
-
-		setcookie( LOGGED_IN_COOKIE, $logged_in_cookie, $expire, COOKIEPATH, ".{$this->home_host}", $secure_logged_in_cookie, true );
-		if ( COOKIEPATH != SITECOOKIEPATH ) {
-			setcookie( LOGGED_IN_COOKIE, $logged_in_cookie, $expire, SITECOOKIEPATH, ".{$this->home_host}", $secure_logged_in_cookie, true );
-		}
-	}
-
-	/**
-	 * Clears sub-domain available auth and logged-in cookies
-	 */
-	public function clear_auth_cookie() {
-		$cookie_domain = ".{$this->home_host}";
-		setcookie( AUTH_COOKIE,        ' ', time() - YEAR_IN_SECONDS, ADMIN_COOKIE_PATH,   $cookie_domain );
-		setcookie( SECURE_AUTH_COOKIE, ' ', time() - YEAR_IN_SECONDS, ADMIN_COOKIE_PATH,   $cookie_domain );
-		setcookie( AUTH_COOKIE,        ' ', time() - YEAR_IN_SECONDS, PLUGINS_COOKIE_PATH, $cookie_domain );
-		setcookie( SECURE_AUTH_COOKIE, ' ', time() - YEAR_IN_SECONDS, PLUGINS_COOKIE_PATH, $cookie_domain );
-		setcookie( LOGGED_IN_COOKIE,   ' ', time() - YEAR_IN_SECONDS, COOKIEPATH,          $cookie_domain );
-		setcookie( LOGGED_IN_COOKIE,   ' ', time() - YEAR_IN_SECONDS, SITECOOKIEPATH,      $cookie_domain );
-	}
 }
 
 scb_MLWP_init( array( 'Multilingual_WP', 'plugin_init' ) );
 
+$mlwp_options = get_option( 'mlwp_options', array() );
+// Wether we have to override the functions or not
+if ( isset( $mlwp_options['lang_mode'] ) && $mlwp_options['lang_mode'] == Multilingual_WP::LT_SD ) {
+	global $mlwp_login_funcs_exist;
+	$mlwp_login_funcs_exist = false;
+
+	if ( ! function_exists( 'wp_set_auth_cookie' ) && ! function_exists( 'wp_clear_auth_cookie' ) ) {
+		
+	} else {
+		// Will later display a message in the admin section that those functions
+		// have not been overridden and problems might occur.
+		$mlwp_login_funcs_exist = true;
+	}
+}

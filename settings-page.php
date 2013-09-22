@@ -353,7 +353,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$permalink_choices[ Multilingual_WP::LT_QUERY ] = __( 'Query Variable mode', 'multilingual-wp' );
 		$permalink_desc .= __( '<code>Query Variable mode</code> will add <code>?language={xx}</code> to all non-default language links, where {xx} is the two-letter code for this language. <br />', 'multilingual-wp' );
 		$permalink_choices[ Multilingual_WP::LT_SD ] = __( 'Sub-Domain mode', 'multilingual-wp' );
-		$permalink_desc .= __( '<code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional <a href="https://codex.wordpress.org/Configuring_Wildcard_Subdomains">server configuration</a>.', 'multilingual-wp' );
+		$permalink_desc .= __( '<code>Sub-Domain mode</code> will prepend {xx}. to your site\'s domain to all non-default language links. This requires additional server configuration.', 'multilingual-wp' );
 
 		$default_settings[] = array(
 			'title' => __( 'Language Rewrite Mode', 'multilingual-wp' ),
