@@ -360,7 +360,11 @@ class Multilingual_WP {
 
 		// If the user is using sub-domains, add/delete additional cookies on log-in/out
 		if ( $this->lang_mode == self::LT_SD ) {
-			add_action( 'set_auth_cookie', array( $this, 'set_auth_cookie' ), 10, 5 );
+			// If you want to access the admin dashboard from the sub-domains, simply
+			// hook to the "mlwp_set_sd_auth_cookie" filter and return true.
+			if ( apply_filters( 'mlwp_set_sd_auth_cookie', false ) ) {
+				add_action( 'set_auth_cookie', array( $this, 'set_auth_cookie' ), 10, 5 );
+			}
 			add_action( 'set_logged_in_cookie', array( $this, 'set_logged_in_cookie' ), 10, 4 );
 
 			add_action( 'clear_auth_cookie', array( $this, 'clear_auth_cookie' ) );
