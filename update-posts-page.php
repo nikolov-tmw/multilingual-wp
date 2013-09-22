@@ -315,9 +315,9 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 			$this->options->updated_terms = array();
 		}
 
-		echo '<p class="help">' . __( 'If this is your first time using this page, please click on "Update all of my terms" first and wait for the "All terms have been successfully updated!" message. Then continue by clicking on the "Update all of my posts" button.', 'ad-stop' ) . '</p>';
+		echo '<p class="help">' . __( 'If this is your first time using this page, please click on "Update all of my terms" first and wait for the "All terms have been successfully updated!" message. Then continue by clicking on the "Update all of my posts" button.', 'multilingual-wp' ) . '</p>';
 
-		echo '<p class="help">' . __( 'In case the script refuses to run properly(you should see a message stating that a term/post has been updated successfully), consider decreasing the value of the "Posts/Terms Per Batch" field.', 'ad-stop' ) . '</p>';
+		echo '<p class="help">' . __( 'In case the script refuses to run properly(you should see a message stating that a term/post has been updated successfully), consider decreasing the value of the "Posts/Terms Per Batch" field.', 'multilingual-wp' ) . '</p>';
 
 		$terms = $this->get_terms( 0 );
 		$this->start_box( __( 'Update Terms', 'multilingual-wp' ), false, false );
