@@ -1104,7 +1104,7 @@ class Multilingual_WP {
 		}
 
 		// Rules for sub-domain setup, or permalinks with query argument
-		if (  $this->lang_mode == self::LT_SD || ( $this->using_permalinks() && $this->lang_mode == self::LT_QUERY ) ) {
+		if ( $this->lang_mode == self::LT_SD || ( $this->using_permalinks() && $this->lang_mode == self::LT_QUERY ) ) {
 			$search = array();
 			$langs = self::$options->enabled_langs;
 			$rewrites = self::$options->rewrites;
@@ -1258,6 +1258,13 @@ class Multilingual_WP {
 			$rewrites = self::$options->rewrites;
 
 			$additional_rules = array();
+			// Hack-around for missing robots.txt file
+			if ( ! isset( $rules['robots\.txt$'] ) ) {
+				$home_path = parse_url( $this->home_url );
+				if ( empty( $home_path['path'] ) || '/' == $home_path['path'] ) {
+					$additional_rules['robots\.txt$'] = $wp_rewrite->index . '?robots=1';
+				}
+			}
 
 			$rewrite_slugs = apply_filters( 'mlwp_lang_rewrite_slugs', array(
 				'search' => 'search',
