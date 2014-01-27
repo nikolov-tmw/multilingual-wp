@@ -98,8 +98,6 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		}
 
 		if ( empty( $errors ) ) {
-			global $Multilingual_WP;
-
 			$langs = $this->options->languages;
 			
 			// Trim the language ID - this could go away in the future

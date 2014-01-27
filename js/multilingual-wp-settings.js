@@ -3,6 +3,12 @@
 		base_url;
 
 	$(document).ready(function(){
+		// Since WordPress will move everything that has "updated" or "error" classes
+		// we add those with JS after the page loads
+		setTimeout(function(){
+			$('.mlwp-box').addClass('updated');
+		}, 300);
+
 		$('.mlwp-box.fade').each(function(){
 			var th = $(this);
 			if ( ! th.hasClass('nofade') ) {

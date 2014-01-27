@@ -255,6 +255,20 @@ class Multilingual_WP {
 	 */
 	private $builtin_rules = array();
 
+	public static function instance() {
+		// Store the instance locally to avoid private static replication
+		static $instance = null;
+
+		// Only run these methods if they haven't been ran previously
+		if ( null === $instance ) {
+			$instance = new Multilingual_WP;
+			$instance->setup();
+		}
+
+		// Always return the instance
+		return $instance;
+	}
+
 	public static function plugin_init() {
 		load_plugin_textdomain( 'multilingual-wp', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 
@@ -306,9 +320,9 @@ class Multilingual_WP {
 			'generated_tax' => array(),
 			'_generated_tax' => array(),
 			'show_ui' => false,
-			'lang_mode' => false,
+			'lang_mode' => self::LT_PRE,
 			'na_message' => true,
-			'def_lang_in_url' => false,
+			'def_lang_in_url' => true,
 			'dl_gettext' => true,
 			'next_mo_update' => time(),
 			'flush_rewrite_rules' => false,
@@ -333,14 +347,21 @@ class Multilingual_WP {
 			new Multilingual_WP_Credits_Page( __FILE__, self::$options );
 		}
 
-		global $Multilingual_WP;
-		$Multilingual_WP = new Multilingual_WP();
+		// Initialize
+		self::instance();
 
 		// Include required files
 		self::include_additional_files();
 	}
 
 	function __construct() {
+		// Nothing to do here...
+	}
+
+	/**
+	 * Setup variables and initial filters/actions
+	 */
+	private function setup() {
 		// Make sure we have the home url before adding all the filters
 		$this->home_url = home_url( '/' );
 		// Store the hostname for the home url
@@ -389,6 +410,11 @@ class Multilingual_WP {
 	}
 
 	public function init() {
+		// Fix the language mode if we're not using permalinks
+		if ( self::LT_PRE == $this->lang_mode && ! $this->using_permalinks() ) {
+			$this->lang_mode = self::$options->lang_mode = self::LT_QUERY;
+		}
+
 		$this->plugin_url = plugin_dir_url( __FILE__ );
 
 		// Fix links mode in case we're trying to have sub-directory links without pretty permalinks
@@ -1296,7 +1322,15 @@ class Multilingual_WP {
 			foreach ( $langs as $lang ) {
 				$slugs_replace = array();
 				foreach ( $rewrite_slugs as $search => $replace ) {
-					$slugs_replace[] = isset( $rewrites[ $search ][ $lang ] ) ? $rewrites[ $search ][ $lang ] : ( ! is_array( $rewrites[ $search ] ) && $rewrites[ $search ] ? $rewrites[ $search ] : $replace );
+					if ( isset( $rewrites[ $search ] ) ) {
+						if ( isset( $rewrites[ $search ][ $lang ] ) ) {
+							$slugs_replace[] = $rewrites[ $search ][ $lang ];
+						} else {
+							$slugs_replace[] = ! is_array( $rewrites[ $search ] ) && $rewrites[ $search ] ? $rewrites[ $search ] : $replace;
+						}
+					} else {
+						$slugs_replace[] = $replace;
+					}
 				}
 				$slugs_replace = array_map( 'trailingslashit', $slugs_replace );
 
@@ -3180,13 +3214,22 @@ class Multilingual_WP {
 						}
 					}
 					if ( in_array( $tax_name, array( 'category', 'post_tag' ) ) ) {
+						// var_dump( $lang != $def_lang, $this->lang_mode, self::LT_PRE, $def_lang_in_url );
 						if ( $lang != $def_lang || ( $this->lang_mode == self::LT_PRE && $def_lang_in_url ) ) {
 							$slug = $tax_name == 'category' ? get_option( 'category_base' ) : get_option( 'tag_base' );
-							$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/{$slug}" : $slug;
+							if ( 0 === stripos( $slug, "{$def_lang}/" ) ) {
+								$slug = substr_replace( $slug, '', 0, strlen( "{$def_lang}/" ) );
+							}
+							$slug = $this->lang_mode == self::LT_PRE && stripos( $slug, "{$lang}/" ) !== 0 ? "{$lang}/{$slug}" : $slug;
 							if ( is_array( $rewrites[ $tax_name ] ) && isset( $rewrites[ $tax_name ][ $lang ] ) ) {
 								$slug = $this->lang_mode == self::LT_PRE ? "{$lang}/" . $rewrites[ $tax_name ][ $lang ] : $rewrites[ $tax_name ][ $lang ];
 							}
 							$rewrite = array( 'slug' => $slug, 'with_front' => false );
+							if ( $lang == $def_lang ) {
+								if ( isset( $wp_taxonomies[ $tax_name ] ) ) {
+									$wp_taxonomies[ $tax_name ]->rewrite['slug'] = $rewrite['slug'];
+								}
+							}
 						}
 					}
 					$args = array(

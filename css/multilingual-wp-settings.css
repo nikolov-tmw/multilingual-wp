@@ -18,11 +18,11 @@ textarea.regular-text { width: 25em; }
 
 .cl { display: block; float: none; clear: both; height: 0; }
 
-div.mlwp-box { border-width: 2px; margin: 5px 0 15px; background-color: #FFFFE0; border-color: #E6DB55; border-style: solid; padding: 0 .6em; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; }
+div.mlwp-box { /* border-width: 2px; margin: 5px 0 15px; background-color: #FFFFE0; border-color: #E6DB55; border-style: solid; padding: 0 .6em; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; */ }
 div.mlwp-box p { margin: .5em 0; padding: 2px; }
-div.mlwp-box.mlwp-notice { background-color: #E0F1FF; border-color: #8497DF; }
-div.mlwp-box.mlwp-success { background-color: #96F1B3; border-color: #48BB51; }
-div.mlwp-box.mlwp-error { background-color: #FFCACA; border-color: #F33636; font-weight: bold; }
+div.mlwp-box.mlwp-notice { /* background-color: #E0F1FF; */ border-color: #8497DF; }
+div.mlwp-box.mlwp-success { /* background-color: #96F1B3; */ border-color: #7AD03A; }
+div.mlwp-box.mlwp-error { /* background-color: #FFCACA; */ border-color: #DD3D36; font-weight: bold; }
 
 /*
 	Screen Icons

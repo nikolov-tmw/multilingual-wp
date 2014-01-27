@@ -65,16 +65,17 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	 * @param $gsg GoogleSitemapGenerator
 	 */
 	public function language_index( $gsg ) {
-		global $Multilingual_WP, $wpdb;
+		global $wpdb;
 
+		$mlwp = _mlwp();
 		$blogUpdate = strtotime( get_lastpostdate( 'blog' ) );
-		$languages = $Multilingual_WP->get_options( 'languages' );
+		$languages = $mlwp->get_options( 'languages' );
 
-		foreach ( $Multilingual_WP->get_enabled_languages() as $language ) {
-			$prefix = $Multilingual_WP::QUERY_VAR . "-{$language}-";
-			$Multilingual_WP->current_lang = $language;
-			$Multilingual_WP->locale = $languages[ $language ]['locale'];
-			$Multilingual_WP->fix_rewrite();
+		foreach ( $mlwp->get_enabled_languages() as $language ) {
+			$prefix = $mlwp::QUERY_VAR . "-{$language}-";
+			$mlwp->current_lang = $language;
+			$mlwp->locale = $languages[ $language ]['locale'];
+			$mlwp->fix_rewrite();
 
 			$gsg->AddSitemap( "{$prefix}misc", null, $blogUpdate );
 
@@ -150,27 +151,27 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	 * @param $params array
 	 */
 	public function language_content( $gsg, $type, $params ) {
-		global $Multilingual_WP;
-		if ( $type == $Multilingual_WP::QUERY_VAR && $params ) {
-			$Multilingual_WP->is_custom_sitemap = true;
+		$mlwp = _mlwp();
+		if ( $type == $mlwp::QUERY_VAR && $params ) {
+			$mlwp->is_custom_sitemap = true;
 			$_params = explode( '-', $params );
 			if ( count( $_params ) > 1 ) {
 				$lang = array_shift( $_params );
-				if ( $Multilingual_WP->is_enabled( $lang ) ) {
-					$languages = $Multilingual_WP->get_options( 'languages' );
-					$Multilingual_WP->current_lang = $lang;
-					$Multilingual_WP->locale = $languages[ $lang ]['locale'];
-					$Multilingual_WP->fix_rewrite();
+				if ( $mlwp->is_enabled( $lang ) ) {
+					$languages = $mlwp->get_options( 'languages' );
+					$mlwp->current_lang = $lang;
+					$mlwp->locale = $languages[ $lang ]['locale'];
+					$mlwp->fix_rewrite();
 
 					$type = array_shift( $_params );
 
 					$this->Content( $gsg, $type, implode( '-', $_params ) );
 				}
-			} elseif ( $Multilingual_WP->is_enabled( $params ) ) {
+			} elseif ( $mlwp->is_enabled( $params ) ) {
 				// $this->language_index( $gsg, $params );
 				$this->Content( $gsg, $type, $params );
 			}
-			$Multilingual_WP->is_custom_sitemap = false;
+			$mlwp->is_custom_sitemap = false;
 		} else {
 			$this->Content( $gsg, $type, $params );
 		}

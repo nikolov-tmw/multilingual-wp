@@ -14,8 +14,8 @@
  *
  * @global Multilingual_WP $GLOBALS['Multilingual_WP']
  */
-function &_mlwp() {
-	return $GLOBALS['Multilingual_WP'];
+function _mlwp() {
+	return Multilingual_WP::instance();
 }
 
 /**
