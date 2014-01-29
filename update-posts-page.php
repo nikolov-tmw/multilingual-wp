@@ -269,7 +269,6 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 	public function page_header( $add_class = '' ) {
 		echo "<div class='wrap mlwp-wrap mlwp-add-new-wrap {$add_class}''>\n";
-		screen_icon( $this->args['screen_icon'] );
 		echo html( "h2", $this->args['page_title'] );
 	}
 

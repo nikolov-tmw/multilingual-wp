@@ -19,7 +19,6 @@ class Multilingual_WP_Remove_Language_Page extends scb_MLWP_AdminPage {
 			'page_title' => __( 'Remove a Language', 'multilingual-wp' ),
 			'parent' => 'multilingual-wp',
 			'action_link' => false,
-			'screen_icon' => 'mlwp_remove_language'
 		);
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
