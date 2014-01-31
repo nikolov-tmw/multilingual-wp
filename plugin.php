@@ -590,6 +590,7 @@ class Multilingual_WP {
 		add_filter( 'rewrite_rules_array',             array( $this, 'add_rewrite_rules' ), $this->late_fp );
 
 		add_filter( 'wp_redirect',                     array( $this, 'fix_redirect_non_latin_chars' ), $this->late_fp );
+		add_filter( 'bloginfo',                        array( $this, 'translate_bloginfo' ), 0, 2 );
 
 		if ( ! is_admin() ) {
 			add_filter( 'get_pages',                   array( $this, 'filter_posts' ), 0 );
@@ -637,6 +638,8 @@ class Multilingual_WP {
 		add_action( 'wp_trash_post',                   array( $this, 'delete_post_action' ) );
 
 		add_action( 'set_object_terms',                array( $this, 'set_object_terms_action' ), 10, 6 );
+
+		add_action( 'wp_before_admin_bar_render',      array( $this, 'fix_ab_site_name' ), 10, 6 );
 
 		if ( ! is_admin() ) {
 			// Query modifications
@@ -1005,6 +1008,67 @@ class Multilingual_WP {
 		unset( $_shortcode_tags );
 
 		return $content;
+	}
+
+	public function translate_bloginfo( $output, $show ) {
+		switch( $show ) {
+			case 'home' : // DEPRECATED
+			case 'siteurl' : // DEPRECATED
+			case 'url' :
+			case 'wpurl' :
+			case 'rdf_url' :
+			case 'rss_url' :
+			case 'rss2_url' :
+			case 'atom_url' :
+			case 'comments_atom_url' :
+			case 'comments_rss2_url' :
+			case 'pingback_url' :
+			case 'stylesheet_url' :
+			case 'stylesheet_directory' :
+			case 'template_directory' :
+			case 'template_url' :
+			case 'admin_email' :
+			case 'charset' :
+			case 'html_type' :
+			case 'version' :
+			case 'language' :
+			case 'text_direction' :
+				break;
+			// We only care about the description and name
+			case 'description':
+			case 'name':
+			default:
+				$output = $this->__( $output );
+				break;
+		}
+
+		return $output;
+	}
+
+	public function fix_ab_site_name() {
+		global $wp_admin_bar;
+
+		$site_name = $wp_admin_bar->get_node( 'site-name' );
+		if ( $site_name ) {
+			$site_name = get_object_vars( $site_name );
+
+			$blogname = $this->__( get_bloginfo( 'name' ) );
+
+			if ( empty( $blogname ) ) {
+				$blogname = preg_replace( '#^(https?://)?(www.)?#', '', get_home_url() );
+			}
+
+			if ( is_network_admin() ) {
+				$blogname = sprintf( __( 'Network Admin: %s' ), esc_html( get_current_site()->site_name ) );
+			} elseif ( is_user_admin() ) {
+				$blogname = sprintf( __( 'Global Dashboard: %s' ), esc_html( get_current_site()->site_name ) );
+			}
+
+			$title = wp_html_excerpt( $blogname, 40, '&hellip;' );
+			$site_name['title'] = $title;
+
+			$wp_admin_bar->add_node( $site_name );
+		}
 	}
 
 	/**
