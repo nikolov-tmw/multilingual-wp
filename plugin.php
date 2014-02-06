@@ -573,6 +573,7 @@ class Multilingual_WP {
 		add_filter( 'widget_content',                  array( $this, '__' ), 0 );
 		add_filter( 'wp_title',                        array( $this, '__' ), $this->late_fp );
 		add_filter( 'list_cats',                       array( $this, '__' ), $this->late_fp );
+		add_filter( 'admin_title',                     array( $this, '__' ), 0 );
 
 		// Comment-separating-related filters
 		add_filter( 'comments_array',                  array( $this, 'filter_comments_by_lang' ), 10, 2 );
