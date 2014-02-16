@@ -389,6 +389,18 @@ class Multilingual_WP {
 			add_action( 'set_logged_in_cookie', array( $this, 'set_logged_in_cookie' ), 10, 4 );
 
 			add_action( 'clear_auth_cookie', array( $this, 'clear_auth_cookie' ) );
+
+			// Also adjust URLs to plugin files
+			add_filter( 'plugins_url', array( $this, 'convert_URL' ) );
+
+			// This is supposed to allow CORS between language sub-domains, but might not work...
+			if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
+				$http_origin = parse_url( $_SERVER['HTTP_ORIGIN'], PHP_URL_HOST );
+				$this->setup_elr();
+				if ( preg_match( '~^(?:' . $this->enabled_langs_regex . ')\.(' . preg_quote( $this->home_host, '~' ) . ')$~', $http_origin ) ) {
+				    header( "Access-Control-Allow-Origin: $http_origin" );
+				}
+			}
 		}
 	}
 
@@ -1305,9 +1317,20 @@ class Multilingual_WP {
 					unset( $rules[ $regex ] );
 				}
 			}
+
+			$wp_def_regex = '~^(robots\\\.txt|\.\*|sitemap\()~';
+			$vip_rules = array();
+			foreach ( $rules as $regex => $match ) {
+				if ( preg_match( $wp_def_regex, $regex ) === 1 ) {
+					// Move built-in rules and sitemap rules to the top of the stack
+					$vip_rules[ $regex ] = $match;
+					unset( $rules[ $regex ] );
+				}
+			}
 			$additional_rules = array_merge( $important_rules, $additional_rules );
 			$additional_rules = array_merge( $tax_add_rules, $additional_rules );
 			$additional_rules = array_merge( $additional_rules, $pt_add_rules );
+			$additional_rules = array_merge( $vip_rules, $additional_rules );
 
 			// Add our rewrite rules at the beginning of all rewrite rules - they are with a higher priority
 			$rules = array_merge( $additional_rules, $rules );
@@ -3646,7 +3669,7 @@ class Multilingual_WP {
 
 		// Work-around for not confusing the WP::parse_request() method with thinking that the root 
 		// URL doesn't actually contain the language information
-		if ( current_filter() == 'admin_bar_menu' || ( current_filter() == 'home_url' && ( ! did_action( 'parse_request' ) && ! is_admin() ) ) || is_robots() || $this->is_sitemap() ) {
+		if ( current_filter() == 'admin_bar_menu' || ( current_filter() == 'home_url' && ( ! did_action( 'parse_request' ) && ! is_admin() ) ) || is_robots() || ( $this->is_sitemap() && self::LT_SD != $this->lang_mode ) ) {
 			return $url;
 		}
 
