@@ -22,6 +22,10 @@ class scb_MLWP_Options {
 
 	protected $defaults;	// the default values
 
+	protected $data;	// all of our data
+
+	protected $data_changed = false;
+
 	public $wp_filter_id;	// used by WP hooks
 
 	/**
@@ -34,6 +38,8 @@ class scb_MLWP_Options {
 	public function __construct( $key, $file, $defaults = array() ) {
 		$this->key = $key;
 		$this->defaults = $defaults;
+		$this->data = $this->get( null, null, true );
+		add_action( 'shutdown', array( $this, '_shutdown' ), 10 );
 
 		if ( $file ) {
 			scb_MLWP_Util::add_activation_hook( $file, array( $this, '_activation' ) );
@@ -54,8 +60,14 @@ class scb_MLWP_Options {
 	 * @param string|array $field The field to get
 	 * @return mixed Whatever is in those fields
 	 */
-	public function get( $field = null, $default = null ) {
-		$data = array_merge( $this->defaults, get_option( $this->key, array() ) );
+	public function get( $field = null, $default = null, $from_option = false ) {
+		if ( $from_option ) {
+			$option = get_option( $this->key, array() );
+			$option = is_array( $option ) ? $option : array();
+			$data = array_merge( $this->defaults, $option );
+		} else {
+			$data = array_merge( $this->defaults, $this->data );
+		}
 
 		return scb_MLWP_Forms::get_value( $field, $data, $default );
 	}
@@ -112,10 +124,24 @@ class scb_MLWP_Options {
 	 * @return null
 	 */
 	public function update( $newdata, $clean = true ) {
-		if ( $clean )
+		if ( $clean ) {
 			$newdata = $this->_clean( $newdata );
+		}
 
-		update_option( $this->key, array_merge( $this->get(), $newdata ) );
+		$this->data = $newdata;
+		$this->data_changed = true;
+	}
+
+	/**
+	 * Store the data(if changed) in the DB towards end of execution
+	 * 
+	 * Uses the data stored in the $this->data property to update the
+	 * option in the DB. Only updates if $this->data_changed == true
+	 */
+	public function _shutdown() {
+		if ( $this->data_changed ) {
+			update_option( $this->key, $this->get() );
+		}
 	}
 
 	/**

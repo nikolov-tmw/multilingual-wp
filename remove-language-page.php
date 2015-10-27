@@ -19,7 +19,6 @@ class Multilingual_WP_Remove_Language_Page extends scb_MLWP_AdminPage {
 			'page_title' => __( 'Remove a Language', 'multilingual-wp' ),
 			'parent' => 'multilingual-wp',
 			'action_link' => false,
-			'screen_icon' => 'mlwp_remove_language'
 		);
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
@@ -85,7 +84,7 @@ class Multilingual_WP_Remove_Language_Page extends scb_MLWP_AdminPage {
 		ob_start();
 
 		if ( ! $this->admin_notice ) {
-			$this->admin_msg( __( 'WARNING: If you select to delete one of the languages bellow and then procede to the "Fix Posts" page, all of your posts for this language will be permanently deleted. There is no way to reverse that!', 'multilingual-wp' ), 'mlwp-error nofade' );
+			$this->admin_msg( __( 'WARNING: If you select to delete one of the languages bellow and then proceede to the "Fix Posts" page, all of your posts for this language will be permanently deleted. There is no way to reverse that!', 'multilingual-wp' ), 'mlwp-error nofade' );
 		}
 
 		$disabled_langs = array();

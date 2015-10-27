@@ -28,6 +28,8 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 		add_action( "sm_build_index", array( $this, "language_index" ), 1, 1 );
 		add_action( "sm_build_content", array( $this, "language_content" ), 1, 3 );
 
+		$this->is_sd = Multilingual_WP::LT_SD == _mlwp()->lang_mode;
+
 		$this->remove_def_actions();
 	}
 
@@ -44,7 +46,9 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 
 		// We loop through all of the filters data, because add_filter() creates a unique index and GoogleSitemapGeneratorStandardBuilder 
 		// creates an annonymous instance - so we can't reference it in any way
-		if ( isset( $wp_filter['sm_build_index'][10] ) && $wp_filter['sm_build_index'][10] ) {
+
+		// We don't modify the index on sub-domained sites - we already have language information from the subdomain
+		if ( ! $this->is_sd && isset( $wp_filter['sm_build_index'][10] ) && $wp_filter['sm_build_index'][10] ) {
 			foreach ( $wp_filter['sm_build_index'][10] as $id => $data ) {
 				if ( is_array( $data['function'] ) && is_object( $data['function'][0] ) && get_class( $data['function'][0] ) == 'GoogleSitemapGeneratorStandardBuilder' && $data['function'][1] == 'Index' ) {
 					unset( $wp_filter['sm_build_index'][10][ $id ] );
@@ -65,16 +69,21 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	 * @param $gsg GoogleSitemapGenerator
 	 */
 	public function language_index( $gsg ) {
-		global $Multilingual_WP, $wpdb;
+		global $wpdb;
 
+		if ( $this->is_sd ) {
+			return;
+		}
+
+		$mlwp = _mlwp();
 		$blogUpdate = strtotime( get_lastpostdate( 'blog' ) );
-		$languages = $Multilingual_WP->get_options( 'languages' );
+		$languages = $mlwp->get_options( 'languages' );
 
-		foreach ( $Multilingual_WP->get_enabled_languages() as $language ) {
-			$prefix = $Multilingual_WP::QUERY_VAR . "-{$language}-";
-			$Multilingual_WP->current_lang = $language;
-			$Multilingual_WP->locale = $languages[ $language ]['locale'];
-			$Multilingual_WP->fix_rewrite();
+		foreach ( $mlwp->get_enabled_languages() as $language ) {
+			$prefix = $mlwp::QUERY_VAR . "-{$language}-";
+			$mlwp->current_lang = $language;
+			$mlwp->locale = $languages[ $language ]['locale'];
+			$mlwp->fix_rewrite();
 
 			$gsg->AddSitemap( "{$prefix}misc", null, $blogUpdate );
 
@@ -150,27 +159,30 @@ class MLWP_GSMG extends GoogleSitemapGeneratorStandardBuilder {
 	 * @param $params array
 	 */
 	public function language_content( $gsg, $type, $params ) {
-		global $Multilingual_WP;
-		if ( $type == $Multilingual_WP::QUERY_VAR && $params ) {
-			$Multilingual_WP->is_custom_sitemap = true;
+		$mlwp = _mlwp();
+		if ( ( $type == $mlwp::QUERY_VAR && $params ) || $this->is_sd ) {
+			$mlwp->is_custom_sitemap = true;
 			$_params = explode( '-', $params );
 			if ( count( $_params ) > 1 ) {
-				$lang = array_shift( $_params );
-				if ( $Multilingual_WP->is_enabled( $lang ) ) {
-					$languages = $Multilingual_WP->get_options( 'languages' );
-					$Multilingual_WP->current_lang = $lang;
-					$Multilingual_WP->locale = $languages[ $lang ]['locale'];
-					$Multilingual_WP->fix_rewrite();
+				$lang = ! $this->is_sd ? array_shift( $_params ) : $mlwp->current_lang;
+				if ( $mlwp->is_enabled( $lang ) ) {
+					// If we're not on a sub-domain, we have to fiddle around with the params
+					if ( ! $this->is_sd ) {
+						$languages = $mlwp->get_options( 'languages' );
+						$mlwp->current_lang = $lang;
+						$mlwp->locale = $languages[ $lang ]['locale'];
+						$mlwp->fix_rewrite();
 
-					$type = array_shift( $_params );
+						$type = array_shift( $_params );
+					}
 
 					$this->Content( $gsg, $type, implode( '-', $_params ) );
 				}
-			} elseif ( $Multilingual_WP->is_enabled( $params ) ) {
+			} elseif ( $mlwp->is_enabled( $params ) ) {
 				// $this->language_index( $gsg, $params );
 				$this->Content( $gsg, $type, $params );
 			}
-			$Multilingual_WP->is_custom_sitemap = false;
+			$mlwp->is_custom_sitemap = false;
 		} else {
 			$this->Content( $gsg, $type, $params );
 		}

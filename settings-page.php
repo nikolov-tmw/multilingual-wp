@@ -11,6 +11,7 @@
 
 class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 	protected $admin_notice = false;
+	protected $admin_notice_class = 'mlwp-notice';
 	public $admin_errors = array();
 
 	public function setup() {
@@ -48,7 +49,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 	public function _page_content_hook() {
 		if ( $this->admin_notice ) {
-			$this->admin_msg( $this->admin_notice, 'mlwp-notice' );
+			$this->admin_msg( $this->admin_notice, $this->admin_notice_class );
 		}
 		if ( $this->options->flush_rewrite_rules ) {
 			$this->admin_msg( sprintf( __( 'Please visit the <a href="%1$s">Fix Posts</a> page and click on the "Update all of my posts" button in order to make sure that all of your posts are available in all languages.', 'multilingual-wp' ), admin_url( 'admin.php?page=fix-posts' ) ), 'mlwp-notice nofade' );
@@ -133,10 +134,11 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 		$this->options->set( $new_data );
 
 		$this->admin_notice = __( 'Settings <strong>saved</strong>.', 'multilingual-wp' );
+		$this->admin_notice_class = 'mlwp-success';
 
 		if ( $this->options->dl_gettext ) {
-			if( !is_dir( WP_LANG_DIR ) || ! $ll = @fopen( trailingslashit( WP_LANG_DIR ) . 'mlwp.test', 'a' ) ) {
-				$error = sprintf( __( 'Could not write to "%s", Gettext Databases could not be downloaded!', 'multilingual-wp' ), WP_LANG_DIR );
+			if( ( ! is_dir( WP_LANG_DIR ) && ! mkdir( WP_LANG_DIR ) ) || ! $ll = @fopen( trailingslashit( WP_LANG_DIR ) . 'mlwp.test', 'a' ) ) {
+				$this->admin_errors[] = sprintf( __( 'Could not write to "%s", Gettext Databases could not be downloaded!', 'multilingual-wp' ), WP_LANG_DIR );
 			} else {
 				@fclose( $ll );
 				@unlink( trailingslashit( WP_LANG_DIR ) . 'mlwp.test' );
@@ -476,7 +478,7 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 				} elseif ( is_array( $_rewrites ) && isset( $_rewrites[ $pt ] ) && ! is_array( $_rewrites[ $pt ] ) ) {
 					$val = $_rewrites[ $pt ];
 				} else {
-					$val = preg_replace( '~^/~', '', $pts_opts[ $pt ]['slug'] );
+					$val = ltrim( $pts_opts[ $pt ]['slug'], '/' );
 				}
 				$options[] = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),
@@ -505,12 +507,15 @@ class Multilingual_WP_Settings_Page extends scb_MLWP_AdminPage {
 
 			$options = array();
 			foreach ( $enabled_langs as $lang ) {
-				if ( is_array( $_rewrites[ $tax ] ) && isset( $_rewrites[ $tax ][ $lang ] ) ) {
+				if ( isset( $_rewrites[ $tax ][ $lang ] ) ) {
 					$val = $_rewrites[ $tax ][ $lang ];
-				} elseif ( is_array( $_rewrites ) && isset( $_rewrites[ $tax ] ) && ! is_array( $_rewrites[ $tax ] ) ) {
+				} elseif ( isset( $_rewrites[ $tax ] ) && ! is_array( $_rewrites[ $tax ] ) ) {
 					$val = $_rewrites[ $tax ];
 				} else {
-					$val = preg_replace( '~^/~', '', $tax_opts[ $tax ]['slug'] );
+					$val = ltrim( $tax_opts[ $tax ]['slug'], '/' );
+				}
+				if ( stripos( $val, "{$default_lang}/" ) === 0 ) {
+					$val = substr_replace( $val, '', 0, strlen( "{$default_lang}/" ) );
 				}
 				$_options = array(
 					'title' => sprintf( __( 'Slug for %s', 'multilingual-wp' ), $languages[ $lang ]['label'] ),

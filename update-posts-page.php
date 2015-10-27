@@ -74,9 +74,10 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 			}
 		}
 
-		global $Multilingual_WP, $qtranslate_slug;
-		$default_lang = $Multilingual_WP->default_lang;
-		$languages = $Multilingual_WP->get_options( 'enabled_langs' );
+		global $qtranslate_slug;
+		$mlwp = _mlwp();
+		$default_lang = $mlwp->default_lang;
+		$languages = $mlwp->get_options( 'enabled_langs' );
 		if ( $_POST['update_type'] == 'terms' ) {
 			$tpp = isset( $_POST['terms_per_batch'] ) && intval( $_POST['terms_per_batch'] ) ? intval( $_POST['terms_per_batch'] ) : 20;
 
@@ -92,24 +93,24 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 			foreach ( $terms as $term ) {
 				if ( $term->parent && ! isset( $updated_terms[ $term->parent ] ) ) {
-					$_parent = $Multilingual_WP->get_term( intval( $term->parent ), $term->taxonomy );
+					$_parent = $mlwp->get_term( intval( $term->parent ), $term->taxonomy );
 					$message[] = '<p class="error">' . sprintf( __( 'The term "%1$s" was ignored, because it\'s parent term "%2$s" has not been updated yet.', 'multilingual-wp' ), $term->name, $_parent->name ) . '</p>';
 					continue;
 				}
 				@set_time_limit( 30 * $langs_count );
-				$Multilingual_WP->setup_term_vars( $term->term_id, $term->taxonomy );
+				$mlwp->setup_term_vars( $term->term_id, $term->taxonomy );
 
-				$rel_langs = $Multilingual_WP->rel_t_langs;
+				$rel_langs = $mlwp->rel_t_langs;
 
-				$Multilingual_WP->create_rel_terms();
+				$mlwp->create_rel_terms();
 
 				// Move over from qTranslate
-				if ( function_exists( 'qtrans_split' ) && ! $Multilingual_WP->is_compat_func( 'qtrans_split' ) ) {
+				if ( function_exists( 'qtrans_split' ) && ! $mlwp->is_compat_func( 'qtrans_split' ) ) {
 					$contents = qtrans_split( $term->description );
 					$title = isset( $qtrans_term_names[ $term->name ] ) ? $qtrans_term_names[ $term->name ] : array();
 					foreach ( $title as $lang => $tit ) {
-						if ( $Multilingual_WP->is_enabled( $lang ) ) {
-							if ( isset( $rel_langs[ $lang ] ) && ( $_term = $Multilingual_WP->get_term( $rel_langs[ $lang ], $Multilingual_WP->hash_tax_name( $term->taxonomy, $lang ) ) ) ) {
+						if ( $mlwp->is_enabled( $lang ) ) {
+							if ( isset( $rel_langs[ $lang ] ) && ( $_term = $mlwp->get_term( $rel_langs[ $lang ], $mlwp->hash_tax_name( $term->taxonomy, $lang ) ) ) ) {
 								$_POST[ "description_{$lang}" ] = $_term->description;
 								$_POST[ "name_{$lang}" ] = $_term->name;
 								$_POST[ "slug_{$lang}" ] = $_term->slug;
@@ -133,7 +134,7 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 					// TODO: Add support for other multilanguage plugins
 				} else {
 					// Set default language details
-					if ( isset( $rel_langs[ $default_lang ] ) && ( $_term = $Multilingual_WP->get_term( $rel_langs[ $default_lang ], $Multilingual_WP->hash_tax_name( $term->taxonomy, $default_lang ) ) ) ) {
+					if ( isset( $rel_langs[ $default_lang ] ) && ( $_term = $mlwp->get_term( $rel_langs[ $default_lang ], $mlwp->hash_tax_name( $term->taxonomy, $default_lang ) ) ) ) {
 						// If translation already exists, assign that content
 						// This way we won't override default languages
 						$_POST[ "description_{$default_lang}" ] = $term->description = $_term->description;
@@ -147,9 +148,9 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 				}
 
 				// Update the default language post
-				$Multilingual_WP->insert_term( $term->name, $term->taxonomy, (array) $term );
+				$mlwp->insert_term( $term->name, $term->taxonomy, (array) $term );
 
-				$Multilingual_WP->update_rel_t_langs();
+				$mlwp->update_rel_t_langs();
 
 				$updated_terms[ $term->term_id ] = $term->term_id;
 
@@ -188,18 +189,18 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 					continue;
 				}
 				@set_time_limit( 30 * $langs_count );
-				$Multilingual_WP->setup_post_vars( $post->ID );
+				$mlwp->setup_post_vars( $post->ID );
 
-				$rel_langs = $Multilingual_WP->rel_langs;
+				$rel_langs = $mlwp->rel_langs;
 
-				$Multilingual_WP->create_rel_posts();
+				$mlwp->create_rel_posts();
 
 				// Move over from qTranslate
-				if ( function_exists( 'qtrans_split' ) && ! $Multilingual_WP->is_compat_func( 'qtrans_split' ) ) {
+				if ( function_exists( 'qtrans_split' ) && ! $mlwp->is_compat_func( 'qtrans_split' ) ) {
 					$contents = qtrans_split( $post->post_content );
 					$titles = qtrans_split( $post->post_title );
 					foreach ( $titles as $lang => $title ) {
-						if ( $Multilingual_WP->is_enabled( $lang ) ) {
+						if ( $mlwp->is_enabled( $lang ) ) {
 							// We've already imported this translation, so add the current data
 							if ( isset( $rel_langs[ $lang ] ) && ( $_post = get_post( $rel_langs[ $lang ] ) ) ) {
 								$_POST[ "content_{$lang}" ] = $_post->post_content;
@@ -240,9 +241,9 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 				}
 
 				// Update the default language post
-				$Multilingual_WP->save_post( $post );
+				$mlwp->save_post( $post );
 
-				$Multilingual_WP->update_rel_langs();
+				$mlwp->update_rel_langs();
 
 				update_post_meta( $post->ID, '_mlwp_batch_updated', 'yes' );
 
@@ -268,7 +269,6 @@ class Multilingual_WP_Update_Posts_Page extends scb_MLWP_AdminPage {
 
 	public function page_header( $add_class = '' ) {
 		echo "<div class='wrap mlwp-wrap mlwp-add-new-wrap {$add_class}''>\n";
-		screen_icon( $this->args['screen_icon'] );
 		echo html( "h2", $this->args['page_title'] );
 	}
 

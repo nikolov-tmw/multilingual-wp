@@ -14,8 +14,8 @@
  *
  * @global Multilingual_WP $GLOBALS['Multilingual_WP']
  */
-function &_mlwp() {
-	return $GLOBALS['Multilingual_WP'];
+function _mlwp() {
+	return Multilingual_WP::instance();
 }
 
 /**
@@ -24,7 +24,7 @@ function &_mlwp() {
  * @uses Multilingual_WP::build_lang_switcher()
  */
 function mlwp_lang_switcher( $options = array() ) {
-	return $GLOBALS['Multilingual_WP']->build_lang_switcher( $options );
+	return _mlwp()->build_lang_switcher( $options );
 }
 
 /**
@@ -33,5 +33,5 @@ function mlwp_lang_switcher( $options = array() ) {
  * @uses Multilingual_WP::convert_URL()
  */
 function mlwp_convert_URL( $url = '', $lang = '', $force = false ) {
-	return $GLOBALS['Multilingual_WP']->convert_URL( $url, $lang );
+	return _mlwp()->convert_URL( $url, $lang );
 }

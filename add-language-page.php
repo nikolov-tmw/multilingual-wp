@@ -19,7 +19,6 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 			'page_title' => __( 'Add New Language', 'multilingual-wp' ),
 			'parent' => 'multilingual-wp',
 			'action_link' => false,
-			'screen_icon' => 'mlwp_add_language'
 		);
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
@@ -98,8 +97,6 @@ class Multilingual_WP_Add_Language_Page extends scb_MLWP_AdminPage {
 		}
 
 		if ( empty( $errors ) ) {
-			global $Multilingual_WP;
-
 			$langs = $this->options->languages;
 			
 			// Trim the language ID - this could go away in the future

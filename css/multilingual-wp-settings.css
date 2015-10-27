@@ -18,16 +18,8 @@ textarea.regular-text { width: 25em; }
 
 .cl { display: block; float: none; clear: both; height: 0; }
 
-div.mlwp-box { border-width: 2px; margin: 5px 0 15px; background-color: #FFFFE0; border-color: #E6DB55; border-style: solid; padding: 0 .6em; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; }
+div.mlwp-box { /* border-width: 2px; margin: 5px 0 15px; background-color: #FFFFE0; border-color: #E6DB55; border-style: solid; padding: 0 .6em; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; */ }
 div.mlwp-box p { margin: .5em 0; padding: 2px; }
-div.mlwp-box.mlwp-notice { background-color: #E0F1FF; border-color: #8497DF; }
-div.mlwp-box.mlwp-success { background-color: #96F1B3; border-color: #48BB51; }
-div.mlwp-box.mlwp-error { background-color: #FFCACA; border-color: #F33636; font-weight: bold; }
-
-/*
-	Screen Icons
-*/
-.multilingual-wp_page_add-new-language .wrap h2,
-.multilingual-wp_page_remove-a-language .wrap h2 { line-height: 51px; }
-#icon-mlwp_add_language { background-image: url(../images/add-language-icon.png); width: 64px; height: 50px; margin-right: 12px; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; }
-#icon-mlwp_remove_language { background-image: url(../images/remove-language-icon.png); width: 64px; height: 50px; margin-right: 12px; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; }
+div.mlwp-box.mlwp-notice { /* background-color: #E0F1FF; */ border-color: #8497DF; }
+div.mlwp-box.mlwp-success { /* background-color: #96F1B3; */ border-color: #7AD03A; }
+div.mlwp-box.mlwp-error { /* background-color: #FFCACA; */ border-color: #DD3D36; font-weight: bold; }
