@@ -14,58 +14,103 @@
 				$editors_cont.css( { 'visibility': 'visible' } );
 			});
 
-			// Set-up word counting
-			$('textarea.wp-editor-area', $editors_cont).each(function(){
-				var th = $(this), last = false, parent_id = th.parents('.js-tab').attr('id');
-				$(document).triggerHandler('wpcountwords', [ th.val(), undefined, parent_id ]);
+			if ( 'undefined' !== typeof wpWordCount ) {
+				// Set-up word counting
+				$('textarea.wp-editor-area', $editors_cont).each(function(){
+					var th = $(this), last = false, parent_id = th.parents('.js-tab').attr('id');
+					$(document).triggerHandler('wpcountwords', [ th.val(), undefined, parent_id ]);
 
-				th.keyup( function(e) {
-					var k = e.keyCode || e.charCode;
+					th.keyup( function(e) {
+						var k = e.keyCode || e.charCode;
 
-					if ( k == last )
+						if ( k == last )
+							return true;
+
+						if ( 13 == k || 8 == last || 46 == last )
+							$(document).triggerHandler('wpcountwords', [ th.val(), undefined, parent_id ]);
+
+						last = k;
 						return true;
+					});
+				})
 
-					if ( 13 == k || 8 == last || 46 == last )
-						$(document).triggerHandler('wpcountwords', [ th.val(), undefined, parent_id ]);
-
-					last = k;
-					return true;
+				$('#content').unbind('keyup');
+				$(document).unbind( 'wpcountwords' );
+				$(document).bind( 'wpcountwords', function(e, txt, type, parent) {
+					wpWordCount.wc(txt, type, parent);
 				});
-			})
 
-			$('#content').unbind('keyup');
-			$(document).unbind( 'wpcountwords' );
-			$(document).bind( 'wpcountwords', function(e, txt, type, parent) {
-				wpWordCount.wc(txt, type, parent);
-			});
+				wpWordCount.block = {};
 
-			wpWordCount.block = {};
+				// Override WP's wordcounting function
+				wpWordCount.wc = function(tx, type, parent) {
+					var parent = typeof parent == 'undefined' ? 'postdivrich' : parent;
+					var t = this, w = $( '.word-count', $('#' + parent) ), tc = 0;
 
-			// Override WP's wordcounting function
-			wpWordCount.wc = function(tx, type, parent) {
-				var parent = typeof parent == 'undefined' ? 'postdivrich' : parent;
-				var t = this, w = $( '.word-count', $('#' + parent) ), tc = 0;
+					if ( type === undefined )
+						type = wordCountL10n.type;
+					if ( type !== 'w' && type !== 'c' )
+						type = 'w';
 
-				if ( type === undefined )
-					type = wordCountL10n.type;
-				if ( type !== 'w' && type !== 'c' )
-					type = 'w';
+					if ( typeof t.block[ parent ] != 'undefined' && t.block[ parent ] )
+						return;
 
-				if ( typeof t.block[ parent ] != 'undefined' && t.block[ parent ] )
-					return;
+					t.block[ parent ] = 1;
 
-				t.block[ parent ] = 1;
+					setTimeout( function() {
+						if ( tx ) {
+							tx = tx.replace( t.settings.strip, ' ' ).replace( /&nbsp;|&#160;/gi, ' ' );
+							tx = tx.replace( t.settings.clean, '' );
+							tx.replace( t.settings[type], function(){tc++;} );
+						}
+						w.html(tc.toString());
 
-				setTimeout( function() {
-					if ( tx ) {
-						tx = tx.replace( t.settings.strip, ' ' ).replace( /&nbsp;|&#160;/gi, ' ' );
-						tx = tx.replace( t.settings.clean, '' );
-						tx.replace( t.settings[type], function(){tc++;} );
+						setTimeout( function() { t.block[ parent ] = 0; }, 2000 );
+					}, 1 );
+				}
+			} else {
+				var counter = new wp.utils.WordCounter();
+
+				$('#content').unbind('keyup');
+				$(document).unbind( 'wpcountwords' );
+				$(document).bind( 'wpcountwords', function(e, txt, type, parent) {
+					if ( parent ) {
+						$( '.word-count', $('#' + parent) ).text( counter.count(txt, type) );
+					} else {
+						$( '#postdivrich .word-count' ).text( counter.count(txt, type) );
 					}
-					w.html(tc.toString());
+				});
 
-					setTimeout( function() { t.block[ parent ] = 0; }, 2000 );
-				}, 1 );
+				// Set-up word counting
+				$('textarea.wp-editor-area', $editors_cont).each(function(){
+					var th = $(this),
+						parent_id = th.parents('.js-tab').attr('id'),
+						contentEditor = false;
+					$(document).triggerHandler('wpcountwords', [ th.val(), undefined, parent_id ]);
+
+					function update(e) {
+						if ( ! contentEditor || contentEditor.isHidden() ) {
+							text = th.val();
+						} else {
+							text = contentEditor.getContent( { format: 'raw' } );
+						}
+						$(document).triggerHandler('wpcountwords', [ text, undefined, parent_id ]);
+					}
+
+					th[0].onkeyup = _.debounce( update, 1000 );
+
+					$( document ).on( 'tinymce-editor-init', function( event, editor ) {
+						if ( editor.id !== th.attr('id') ) {
+							return;
+						}
+
+						contentEditor = editor;
+
+						editor.on( 'nodechange keyup', _.debounce( update, 1000 ) );
+					} );
+
+					th[0].oninput = th[0].onkeyup = _.debounce( update, 1000 );
+				});
 			}
 
 			function init_js_tabs( parent ) {
